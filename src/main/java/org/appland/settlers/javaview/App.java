@@ -343,6 +343,11 @@ public class App {
             return result;
         }
 
+        private void cancelRoadBuilding() {
+            roadPoints = new ArrayList<>();
+            state = IDLE;
+        }
+
         enum UiState {
 
             IDLE, BUILDING_ROAD
@@ -538,7 +543,8 @@ public class App {
                 }
                 this.repaint();
             } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                cancelRoadBuilding();
+                repaint();
             }
         }
 
