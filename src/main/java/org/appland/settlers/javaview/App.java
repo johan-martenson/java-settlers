@@ -528,7 +528,7 @@ public class App {
 
                     if (map.isFlagAtPoint(p)) {
 
-                        roadPoints.add(p);
+                        addRoadPoint(p);
                         buildRoad(roadPoints);
                     } else {
                         addRoadPoint(p);
