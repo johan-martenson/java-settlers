@@ -5,22 +5,29 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import static java.lang.Math.abs;
+import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
-import static java.lang.Math.round;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import javax.swing.*;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.WOODCUTTER;
@@ -36,6 +43,8 @@ import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
+import org.appland.settlers.model.Terrain;
+import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Woodcutter;
 
 public class App {
@@ -419,7 +428,7 @@ public class App {
             
             setState(IDLE);
             
-            map = new GameMap(width, height);
+            map = new GameMap(widthInPoints, heightInPoints);
             
             placeBuilding(HEADQUARTER, new Point(5, 5));
             
@@ -456,14 +465,126 @@ public class App {
         enum HouseType {
             WOODCUTTER, HEADQUARTER
         }
-        
+
+        private Image loadImage(String file) {
+            try {
+                URL imgURL = getClass().getClassLoader().getResource(file);
+                ImageIcon imageIcon = new ImageIcon(imgURL);
+            
+                return imageIcon.getImage();
+            } catch (Exception e) {
+                System.out.print("Error while loading image " + file + ": " + e);
+            }
+
+            return null;
+        }
+
+
+        private BufferedImage createOffScreenImage(int width, int height) {
+            return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        }
+
+	private BufferedImage createTerrainTexture(int w, int h) {
+	    BufferedImage image = createOffScreenImage(w, h);
+	    Set<Tile> handled = new HashSet<>();
+	    Terrain terrain = map.getTerrain();
+	    Graphics2D g = image.createGraphics();
+
+	    g.setBackground(Color.WHITE);
+
+	    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+	    boolean rowOffsetFlip = true;
+
+	    /* Place all possible flag points in the list */
+	    int x, y;
+
+	    for (y = 0; y < heightInPoints; y++) {
+
+		/* Draw upwards triangles */
+		if (y + 1 < heightInPoints) {
+		    int startX;
+
+		    if (rowOffsetFlip) {
+			startX = 0;
+		    } else {
+			startX = 1;
+		    }
+
+		    for (x = startX; x < widthInPoints; x++) {
+			Point p1 = new Point(x, y);
+			Point p2 = new Point(x + 2, y);
+			Point p3 = new Point(x + 1, y + 1);
+
+			Tile t = terrain.getTile(p1, p2, p3);
+
+			drawTile(g, t, p1, p2, p3);
+		    }
+		}
+
+		/* Draw downwards triangles */
+		if (y - 1 > 0) {
+		    int startX;
+
+		    if (rowOffsetFlip) {
+			startX = 0;
+		    } else {
+			startX = 1;
+		    }
+
+		    for (x = startX; x < widthInPoints; x++) {
+			Point p1 = new Point(x, y);
+			Point p2 = new Point(x + 2, y);
+			Point p3 = new Point(x + 1, y - 1);
+
+			Tile t = terrain.getTile(p1, p2, p3);
+
+			drawTile(g, t, p1, p2, p3);
+		    }
+		}
+
+		rowOffsetFlip = !rowOffsetFlip;
+	    }
+
+	    return image;
+	}
+
+        private void drawTile(Graphics2D g, Tile t, Point p1, Point p2, Point p3) {
+            switch (t.getVegetationType()) {
+            case GRASS:
+                g.setColor(Color.GREEN);
+                break;
+            case SWAMP:
+                g.setColor(Color.GRAY);
+                break;
+            case WATER:
+                g.setColor(Color.BLUE);
+                break;
+            default:
+                g.setColor(Color.GRAY);
+            }
+
+            fillScaledTriangle(g, p1, p2, p3);
+        }
+
+        private void fillScaledTriangle(Graphics2D g, Point p1, Point p2, Point p3) {
+
+	    Path2D.Double triangle = new Path2D.Double();
+	    triangle.moveTo(toScreenX(p1), toScreenY(p1));
+	    triangle.lineTo(toScreenX(p2), toScreenY(p2));
+	    triangle.lineTo(toScreenX(p3), toScreenY(p3));
+	    triangle.closePath();
+	    g.fill(triangle);
+        }
+
         GameMap map;
 
-        int width;
-        int height;
+        int widthInPoints;
+        int heightInPoints;
         List<Point> grid;
         int scaleX;
         int scaleY;
+	BufferedImage terrain;
 
         public GameCanvas() {
         }
@@ -471,16 +592,21 @@ public class App {
         public void initGame(int w, int h) throws Exception {
             System.out.println("Create game map");
 
-            width = w;
-            height = h;
+            widthInPoints = w;
+            heightInPoints = h;
             roadPoints = new ArrayList<>();
             showAvailableSpots = false;
             apiRecording = "";
             flagNames    = new HashMap<>();
             pointNames   = new HashMap<>();
 
+            scaleX = 500 / widthInPoints;
+            scaleY = 500 / heightInPoints;
+
             /* Create the initial game board */
-            map = new GameMap(width, height);
+            map = new GameMap(widthInPoints, heightInPoints);
+
+	    terrain = createTerrainTexture(500, 500);
 
             apiRecording = apiRecording + "GameMap map = new GameMap(" + w + ", " + h + ");\n";
             
@@ -491,16 +617,24 @@ public class App {
             map.placeBuilding(hq, hqPoint);
 
             apiRecording = apiRecording + "map.placeBuilding(new Headquarter(), new Point(" + 5 + ", " + 5 + "));\n";
-
             
-            grid = buildGrid(width, height);
-
-            scaleX = 500 / width;
-            scaleY = 500 / height;
-
+            grid = buildGrid(widthInPoints, heightInPoints);
+            
             /* Create listener */
             addMouseListener(this);
             addKeyListener(this);
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent evt) {
+                    
+                    scaleX = getWidth() / widthInPoints;
+                    scaleY = getHeight() / heightInPoints;
+                    
+                    terrain = createTerrainTexture(getWidth(), getHeight());
+                    
+                    repaint();
+                }
+            });
             
             /* Initial state is IDLE */
             state = IDLE;
@@ -533,6 +667,10 @@ public class App {
         @Override
         public void paint(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics;
+
+	    if (terrain != null) {
+		g.drawImage(terrain, 0, 0, getWidth(), getHeight(), 0, 0, terrain.getWidth(), terrain.getHeight(), null);
+	    }
 
             drawGrid(g);
 
@@ -602,12 +740,6 @@ public class App {
         @Override
         public void mouseClicked(MouseEvent me) {
             Point p = screenToPoint(me.getX(), me.getY());
-            
-            if (isDoubleClick(me)) {
-                System.out.println("Double click at" + me.getX() + ", " + me.getY() + " - " + p);
-            } else {
-                System.out.println("Single click at" + me.getX() + ", " + me.getY() + " - " + p);
-            }
 
             try {
 
