@@ -11,18 +11,22 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import static java.lang.Math.abs;
+import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
+import static java.lang.Math.round;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
+import static org.appland.settlers.javaview.App.GameCanvas.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.GameCanvas.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.IDLE;
+import static org.appland.settlers.javaview.App.GameCanvas.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
@@ -32,15 +36,19 @@ import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
+import org.appland.settlers.model.Woodcutter;
 
 public class App {
 
     static class GameCanvas extends Canvas implements MouseListener, KeyListener {
 
-        private UiState state;
-        private List<Point> roadPoints;
-        private boolean showAvailableSpots;
-        private String  apiRecording;
+        private UiState            state;
+        private List<Point>        roadPoints;
+        private boolean            showAvailableSpots;
+        private String             apiRecording;
+        private Point              selectedPoint;
+        private Map<Flag, String>  flagNames;
+        private Map<Point, String> pointNames;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -53,11 +61,8 @@ public class App {
             int roundedX = (int) round(px);
             int roundedY = (int) round(py);
 
-            System.out.println("BEFORE " + roundedX + " " + roundedY);
-            System.out.println("REAL COORDS " + px + " " + py);
             if (abs(px - roundedX) < abs(py - Math.round(py))) {
                 if ((roundedX + roundedY) % 2 != 0) {
-                    System.out.println("NOT EVEN, X CLOSER");
 
                     if (roundedY > py) {
                         roundedY = (int) floor(py);
@@ -67,8 +72,6 @@ public class App {
                 }
             } else {
                 if ((roundedX + roundedY) % 2 != 0) {
-                    System.out.println("NOT EVEN, Y CLOSER");
-
                     if (roundedX > px) {
                         roundedX = (int) floor(px);
                     } else {
@@ -77,12 +80,12 @@ public class App {
                 }
             }
 
-            System.out.println("AFTER " + roundedX + " " + roundedY);
-
             return new Point(roundedX, roundedY);
         }
 
         private void startRoad(Point p) throws Exception {
+            System.out.println("Starting road");
+
             if (!roadPoints.isEmpty()) {
                 throw new Exception("Already building a road, can't start a new one");
             }
@@ -91,11 +94,15 @@ public class App {
         }
 
         private String recordPoint(Point p) {
-            return "new Point(" + p.x +", " + p.y + ")";
+            if (pointNames.containsKey(p)) {
+                return pointNames.get(p);
+            } else {
+                return "new Point(" + p.x +", " + p.y + ")";
+            }
         }
         
         private void buildRoad(List<Point> wayPoints) throws Exception {
-            System.out.println("BUILDING ROAD WITH POINTS " + wayPoints);
+            System.out.println("Building road (" + wayPoints + ")");
             
             map.placeRoad(wayPoints);
             
@@ -116,8 +123,6 @@ public class App {
             }
             
             apiRecording = apiRecording + ");\n";
-        
-            state = IDLE;
 
             roadPoints = new ArrayList<>();
         }
@@ -129,8 +134,6 @@ public class App {
                 Point last = getLastSelectedWayPoint();
 
                 if (!point.isAdjacent(last)) {
-                    System.out.println("NOT ADJACENT");
-                    
                     List<Point> pointsBetween = map.findAutoSelectedRoad(last, point, roadPoints);
                     
                     boolean firstRun = true;
@@ -176,9 +179,6 @@ public class App {
 
         private void drawRoad(Graphics2D g, Road r) {
             List<Point> wayPoints = r.getWayPoints();
-
-            System.out.println("DRAWING ROAD " + r);
-            System.out.println("WAY POINTS " + wayPoints);
             
             g.setColor(Color.ORANGE);
             Stroke oldStroke = g.getStroke();
@@ -228,6 +228,10 @@ public class App {
         private void fillScaledRect(Graphics2D g, Point p, int w, int h) {
             g.fillRect(toScreenX(p), toScreenY(p), w, h);
         }
+
+        private void fillScaledOval(Graphics2D g, Point p, int w, int h) {
+            g.fillOval(toScreenX(p), toScreenY(p), w, h);
+        }
         
         private void drawFlags(Graphics2D g) {
             g.setColor(Color.BLACK);
@@ -240,7 +244,7 @@ public class App {
         private void drawPossibleRoadConnections(Graphics2D g, Point point) {
             g.setColor(Color.GREEN);
             
-            for (Point p : map.getPossibleAdjacentRoadConnections(point)) {
+            for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(point)) {
                 if (map.isFlagAtPoint(p)) {
                     continue;
                 }
@@ -258,11 +262,9 @@ public class App {
         }
 
         @Override
-        public void keyPressed(KeyEvent ke) {
-            System.out.println("ANY KEY PRESSED " + ke.getKeyChar());
-            
+        public void keyPressed(KeyEvent ke) {            
             if (ke.getKeyChar() == ' ') {
-                System.out.println("SPACE PRESSED");
+                System.out.println("Toggle show available spots");
                 
                 showAvailableSpots = !showAvailableSpots;
                 
@@ -271,6 +273,35 @@ public class App {
                 System.out.println("--------------------------------------");
                 System.out.println(apiRecording);
                 System.out.println("--------------------------------------");
+            } else if (ke.getKeyChar() == 'w' && state == POINT_SELECTED) {
+                try {
+                    placeBuilding(WOODCUTTER, selectedPoint);
+                    
+                    setState(IDLE);
+                    
+                    repaint();
+                } catch (Exception ex) {
+                    System.out.println("Exception while building woodcutter: " + ex);
+
+                    setState(IDLE);
+                }
+            } else if (ke.getKeyChar() == 'X') {
+                apiRecording += "\n\n\n\n/*   MARKER   */\n";
+                System.out.println("Added marker to api recording");
+            } else if (ke.getKeyChar() == KeyEvent.VK_ESCAPE) {
+                System.out.println("Resetting state to idle");
+                
+                setState(IDLE);
+
+                repaint();
+            } else if (ke.getKeyChar() == 'R') {
+                try {
+                    resetGame();
+                    repaint();
+                } catch (Exception ex) {
+                    System.out.println("Failed to reset game. Exiting. Exception: " + ex);
+                    System.exit(1);
+                }
             }
         }
 
@@ -296,11 +327,19 @@ public class App {
         }
 
         private void placeFlag(Point p) throws Exception {
-            Flag f = new Flag(p);
+            Flag f = new Flag(p);                            
                             
+            System.out.println("Placed flag at " + p);
+
             map.placeFlag(f);
             
-            apiRecording = apiRecording + "map.placeFlag(new Flag(new Point(" + p.x + ", " + p.y + ")));\n";
+            String pointName = registerPoint(p);
+            String flagName  = registerFlag(f);
+            
+            apiRecording += pointName + " = new Point(" + p.x + ", " + p.y + ");\n";
+            apiRecording += flagName  + " = new Flag(" + pointName + ");\n";
+            
+            apiRecording += "map.placeFlag(" + flagName + ");\n\n";
         }
 
         private void drawAvailableFlag(Graphics2D g, Point p) {
@@ -345,14 +384,79 @@ public class App {
 
         private void cancelRoadBuilding() {
             roadPoints = new ArrayList<>();
-            state = IDLE;
+        }
+
+        private void placeBuilding(HouseType houseType, Point p) throws Exception {
+            Building b = null;
+            String newHouse = "";
+            
+            System.out.println("Placing " + houseType + " at " + selectedPoint);
+            
+            switch (houseType) {
+            case WOODCUTTER:
+                b = new Woodcutter();
+                newHouse = "new Woodcutter()";
+                break;
+            }    
+        
+            if (b == null) {
+                throw new Exception("Can't build " + houseType);
+            }
+
+            map.placeBuilding(b, p);
+            
+            apiRecording += "map.placeBuilding(" + newHouse + ", " + recordPoint(p) + ");\n";
+        }
+
+        private void drawSelectedPoint(Graphics2D g) {
+            g.setColor(Color.BLUE);
+            
+            fillScaledOval(g, selectedPoint, 4, 4);
+        }
+
+        private void resetGame() throws Exception {
+            System.out.println("Resetting game");
+            
+            setState(IDLE);
+            
+            map = new GameMap(width, height);
+            
+            placeBuilding(HEADQUARTER, new Point(5, 5));
+            
+            apiRecording = "";
+            flagNames.clear();
+            pointNames.clear();
+        }
+
+        private void setState(UiState uiState) {
+            System.out.println("State change: " + state + " --> " + uiState);
+            state = uiState;            
+        }
+
+        private String registerFlag(Flag f) {
+            String name = "flag" + flagNames.size();
+            
+            flagNames.put(f, name);
+            
+            return name;
+        }
+
+        private String registerPoint(Point p) {
+            String name = "point" + pointNames.size();
+            
+            pointNames.put(p, name);
+            
+            return name;
         }
 
         enum UiState {
-
-            IDLE, BUILDING_ROAD
+            IDLE, BUILDING_ROAD, POINT_SELECTED
         }
 
+        enum HouseType {
+            WOODCUTTER, HEADQUARTER
+        }
+        
         GameMap map;
 
         int width;
@@ -372,6 +476,8 @@ public class App {
             roadPoints = new ArrayList<>();
             showAvailableSpots = false;
             apiRecording = "";
+            flagNames    = new HashMap<>();
+            pointNames   = new HashMap<>();
 
             /* Create the initial game board */
             map = new GameMap(width, height);
@@ -446,6 +552,8 @@ public class App {
                 drawLastSelectedPoint(g);
                 
                 drawPossibleRoadConnections(g, getLastSelectedWayPoint());
+            } else if (state == POINT_SELECTED) {
+                drawSelectedPoint(g);
             }
         }
 
@@ -466,8 +574,6 @@ public class App {
         }
 
         private void drawRoads(Graphics2D g) {
-            System.out.println("DRAWING ROADS");
-            
             List<Road> roads = map.getRoads();
 
             g.setColor(Color.ORANGE);
@@ -477,7 +583,7 @@ public class App {
             }
         }
 
-        private void drawHouses(Graphics graphics) {
+        private void drawHouses(Graphics2D graphics) {
             List<Building> houses = map.getBuildings();
 
             for (Building b : houses) {
@@ -485,12 +591,12 @@ public class App {
             }
         }
 
-        private void drawHouse(Graphics graphics, Building b) {
+        private void drawHouse(Graphics2D graphics, Building b) {
             Point p = b.getPosition();
 
             graphics.setColor(Color.BLACK);
 
-            drawScaledOval(graphics, p, 10, 10);
+            fillScaledRect(graphics, p, 15, 15);
         }
 
         @Override
@@ -506,44 +612,52 @@ public class App {
             try {
 
                 if (isDoubleClick(me)) {
-                    if (state == IDLE) {
+                    if (state == IDLE || state == POINT_SELECTED) {
                         if (map.isFlagAtPoint(p)) {
-                            System.out.println("Starting road");
-
                             startRoad(p);
 
-                            state = BUILDING_ROAD;
+                            setState(BUILDING_ROAD);
                         } else {
                             placeFlag(p);
                             
-                            System.out.println("Placed flag at " + p);
+                            setState(IDLE);
                         }
                     } else if (state == BUILDING_ROAD) {
-                        System.out.println("Placing flag at " + p);
-                        
                         placeFlag(p);
-                        
-                        System.out.println("Building road " + roadPoints);
-                        buildRoad(roadPoints);
 
+                        buildRoad(roadPoints);
+        
+                        setState(IDLE);
                     }
                 }
 
-                if (!isDoubleClick(me) && state == BUILDING_ROAD) {
+                if (!isDoubleClick(me)) {
+                    if (state == BUILDING_ROAD) {
 
-                    if (map.isFlagAtPoint(p)) {
+                        if (map.isFlagAtPoint(p)) {
 
-                        addRoadPoint(p);
-                        buildRoad(roadPoints);
-                    } else {
-                        addRoadPoint(p);
+                            addRoadPoint(p);
+                            buildRoad(roadPoints);
+                            
+                            setState(IDLE);
+                        } else {
+                            addRoadPoint(p);
+                        }
+                    } else if (state == IDLE) {
+                        selectedPoint = p;
+                        
+                        setState(POINT_SELECTED);
+                        
+                        System.out.println("Selected " + p);
                     }
-
-                    System.out.println("Added point to road " + roadPoints);
                 }
                 this.repaint();
             } catch (Exception ex) {
+                System.out.println("Exception at single click: " + ex);
+                ex.printStackTrace();
+                
                 cancelRoadBuilding();
+                setState(IDLE);
                 repaint();
             }
         }
