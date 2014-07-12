@@ -406,6 +406,10 @@ public class App {
                 b = new Woodcutter();
                 newHouse = "new Woodcutter()";
                 break;
+            case HEADQUARTER:
+                b = new Headquarter();
+                newHouse = "new Headquarter()";
+                break;
             }    
         
             if (b == null) {
