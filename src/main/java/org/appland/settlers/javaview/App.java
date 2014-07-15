@@ -17,8 +17,12 @@ import java.awt.event.MouseListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
+import static java.lang.Math.abs;
+import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
+import static java.lang.Math.round;
+import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
@@ -28,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.WOODCUTTER;
@@ -35,9 +41,13 @@ import static org.appland.settlers.javaview.App.GameCanvas.UiState.BUILDING_ROAD
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.IDLE;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.DeliveryNotPossibleException;
 import org.appland.settlers.model.Flag;
+import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
+import org.appland.settlers.model.InvalidMaterialException;
+import org.appland.settlers.model.InvalidStateForProduction;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Size;
@@ -46,6 +56,7 @@ import static org.appland.settlers.model.Size.MEDIUM;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Woodcutter;
+import org.appland.settlers.model.Worker;
 
 public class App {
 
@@ -58,6 +69,8 @@ public class App {
         private Point              selectedPoint;
         private Map<Flag, String>  flagNames;
         private Map<Point, String> pointNames;
+        private GameLogic          gameLogic;
+        private Image              houseImage;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -462,6 +475,43 @@ public class App {
             return name;
         }
 
+        private void drawPersons(Graphics2D g) {
+            for (Worker w : map.getAllWorkers()) {
+                if (w.isInsideBuilding()) {
+                    continue;
+                }
+
+                drawPerson(g, w);
+            }
+        }
+
+        private void drawPerson(Graphics2D g, Worker w) {
+            g.setColor(Color.BLACK);
+            
+            if (w.isArrived()) {
+                fillScaledOval(g, w.getPosition(), 5, 10);
+            } else {
+                try {
+                    Point last = w.getLastPoint();
+                    Point next = w.getNextPoint();
+                    
+                    int percent = w.getPercentageOfDistanceTraveled();
+                    
+                    double actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
+                    double actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
+                    
+                    g.fillOval((int)(actualX*scaleX) - 4, getHeight() - (int)(actualY*scaleY) - 10, 5, 15);
+                    
+                    if (w.getCargo() != null ) {
+                        g.setColor(Color.RED);
+                        g.fillRect((int)(actualX*scaleX) -2, getHeight() - (int)(actualY*scaleY) - 6, 5, 5);
+                    }
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
         enum UiState {
             IDLE, BUILDING_ROAD, POINT_SELECTED
         }
@@ -603,6 +653,7 @@ public class App {
             apiRecording = "";
             flagNames    = new HashMap<>();
             pointNames   = new HashMap<>();
+            gameLogic    = new GameLogic();
 
             scaleX = 500 / widthInPoints;
             scaleY = 500 / heightInPoints;
@@ -611,6 +662,8 @@ public class App {
             map = new GameMap(widthInPoints, heightInPoints);
 
 	    terrain = createTerrainTexture(500, 500);
+            
+            houseImage = loadImage("house.jpg");
 
             apiRecording = apiRecording + "GameMap map = new GameMap(" + w + ", " + h + ");\n";
             
@@ -642,6 +695,42 @@ public class App {
             
             /* Initial state is IDLE */
             state = IDLE;
+
+        
+        
+            /* Start game tick */
+            Thread t = new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+            
+                    int count = 0;
+                    while (true) {
+                        if (count == 10) {
+                            count = 0;
+
+                            try {
+                                gameLogic.gameLoop(map);
+                            } catch (Exception ex) {
+                                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        } else {
+                            count++;
+                            map.stepTime();
+                        }
+
+                        repaint();
+                        
+                        try {
+                            Thread.sleep(250);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+
+            t.start();
         }
 
         List<Point> buildGrid(int width, int height) {
@@ -683,6 +772,8 @@ public class App {
             drawFlags(g);
 
             drawHouses(g);
+            
+            drawPersons(g);
 
             if (showAvailableSpots) {
                 drawAvailableSpots(g);
@@ -733,12 +824,16 @@ public class App {
             }
         }
 
-        private void drawHouse(Graphics2D graphics, Building b) {
+        private void drawHouse(Graphics2D g, Building b) {
             Point p = b.getPosition();
 
-            graphics.setColor(Color.BLACK);
+            g.setColor(Color.BLACK);
 
-            fillScaledRect(graphics, p, 15, 15);
+            if (houseImage != null) {
+                g.drawImage(houseImage, p.x*scaleX, getHeight() - p.y*scaleY, getWidth(), getHeight(), 0, 0, terrain.getWidth(), terrain.getHeight(), null);
+            } else {
+                fillScaledRect(g, p, 15, 15);
+            }
         }
 
         @Override
