@@ -14,15 +14,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
-import static java.lang.Math.abs;
-import static java.lang.Math.abs;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
-import static java.lang.Math.round;
-import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,13 +36,10 @@ import static org.appland.settlers.javaview.App.GameCanvas.UiState.BUILDING_ROAD
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.IDLE;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
-import org.appland.settlers.model.DeliveryNotPossibleException;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
-import org.appland.settlers.model.InvalidMaterialException;
-import org.appland.settlers.model.InvalidStateForProduction;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Size;
@@ -71,14 +63,15 @@ public class App {
         private Map<Point, String> pointNames;
         private GameLogic          gameLogic;
         private Image              houseImage;
+        private ScaledDrawer       drawer;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
         }
 
         private Point screenToPoint(int x, int y) {
-            double px = (double) x / (double) scaleX;
-            double py = (double) (getHeight() - y) / (double) scaleY;
+            double px = (double) x / (double) drawer.getScaleX();
+            double py = (double) (getHeight() - y) / (double) drawer.getScaleY();
 
             int roundedX = (int) round(px);
             int roundedY = (int) round(py);
@@ -191,7 +184,7 @@ public class App {
 
                 g.setColor(Color.YELLOW);
 
-                drawScaledLine(g, previous, current);
+                drawer.drawScaledLine(g, previous, current);
 
                 previous = current;
             }
@@ -215,7 +208,7 @@ public class App {
                     continue;
                 }
 
-                drawScaledLine(g, previous, p);
+                drawer.drawScaledLine(g, previous, p);
 
                 previous = p;
             }
@@ -228,38 +221,15 @@ public class App {
 
             graphics.setColor(Color.RED);
 
-            drawScaledFilledOval(graphics, selected, 7, 7);
+            drawer.drawScaledFilledOval(graphics, selected, 7, 7);
         }
 
-        private void drawScaledLine(Graphics graphics, Point p1, Point p2) {
-            graphics.drawLine(toScreenX(p1), toScreenY(p1), toScreenX(p2), toScreenY(p2));
-        }
-
-        private void drawScaledFilledOval(Graphics graphics, Point p, int w, int h) {
-            graphics.fillOval(toScreenX(p), toScreenY(p), w, h);
-        }
-
-        private void drawScaledRect(Graphics g, Point p, int i, int i0) {
-            g.drawRect(toScreenX(p), toScreenY(p), i, i0);
-        }
-
-        private void drawScaledOval(Graphics g, Point p, int i, int i0) {
-            g.drawOval(toScreenX(p), toScreenY(p), i, i0);
-        }
-
-        private void fillScaledRect(Graphics2D g, Point p, int w, int h) {
-            g.fillRect(toScreenX(p), toScreenY(p), w, h);
-        }
-
-        private void fillScaledOval(Graphics2D g, Point p, int w, int h) {
-            g.fillOval(toScreenX(p), toScreenY(p), w, h);
-        }
         
         private void drawFlags(Graphics2D g) {
             g.setColor(Color.BLACK);
             
             for (Flag f : map.getFlags()) {
-                fillScaledRect(g, f.getPosition(), 3, 3);
+                drawer.fillScaledRect(g, f.getPosition(), 3, 3);
             }
         }
 
@@ -271,7 +241,7 @@ public class App {
                     continue;
                 }
                 
-                fillScaledRect(g, p, 3, 3);
+                drawer.fillScaledRect(g, p, 3, 3);
             }
         }
 
@@ -367,7 +337,7 @@ public class App {
         private void drawAvailableFlag(Graphics2D g, Point p) {
             g.setColor(Color.ORANGE);
 
-            fillScaledRect(g, p, 2, 2);
+            drawer.fillScaledRect(g, p, 2, 2);
         }
         
 
@@ -382,7 +352,7 @@ public class App {
                 height = 9;
             }
             
-            fillScaledRect(g, key, 3, height);
+            drawer.fillScaledRect(g, key, 3, height);
         }
 
         private String recordPointList(List<Point> wayPoints) {
@@ -437,7 +407,7 @@ public class App {
         private void drawSelectedPoint(Graphics2D g) {
             g.setColor(Color.BLUE);
             
-            fillScaledOval(g, selectedPoint, 4, 4);
+            drawer.fillScaledOval(g, selectedPoint, 4, 4);
         }
 
         private void resetGame() throws Exception {
@@ -489,7 +459,7 @@ public class App {
             g.setColor(Color.BLACK);
             
             if (w.isArrived()) {
-                fillScaledOval(g, w.getPosition(), 5, 10);
+                drawer.fillScaledOval(g, w.getPosition(), 5, 10);
             } else {
                 try {
                     Point last = w.getLastPoint();
@@ -500,11 +470,11 @@ public class App {
                     double actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
                     double actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
                     
-                    g.fillOval((int)(actualX*scaleX) - 4, getHeight() - (int)(actualY*scaleY) - 10, 5, 15);
+                    g.fillOval((int)(actualX*drawer.getScaleX()) - 4, getHeight() - (int)(actualY*drawer.getScaleY()) - 10, 5, 15);
                     
                     if (w.getCargo() != null ) {
                         g.setColor(Color.RED);
-                        g.fillRect((int)(actualX*scaleX) -2, getHeight() - (int)(actualY*scaleY) - 6, 5, 5);
+                        g.fillRect((int)(actualX*drawer.getScaleX()) -2, getHeight() - (int)(actualY*drawer.getScaleY()) - 6, 5, 5);
                     }
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
@@ -618,17 +588,7 @@ public class App {
                 g.setColor(Color.GRAY);
             }
 
-            fillScaledTriangle(g, p1, p2, p3);
-        }
-
-        private void fillScaledTriangle(Graphics2D g, Point p1, Point p2, Point p3) {
-
-	    Path2D.Double triangle = new Path2D.Double();
-	    triangle.moveTo(toScreenX(p1), toScreenY(p1));
-	    triangle.lineTo(toScreenX(p2), toScreenY(p2));
-	    triangle.lineTo(toScreenX(p3), toScreenY(p3));
-	    triangle.closePath();
-	    g.fill(triangle);
+            drawer.fillScaledTriangle(g, p1, p2, p3);
         }
 
         GameMap map;
@@ -636,8 +596,6 @@ public class App {
         int widthInPoints;
         int heightInPoints;
         List<Point> grid;
-        int scaleX;
-        int scaleY;
 	BufferedImage terrain;
 
         public GameCanvas() {
@@ -655,8 +613,7 @@ public class App {
             pointNames   = new HashMap<>();
             gameLogic    = new GameLogic();
 
-            scaleX = 500 / widthInPoints;
-            scaleY = 500 / heightInPoints;
+            drawer       = new ScaledDrawer(500, 500, w, h);
 
             /* Create the initial game board */
             map = new GameMap(widthInPoints, heightInPoints);
@@ -684,8 +641,7 @@ public class App {
                 @Override
                 public void componentResized(ComponentEvent evt) {
                     
-                    scaleX = getWidth() / widthInPoints;
-                    scaleY = getHeight() / heightInPoints;
+                    drawer.recalculateScale(getWidth(), getHeight());
                     
                     terrain = createTerrainTexture(getWidth(), getHeight());
                     
@@ -794,17 +750,10 @@ public class App {
             graphics.setColor(Color.GRAY);
 
             for (Point p : grid) {
-                drawScaledRect(graphics, p, 2, 2);
+                drawer.drawScaledRect(graphics, p, 2, 2);
             }
         }
 
-        private int toScreenX(Point p) {
-            return p.x * scaleX;
-        }
-
-        private int toScreenY(Point p) {
-            return getHeight() - p.y * scaleY;
-        }
 
         private void drawRoads(Graphics2D g) {
             List<Road> roads = map.getRoads();
@@ -830,9 +779,11 @@ public class App {
             g.setColor(Color.BLACK);
 
             if (houseImage != null) {
-                g.drawImage(houseImage, p.x*scaleX, getHeight() - p.y*scaleY, getWidth(), getHeight(), 0, 0, terrain.getWidth(), terrain.getHeight(), null);
+                g.drawImage(houseImage, p.x*drawer.getScaleX(), getHeight() - p.y*drawer.getScaleY(), 
+                        getWidth(), getHeight(), 0, 0, 
+                        terrain.getWidth(), terrain.getHeight(), null);
             } else {
-                fillScaledRect(g, p, 15, 15);
+                drawer.fillScaledRect(g, p, 15, 15);
             }
         }
 
