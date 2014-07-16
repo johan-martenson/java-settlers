@@ -224,9 +224,16 @@ public class App {
 
         
         private void drawFlags(Graphics2D g) {
-            g.setColor(Color.BLACK);
-            
             for (Flag f : map.getFlags()) {
+                Point p = f.getPosition();
+                
+                if (!f.getStackedCargo().isEmpty()) {
+                    g.setColor(Color.RED);
+                    g.fillRect((int)(p.x*drawer.getScaleX()) - 2, getHeight() - (int)(p.y*drawer.getScaleY()) - 5, 5, 5);
+                }
+    
+                g.setColor(Color.BLACK);
+            
                 drawer.fillScaledRect(g, f.getPosition(), 3, 3);
             }
         }
@@ -754,12 +761,20 @@ public class App {
 
             if (houseImage != null) {
                 g.drawImage(houseImage, 
-                        p.x*drawer.getScaleX()- 50, getHeight() - p.y*drawer.getScaleY() - 50, 
-                        p.x*drawer.getScaleX(), getHeight() - p.y*drawer.getScaleY(), 
+                        p.x*drawer.getScaleX()- 25, getHeight() - p.y*drawer.getScaleY() - 25, 
+                        p.x*drawer.getScaleX() + 25, getHeight() - p.y*drawer.getScaleY() + 25, 
                         0, 0, houseImage.getWidth(null), houseImage.getHeight(null), null);
             } else {
                 drawer.fillScaledRect(g, p, 15, 15);
             }
+
+            String title = b.getClass().getSimpleName();
+            
+            if (b.getConstructionState() == Building.ConstructionState.UNDER_CONSTRUCTION) {
+                title = "(" + title + ")";
+            }
+            
+            g.drawString(title, p.x*drawer.getScaleX() - 30, getHeight() - (p.y*drawer.getScaleY()) - 30);
         }
 
         @Override
