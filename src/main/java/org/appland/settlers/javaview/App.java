@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -57,13 +58,13 @@ public class App {
         private UiState            state;
         private List<Point>        roadPoints;
         private boolean            showAvailableSpots;
-        private String             apiRecording;
         private Point              selectedPoint;
         private Map<Flag, String>  flagNames;
         private Map<Point, String> pointNames;
         private GameLogic          gameLogic;
         private Image              houseImage;
         private ScaledDrawer       drawer;
+        private ApiRecorder        recorder;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -107,21 +108,17 @@ public class App {
 
             addRoadPoint(p);
         }
-
-        private String recordPoint(Point p) {
-            if (pointNames.containsKey(p)) {
-                return pointNames.get(p);
-            } else {
-                return "new Point(" + p.x +", " + p.y + ")";
-            }
-        }
         
         private void buildRoad(List<Point> wayPoints) throws Exception {
             System.out.println("Building road (" + wayPoints + ")");
             
             map.placeRoad(wayPoints);
             
-            apiRecording = apiRecording + "map.placeRoad(";
+            for (Point p : wayPoints) {
+                recorder.registerPoint(p);
+            }
+            
+            recorder.record("map.placeRoad(");
             
             boolean firstRun = true;
             
@@ -129,15 +126,16 @@ public class App {
                 if (firstRun) {
                     firstRun = false;
                     
-                    apiRecording += recordPoint(p);
+                    recorder.recordPoint(p);
                     
                     continue;
                 }
                 
-                apiRecording += ", " + recordPoint(p);
+                recorder.record(", ");
+                recorder.recordPoint(p);
             }
             
-            apiRecording = apiRecording + ");\n";
+            recorder.record(");\n");
 
             roadPoints = new ArrayList<>();
         }
@@ -263,7 +261,7 @@ public class App {
                 repaint();
             } else if (ke.getKeyChar() == 'd') {
                 System.out.println("--------------------------------------");
-                System.out.println(apiRecording);
+                System.out.println(recorder.getRecording());
                 System.out.println("--------------------------------------");
             } else if (ke.getKeyChar() == 'w' && state == POINT_SELECTED) {
                 try {
@@ -278,7 +276,7 @@ public class App {
                     setState(IDLE);
                 }
             } else if (ke.getKeyChar() == 'X') {
-                apiRecording += "\n\n\n\n/*   MARKER   */\n";
+                recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
             } else if (ke.getKeyChar() == KeyEvent.VK_ESCAPE) {
                 System.out.println("Resetting state to idle");
@@ -325,13 +323,7 @@ public class App {
 
             map.placeFlag(f);
             
-            String pointName = registerPoint(p);
-            String flagName  = registerFlag(f);
-            
-            apiRecording += pointName + " = new Point(" + p.x + ", " + p.y + ");\n";
-            apiRecording += flagName  + " = new Flag(" + pointName + ");\n";
-            
-            apiRecording += "map.placeFlag(" + flagName + ");\n\n";
+            recorder.recordPlaceFlag(f, p);
         }
 
         private void drawAvailableFlag(Graphics2D g, Point p) {
@@ -401,7 +393,7 @@ public class App {
 
             map.placeBuilding(b, p);
             
-            apiRecording += "map.placeBuilding(" + newHouse + ", " + recordPoint(p) + ");\n";
+            recorder.recordPlaceBuilding(b, newHouse, p);
         }
 
         private void drawSelectedPoint(Graphics2D g) {
@@ -419,7 +411,7 @@ public class App {
             
             placeBuilding(HEADQUARTER, new Point(5, 5));
             
-            apiRecording = "";
+            recorder.clear();
             flagNames.clear();
             pointNames.clear();
         }
@@ -427,22 +419,6 @@ public class App {
         private void setState(UiState uiState) {
             System.out.println("State change: " + state + " --> " + uiState);
             state = uiState;            
-        }
-
-        private String registerFlag(Flag f) {
-            String name = "flag" + flagNames.size();
-            
-            flagNames.put(f, name);
-            
-            return name;
-        }
-
-        private String registerPoint(Point p) {
-            String name = "point" + pointNames.size();
-            
-            pointNames.put(p, name);
-            
-            return name;
         }
 
         private void drawPersons(Graphics2D g) {
@@ -492,10 +468,8 @@ public class App {
 
         private Image loadImage(String file) {
             try {
-                URL imgURL = getClass().getClassLoader().getResource(file);
-                ImageIcon imageIcon = new ImageIcon(imgURL);
-            
-                return imageIcon.getImage();
+                final URL imgURL = Thread.currentThread().getContextClassLoader().getResource(file); //getClass().getClassLoader().getResource(file);
+                return Toolkit.getDefaultToolkit().getImage(imgURL);
             } catch (Exception e) {
                 System.out.print("Error while loading image " + file + ": " + e);
             }
@@ -608,21 +582,21 @@ public class App {
             heightInPoints = h;
             roadPoints = new ArrayList<>();
             showAvailableSpots = false;
-            apiRecording = "";
             flagNames    = new HashMap<>();
             pointNames   = new HashMap<>();
             gameLogic    = new GameLogic();
 
             drawer       = new ScaledDrawer(500, 500, w, h);
+            recorder  = new ApiRecorder();
 
             /* Create the initial game board */
             map = new GameMap(widthInPoints, heightInPoints);
 
 	    terrain = createTerrainTexture(500, 500);
             
-            houseImage = loadImage("house.jpg");
+            houseImage = loadImage("house-sketched.jpg");
 
-            apiRecording = apiRecording + "GameMap map = new GameMap(" + w + ", " + h + ");\n";
+            recorder.record("GameMap map = new GameMap(" + w + ", " + h + ");\n");
             
             Headquarter hq = new Headquarter();
             
@@ -630,8 +604,8 @@ public class App {
 
             map.placeBuilding(hq, hqPoint);
 
-            apiRecording = apiRecording + "map.placeBuilding(new Headquarter(), new Point(" + 5 + ", " + 5 + "));\n";
-            
+            recorder.recordPlaceBuilding(hq, "new Headquarter()", hqPoint);
+
             grid = buildGrid(widthInPoints, heightInPoints);
             
             /* Create listener */
@@ -779,9 +753,10 @@ public class App {
             g.setColor(Color.BLACK);
 
             if (houseImage != null) {
-                g.drawImage(houseImage, p.x*drawer.getScaleX(), getHeight() - p.y*drawer.getScaleY(), 
-                        getWidth(), getHeight(), 0, 0, 
-                        terrain.getWidth(), terrain.getHeight(), null);
+                g.drawImage(houseImage, 
+                        p.x*drawer.getScaleX()- 50, getHeight() - p.y*drawer.getScaleY() - 50, 
+                        p.x*drawer.getScaleX(), getHeight() - p.y*drawer.getScaleY(), 
+                        0, 0, houseImage.getWidth(null), houseImage.getHeight(null), null);
             } else {
                 drawer.fillScaledRect(g, p, 15, 15);
             }
