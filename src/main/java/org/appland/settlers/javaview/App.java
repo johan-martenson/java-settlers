@@ -112,30 +112,9 @@ public class App {
         private void buildRoad(List<Point> wayPoints) throws Exception {
             System.out.println("Building road (" + wayPoints + ")");
             
-            map.placeRoad(wayPoints);
+            Road r = map.placeRoad(wayPoints);
             
-            for (Point p : wayPoints) {
-                recorder.registerPoint(p);
-            }
-            
-            recorder.record("map.placeRoad(");
-            
-            boolean firstRun = true;
-            
-            for (Point p : wayPoints) {
-                if (firstRun) {
-                    firstRun = false;
-                    
-                    recorder.recordPoint(p);
-                    
-                    continue;
-                }
-                
-                recorder.record(", ");
-                recorder.recordPoint(p);
-            }
-            
-            recorder.record(");\n");
+            recorder.recordPlaceRoad(r);
 
             roadPoints = new ArrayList<>();
         }

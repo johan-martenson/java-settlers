@@ -11,6 +11,7 @@ import java.util.Map;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Point;
+import org.appland.settlers.model.Road;
 
 /**
  *
@@ -22,11 +23,13 @@ public class ApiRecorder {
     private Map<Flag, String>     flagNames;
     private String                recording;
     private Map<Building, String> buildingNames;
+    private Map<Road, String>     roadNames;
     
     public ApiRecorder() {
         pointNames    = new HashMap<>();
         flagNames     = new HashMap<>();
         buildingNames = new HashMap<>();
+        roadNames     = new HashMap<>();
         recording = "";
     }
     
@@ -43,6 +46,10 @@ public class ApiRecorder {
     }
 
     public void registerPoint(Point p) {
+        if (pointNames.containsKey(p)) {
+            return;
+        }
+        
         String name = "point" + pointNames.size();
 
         pointNames.put(p, name);
@@ -59,6 +66,14 @@ public class ApiRecorder {
 
         flagNames.put(f, name);
 
+        return name;
+    }
+
+    private String registerRoad(Road r) {
+        String name = "road" + roadNames.size();
+        
+        roadNames.put(r, name);
+        
         return name;
     }
 
@@ -93,5 +108,34 @@ public class ApiRecorder {
         String flagName  = flagNames.get(f);
         
         record("Flag " + flagName + " = map.placeFlag(" + pointName + ");\n\n");
+    }
+
+    void recordPlaceRoad(Road r) {
+        System.out.println("RECORDING ROAD");
+        
+        String roadName = registerRoad(r);
+        
+        for (Point p : r.getWayPoints()) {
+            registerPoint(p);
+        }
+            
+        record("Road " + roadName + " = map.placeRoad(");
+
+        boolean firstRun = true;
+
+        for (Point p : r.getWayPoints()) {
+            if (firstRun) {
+                firstRun = false;
+
+                recordPoint(p);
+
+                continue;
+            }
+
+            record(", ");
+            recordPoint(p);
+        }
+
+        record(");\n");
     }
 }
