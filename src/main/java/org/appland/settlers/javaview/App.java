@@ -31,18 +31,22 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import static org.appland.settlers.javaview.App.GameCanvas.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.GameCanvas.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.GameCanvas.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.IDLE;
 import static org.appland.settlers.javaview.App.GameCanvas.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
+import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
+import org.appland.settlers.model.Sawmill;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
@@ -261,6 +265,25 @@ public class App {
 
                     setState(IDLE);
                 }
+            } else if (ke.getKeyChar() == 'f') {
+                try {
+                    placeBuilding(FORESTER, selectedPoint);
+                    setState(IDLE);
+                
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
+            } else if (ke.getKeyChar() == 's') {
+                try {
+                    placeBuilding(SAWMILL, selectedPoint);
+                    setState(IDLE);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
             } else if (ke.getKeyChar() == 'X') {
                 recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
@@ -371,6 +394,14 @@ public class App {
                 b = new Headquarter();
                 newHouse = "new Headquarter()";
                 break;
+            case FORESTER:
+                b = new ForesterHut();
+                newHouse = "new Forester()";
+                break;
+            case SAWMILL:
+                b = new Sawmill();
+                newHouse = "new Sawmill()";
+                break;
             }    
         
             if (b == null) {
@@ -449,7 +480,7 @@ public class App {
         }
 
         enum HouseType {
-            WOODCUTTER, HEADQUARTER
+            WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL
         }
 
         private Image loadImage(String file) {
@@ -800,6 +831,8 @@ public class App {
                         setState(POINT_SELECTED);
                         
                         System.out.println("Selected " + p);
+                    } else if (state == POINT_SELECTED) {
+                        selectedPoint = p;
                     }
                 }
                 this.repaint();
