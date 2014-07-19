@@ -1,6 +1,7 @@
 package org.appland.settlers.javaview;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -31,13 +32,13 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
-import static org.appland.settlers.javaview.App.GameCanvas.HouseType.FORESTER;
-import static org.appland.settlers.javaview.App.GameCanvas.HouseType.HEADQUARTER;
-import static org.appland.settlers.javaview.App.GameCanvas.HouseType.SAWMILL;
-import static org.appland.settlers.javaview.App.GameCanvas.HouseType.WOODCUTTER;
-import static org.appland.settlers.javaview.App.GameCanvas.UiState.BUILDING_ROAD;
-import static org.appland.settlers.javaview.App.GameCanvas.UiState.IDLE;
-import static org.appland.settlers.javaview.App.GameCanvas.UiState.POINT_SELECTED;
+import static org.appland.settlers.javaview.App.HouseType.FORESTER;
+import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
+import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
+import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
+import static org.appland.settlers.javaview.App.UiState.IDLE;
+import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
@@ -55,9 +56,43 @@ import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Woodcutter;
 import org.appland.settlers.model.Worker;
 
-public class App {
+public class App extends JFrame {
+    private SidePanel sidePanel;
 
-    static class GameCanvas extends Canvas implements MouseListener, KeyListener {
+    public App() {
+        super();
+        
+        GameCanvas canvas = new GameCanvas();
+        sidePanel = new SidePanel();
+
+        try {
+            canvas.initGame(20, 20);
+        } catch (Exception e) {
+            System.out.println(e);
+            System.exit(1);
+        }
+
+        setSize(600, 500);
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        getContentPane().add(canvas);
+        getContentPane().add(sidePanel, BorderLayout.EAST);
+
+        setVisible(true);
+    }
+    
+
+    enum UiState {
+        IDLE, BUILDING_ROAD, POINT_SELECTED
+    }
+
+    enum HouseType {
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL
+    }
+
+    
+    class GameCanvas extends Canvas implements MouseListener, KeyListener {
 
         private UiState            state;
         private List<Point>        roadPoints;
@@ -475,12 +510,22 @@ public class App {
             }
         }
 
-        enum UiState {
-            IDLE, BUILDING_ROAD, POINT_SELECTED
-        }
-
-        enum HouseType {
-            WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL
+        private void selectPoint(Point p) {
+            selectedPoint = p;
+            
+            if (map.isFlagAtPoint(p)) {
+                try {
+                    sidePanel.displayFlag(map.getFlagAtPoint(p));
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (map.isBuildingAtPoint(p)) {
+                sidePanel.displayHouse(map.getBuildingAtPoint(p));
+            } else if (map.isRoadAtPoint(p)) {
+                sidePanel.displayRoad(map.getRoadAtPoint(p));
+            } else {
+                sidePanel.clearInfo();
+            }
         }
 
         private Image loadImage(String file) {
@@ -590,6 +635,7 @@ public class App {
 	BufferedImage terrain;
 
         public GameCanvas() {
+            super();
         }
 
         public void initGame(int w, int h) throws Exception {
@@ -826,13 +872,13 @@ public class App {
                             addRoadPoint(p);
                         }
                     } else if (state == IDLE) {
-                        selectedPoint = p;
+                        selectPoint(p);
                         
                         setState(POINT_SELECTED);
-                        
-                        System.out.println("Selected " + p);
                     } else if (state == POINT_SELECTED) {
-                        selectedPoint = p;
+                        selectPoint(p);
+                        
+                        setState(POINT_SELECTED);
                     }
                 }
                 this.repaint();
@@ -864,23 +910,6 @@ public class App {
     }
 
     public static void main(String[] args) {
-
-        GameCanvas canvas = new GameCanvas();
-
-        try {
-            canvas.initGame(20, 20);
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        JFrame frame = new JFrame();
-
-        frame.setSize(600, 500);
-
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        frame.getContentPane().add(canvas);
-
-        frame.setVisible(true);
+        new App();
     }
 }
