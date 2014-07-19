@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
+import org.appland.settlers.model.Courier;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Material;
 import org.appland.settlers.model.Road;
@@ -35,11 +36,34 @@ public class SidePanel extends JTabbedPane {
     private final ControlPanel controlPanel;
     private CommandListener commandListener;
 
+    private Flag flag;
+    private Road road;
+    private Building house;
+    
+    
+    void update() {
+        if (flag != null) {
+            infoPanel.displayInfo(flag);
+        } else if (house != null) {
+            infoPanel.displayInfo(house);
+        } else if (road != null) {
+            infoPanel.displayInfo(road);
+        }
+    }
+    
     void displayFlag(Flag flagAtPoint) {
+        flag = flagAtPoint;
+        road = null;
+        house = null;
+        
         infoPanel.displayInfo(flagAtPoint);
     }
 
     void displayHouse(Building b) {
+        flag = null;
+        road = null;
+        house = b;
+        
         infoPanel.displayInfo(b);
     }
     
@@ -52,6 +76,10 @@ public class SidePanel extends JTabbedPane {
     }
 
     void displayRoad(Road roadAtPoint) {
+        flag = null;
+        road = roadAtPoint;
+        house = null;
+        
         infoPanel.displayInfo(roadAtPoint);
     }
 
@@ -96,6 +124,10 @@ public class SidePanel extends JTabbedPane {
         public Infoview() {
             super();
             
+            flag = null;
+            house = null;
+            road = null;
+            
             setMinimumSize(new Dimension(200, 100));
             setPreferredSize(new Dimension(300, 500));
             
@@ -104,8 +136,10 @@ public class SidePanel extends JTabbedPane {
             
             titleLabel.setText("none");
             
-            add(titleLabel, BorderLayout.NORTH);
-            add(infoLabel, BorderLayout.CENTER);
+            setLayout(new GridLayout(2, 1));
+            
+            add(titleLabel);
+            add(infoLabel);
 
             setVisible(true);
         }
@@ -169,7 +203,47 @@ public class SidePanel extends JTabbedPane {
         void displayInfo(Road r) {
             titleLabel.setText("Road - " + r.getStart() + " to " + r.getEnd());
             
-            String info = "Assigned courier: " + r.getCourier();
+            Courier courier = r.getCourier();
+            
+            String info = "<html>";
+            
+            if (courier != null) {
+                info += "Assigned courier: <br>" + r.getCourier();
+                
+                if (courier.isExactlyAtPoint()) {
+                    info += "Is at " + courier.getPosition() + "<br>";
+                } else {
+                    try {
+                        info += "Is between" + courier.getLastPoint() + " and " + courier.getNextPoint() + "<br>";
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                
+                info += "Target is " + courier.getTargetFlag() + "<br>";
+                
+                info += "Has arrived: " + courier.isArrived() + "<br>";
+                
+                if (courier.getCargo() == null) {
+                    info += "Carrying no cargo<br>";
+                } else {
+                    info += "Carrying cargo of type " + courier.getCargo().getMaterial() + "<br>";
+                    info += "Cargo is targeted for " + courier.getCargo().getTarget() + "<br>";
+                }
+                
+                Cargo cargo = courier.getPromisedDelivery();
+                
+                if (cargo != null) {
+                    info += "Has promised to pick up " + cargo.getMaterial() + "cargo at " + cargo.getPosition() + "<br>";
+                } else {
+                    info += "Has not promised to pick up any cargo <br>";
+                }
+            } else {
+                info += "No assigned courier";
+            }
+            
+            info += "</html>";
+            
             infoLabel.setText(info);
         }
 

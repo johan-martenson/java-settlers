@@ -657,7 +657,7 @@ public class App extends JFrame {
 
 	    terrain = createTerrainTexture(500, 500);
             
-            houseImage = loadImage("house-sketched.jpg");
+            houseImage = loadImage("house-sketched.png");
 
             recorder.record("GameMap map = new GameMap(" + w + ", " + h + ");\n");
             
@@ -692,8 +692,9 @@ public class App extends JFrame {
         
         
             /* Start game tick */
-            Thread t = new Thread(new Runnable() {
-
+            Thread t;
+            t = new Thread(new Runnable() {
+                
                 @Override
                 public void run() {
             
@@ -710,6 +711,7 @@ public class App extends JFrame {
                         } else {
                             count++;
                             map.stepTime();
+                            sidePanel.update();
                         }
 
                         repaint();
