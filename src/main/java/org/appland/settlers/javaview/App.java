@@ -431,7 +431,7 @@ public class App extends JFrame {
                 break;
             case FORESTER:
                 b = new ForesterHut();
-                newHouse = "new Forester()";
+                newHouse = "new ForesterHut()";
                 break;
             case SAWMILL:
                 b = new Sawmill();
