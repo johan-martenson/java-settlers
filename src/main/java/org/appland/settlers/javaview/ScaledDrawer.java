@@ -40,11 +40,11 @@ public class ScaledDrawer {
         return height;
     }
 
-    private int toScreenX(Point p) {
+    int toScreenX(Point p) {
         return p.x * scaleX;
     }
 
-    private int toScreenY(Point p) {
+    int toScreenY(Point p) {
         return getHeight() - p.y * scaleY;
     }
 

@@ -83,7 +83,7 @@ public class SidePanel extends JTabbedPane {
         infoPanel.displayInfo(roadAtPoint);
     }
 
-    private class ControlPanel extends JComponent {
+    private class ControlPanel extends JPanel {
 
         boolean turboToggle;
         
@@ -95,13 +95,11 @@ public class SidePanel extends JTabbedPane {
             setMinimumSize(new Dimension(100, 100));
             setPreferredSize(new Dimension(100, 500));
             
-            JPanel panel = new JPanel();
-            
-            panel.setLayout(new GridLayout(1, 1));
+            setLayout(new GridLayout(1, 1));
             
             JButton turboButton = new JButton("Toggle turbo");
             
-            panel.add(turboButton);
+            add(turboButton);
             
             turboButton.addActionListener(new ActionListener() {
 
@@ -114,6 +112,8 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
+            
+            setVisible(true);
         }
     }
 
@@ -270,7 +270,7 @@ public class SidePanel extends JTabbedPane {
         setVisible(true);
     }
 
-    public void setCommandListener(CommandListener cl) {
+    void setCommandListener(CommandListener cl) {
         commandListener = cl;
     }
 }

@@ -16,10 +16,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
+import static java.lang.Math.abs;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
+import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
@@ -51,8 +54,10 @@ import org.appland.settlers.model.Sawmill;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
+import static org.appland.settlers.model.Size.SMALL;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
+import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.Woodcutter;
 import org.appland.settlers.model.Worker;
 
@@ -65,6 +70,8 @@ public class App extends JFrame {
         GameCanvas canvas = new GameCanvas();
         sidePanel = new SidePanel();
 
+        sidePanel.setCommandListener(canvas);
+        
         try {
             canvas.initGame(20, 20);
         } catch (Exception e) {
@@ -81,7 +88,6 @@ public class App extends JFrame {
 
         setVisible(true);
     }
-    
 
     enum UiState {
         IDLE, BUILDING_ROAD, POINT_SELECTED
@@ -92,7 +98,7 @@ public class App extends JFrame {
     }
 
     
-    class GameCanvas extends Canvas implements MouseListener, KeyListener {
+    class GameCanvas extends Canvas implements MouseListener, KeyListener, CommandListener {
 
         private UiState            state;
         private List<Point>        roadPoints;
@@ -104,11 +110,21 @@ public class App extends JFrame {
         private Image              houseImage;
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
+        private int                tick;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
         }
 
+        @Override
+        public void setTurboMode(boolean toggle) {
+            if (toggle) {
+                tick = 50;
+            } else {
+                tick = 250;
+            }
+        }
+        
         private Point screenToPoint(int x, int y) {
             double px = (double) x / (double) drawer.getScaleX();
             double py = (double) (getHeight() - y) / (double) drawer.getScaleY();
@@ -641,8 +657,9 @@ public class App extends JFrame {
         public void initGame(int w, int h) throws Exception {
             System.out.println("Create game map");
 
-            widthInPoints = w;
+            widthInPoints  = w;
             heightInPoints = h;
+            tick           = 250;
             roadPoints = new ArrayList<>();
             showAvailableSpots = false;
             flagNames    = new HashMap<>();
@@ -650,7 +667,7 @@ public class App extends JFrame {
             gameLogic    = new GameLogic();
 
             drawer       = new ScaledDrawer(500, 500, w, h);
-            recorder  = new ApiRecorder();
+            recorder     = new ApiRecorder();
 
             /* Create the initial game board */
             map = new GameMap(widthInPoints, heightInPoints);
@@ -717,7 +734,7 @@ public class App extends JFrame {
                         repaint();
                         
                         try {
-                            Thread.sleep(250);
+                            Thread.sleep(tick);
                         } catch (InterruptedException ex) {
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -767,6 +784,8 @@ public class App extends JFrame {
             drawFlags(g);
 
             drawHouses(g);
+            
+            drawTrees(g);
             
             drawPersons(g);
 
@@ -908,6 +927,34 @@ public class App extends JFrame {
 
         @Override
         public void mouseExited(MouseEvent me) {
+        }
+
+        private void drawTrees(Graphics2D g) {
+            for (Tree t : map.getTrees()) {
+                drawTree(g, t);
+            }
+        }
+
+        private void drawTree(Graphics2D g, Tree t) {
+            Point p = t.getPosition();
+
+            int base = 5;
+            int height = 30;
+            
+            if (t.getSize() == SMALL) {
+                base = 2;
+                height = 15;
+            } else if (t.getSize() == MEDIUM) {
+                base = 3;
+                height = 24;
+            }
+            
+            Path2D.Double triangle = new Path2D.Double();
+            triangle.moveTo(drawer.toScreenX(p) - base, drawer.toScreenY(p));
+            triangle.lineTo(drawer.toScreenX(p) + base, drawer.toScreenY(p));
+            triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - height);
+            triangle.closePath();
+            g.fill(triangle);
         }
     }
 
