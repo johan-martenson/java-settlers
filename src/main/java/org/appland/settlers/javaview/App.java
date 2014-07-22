@@ -2,7 +2,6 @@ package org.appland.settlers.javaview;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -17,6 +16,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
@@ -100,7 +100,7 @@ public class App extends JFrame {
     }
 
     
-    class GameCanvas extends Canvas implements MouseListener, KeyListener, CommandListener {
+    class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener {
 
         private UiState            state;
         private List<Point>        roadPoints;
@@ -113,6 +113,8 @@ public class App extends JFrame {
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
         private int                tick;
+        private BufferStrategy     myBufferStrategy;
+        private BufferedImage      backbuffer;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -296,6 +298,8 @@ public class App extends JFrame {
 
         @Override
         public void keyPressed(KeyEvent ke) {            
+            System.out.println("KEY PRESSED");
+            
             if (ke.getKeyChar() == ' ') {
                 System.out.println("Toggle show available spots");
                 
@@ -557,6 +561,8 @@ public class App extends JFrame {
             } else {
                 sidePanel.clearInfo();
             }
+
+            requestFocus();
         }
 
         private Image loadImage(String file) {
@@ -710,8 +716,12 @@ public class App extends JFrame {
             grid = buildGrid(widthInPoints, heightInPoints);
             
             /* Create listener */
+            setFocusable(true);
+            requestFocusInWindow();
+            
             addMouseListener(this);
             addKeyListener(this);
+            
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent evt) {
@@ -726,9 +736,7 @@ public class App extends JFrame {
             
             /* Initial state is IDLE */
             state = IDLE;
-
-        
-        
+            
             /* Start game tick */
             Thread t;
             t = new Thread(new Runnable() {
@@ -764,8 +772,10 @@ public class App extends JFrame {
             });
 
             t.start();
+            
+            requestFocus();
         }
-
+        
         List<Point> buildGrid(int width, int height) {
             java.util.List<Point> result = new ArrayList<>();
             boolean rowFlip = true;
@@ -791,7 +801,7 @@ public class App extends JFrame {
         }
 
         @Override
-        public void paint(Graphics graphics) {
+        public void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics;
 
 	    if (terrain != null) {
