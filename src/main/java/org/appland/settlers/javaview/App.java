@@ -19,10 +19,8 @@ import java.awt.event.MouseListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
-import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
-import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,6 +35,7 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
@@ -49,12 +48,14 @@ import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Point;
+import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Sawmill;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
 import static org.appland.settlers.model.Size.SMALL;
+import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Tree;
@@ -76,6 +77,7 @@ public class App extends JFrame {
             canvas.initGame(20, 20);
         } catch (Exception e) {
             System.out.println(e);
+            e.printStackTrace(System.out);
             System.exit(1);
         }
 
@@ -94,7 +96,7 @@ public class App extends JFrame {
     }
 
     enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY
     }
 
     
@@ -335,6 +337,15 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
+            } else if (ke.getKeyChar() == 'q') {
+                try {
+                    placeBuilding(QUARRY, selectedPoint);
+                    setState(IDLE);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
             } else if (ke.getKeyChar() == 'X') {
                 recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
@@ -452,6 +463,10 @@ public class App extends JFrame {
             case SAWMILL:
                 b = new Sawmill();
                 newHouse = "new Sawmill()";
+                break;
+            case QUARRY:
+                b = new Quarry();
+                newHouse = "new Quarry()";
                 break;
             }    
         
@@ -686,6 +701,12 @@ public class App extends JFrame {
 
             recorder.recordPlaceBuilding(hq, "new Headquarter()", hqPoint);
 
+            Point stonePoint = new Point(12, 12);
+            
+            Stone stone = map.placeStone(stonePoint);
+            
+            recorder.recordPlaceStone(stone, stonePoint);
+            
             grid = buildGrid(widthInPoints, heightInPoints);
             
             /* Create listener */
@@ -786,6 +807,8 @@ public class App extends JFrame {
             drawHouses(g);
             
             drawTrees(g);
+            
+            drawStones(g);
             
             drawPersons(g);
 
@@ -952,9 +975,21 @@ public class App extends JFrame {
             Path2D.Double triangle = new Path2D.Double();
             triangle.moveTo(drawer.toScreenX(p) - base, drawer.toScreenY(p));
             triangle.lineTo(drawer.toScreenX(p) + base, drawer.toScreenY(p));
-            triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - height);
+            triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - height   );
             triangle.closePath();
             g.fill(triangle);
+        }
+
+        private void drawStones(Graphics2D g) {
+            for (Stone s : map.getStones()) {
+                drawStone(g, s);
+            }
+        }
+
+        private void drawStone(Graphics2D g, Stone s) {
+            g.setColor(Color.DARK_GRAY);
+            
+            drawer.fillScaledRect(g, s.getPosition(), 15, 15);
         }
     }
 

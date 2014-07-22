@@ -12,6 +12,7 @@ import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
+import org.appland.settlers.model.Stone;
 
 /**
  *
@@ -24,12 +25,14 @@ public class ApiRecorder {
     private String                recording;
     private Map<Building, String> buildingNames;
     private Map<Road, String>     roadNames;
+    private Map<Stone, String>    stoneNames;
     
     public ApiRecorder() {
         pointNames    = new HashMap<>();
         flagNames     = new HashMap<>();
         buildingNames = new HashMap<>();
         roadNames     = new HashMap<>();
+        stoneNames    = new HashMap<>();
         recording = "";
     }
     
@@ -45,9 +48,9 @@ public class ApiRecorder {
         }
     }
 
-    public void registerPoint(Point p) {
+    public String registerPoint(Point p) {
         if (pointNames.containsKey(p)) {
-            return;
+            return pointNames.get(p);
         }
         
         String name = "point" + pointNames.size();
@@ -55,6 +58,8 @@ public class ApiRecorder {
         pointNames.put(p, name);
 
         record("Point " + name + " = new Point(" + p.x + ", " + p.y + ");\n");
+        
+        return name;
     }
 
     String getRecording() {
@@ -81,6 +86,14 @@ public class ApiRecorder {
         String name = "building" + buildingNames.size();
         
         buildingNames.put(b, name);
+        
+        return name;
+    }
+    
+    public String registerStone(Stone s) {
+        String name = "stone" + stoneNames.size();
+        
+        stoneNames.put(s, name);
         
         return name;
     }
@@ -137,5 +150,13 @@ public class ApiRecorder {
         }
 
         record(");\n");
+    }
+
+    void recordPlaceStone(Stone stone, Point stonePoint) {
+        String pointName = registerPoint(stonePoint);
+        
+        String stoneName = registerStone(stone);
+        
+        record("Stone " + stoneName + " = map.placeStone(" + pointName + ");\n");
     }
 }
