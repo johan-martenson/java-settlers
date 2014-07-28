@@ -220,7 +220,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
                 
-                info += "Target is " + courier.getTargetFlag() + "<br>";
+                info += "Target is " + courier.getTarget() + "<br>";
                 
                 info += "Has arrived: " + courier.isArrived() + "<br>";
                 

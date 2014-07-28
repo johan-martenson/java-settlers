@@ -16,7 +16,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Path2D;
-import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
@@ -33,6 +32,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
@@ -42,6 +42,8 @@ import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.UiState.IDLE;
 import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.Crop;
+import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameLogic;
@@ -96,7 +98,7 @@ public class App extends JFrame {
     }
 
     enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM
     }
 
     
@@ -113,8 +115,7 @@ public class App extends JFrame {
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
         private int                tick;
-        private BufferStrategy     myBufferStrategy;
-        private BufferedImage      backbuffer;
+        private char               previousKey;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -322,15 +323,29 @@ public class App extends JFrame {
 
                     setState(IDLE);
                 }
-            } else if (ke.getKeyChar() == 'f') {
-                try {
-                    placeBuilding(FORESTER, selectedPoint);
-                    setState(IDLE);
-                
-                    repaint();
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
+            } else if (ke.getKeyChar() == 'o') {
+                if (previousKey == 'f') {
+                    try {
+                        placeBuilding(FORESTER, selectedPoint);
+                        setState(IDLE);
+
+                        repaint();
+                    } catch (Exception ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        setState(IDLE);
+                    }
+                }
+            } else if (ke.getKeyChar() == 'a') {
+                if (previousKey == 'f') {
+                    try {
+                        placeBuilding(FARM, selectedPoint);
+                        setState(IDLE);
+                        
+                        repaint();
+                    } catch (Exception ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        setState(IDLE);
+                    }
                 }
             } else if (ke.getKeyChar() == 's') {
                 try {
@@ -368,6 +383,8 @@ public class App extends JFrame {
                     System.exit(1);
                 }
             }
+
+            previousKey = ke.getKeyChar();
         }
 
         @Override
@@ -472,6 +489,10 @@ public class App extends JFrame {
                 b = new Quarry();
                 newHouse = "new Quarry()";
                 break;
+            case FARM:
+                b = new Farm();
+                newHouse = "new Farm()";
+                break;
             }    
         
             if (b == null) {
@@ -521,13 +542,20 @@ public class App extends JFrame {
         private void drawPerson(Graphics2D g, Worker w) {
             g.setColor(Color.BLACK);
             
-            if (w.isArrived()) {
-                drawer.fillScaledOval(g, w.getPosition(), 5, 10);
-            } else {
+            if (w.isTraveling()) {
+                Point next = null;
+                
                 try {
-                    Point last = w.getLastPoint();
-                    Point next = w.getNextPoint();
-                    
+                    next = w.getNextPoint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                Point last = w.getLastPoint();
+                
+                if (next == null) {
+                    drawer.fillScaledOval(g, last, 5, 10);
+                } else {
                     int percent = w.getPercentageOfDistanceTraveled();
                     
                     double actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
@@ -539,9 +567,9 @@ public class App extends JFrame {
                         g.setColor(Color.RED);
                         g.fillRect((int)(actualX*drawer.getScaleX()) -2, getHeight() - (int)(actualY*drawer.getScaleY()) - 6, 5, 5);
                     }
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            } else {
+                drawer.fillScaledOval(g, w.getPosition(), 5, 10);
             }
         }
 
@@ -709,9 +737,11 @@ public class App extends JFrame {
 
             Point stonePoint = new Point(12, 12);
             
-            Stone stone = map.placeStone(stonePoint);
+            Stone stone0 = map.placeStone(stonePoint);
+            Stone stone1 = map.placeStone(stonePoint.downRight());
             
-            recorder.recordPlaceStone(stone, stonePoint);
+            recorder.recordPlaceStone(stone0, stonePoint);
+            recorder.recordPlaceStone(stone1, stonePoint.downRight());
             
             grid = buildGrid(widthInPoints, heightInPoints);
             
@@ -721,6 +751,8 @@ public class App extends JFrame {
             
             addMouseListener(this);
             addKeyListener(this);
+            
+            previousKey = ' ';
             
             addComponentListener(new ComponentAdapter() {
                 @Override
@@ -819,6 +851,8 @@ public class App extends JFrame {
             drawTrees(g);
             
             drawStones(g);
+            
+            drawCrops(g);
             
             drawPersons(g);
 
@@ -1000,6 +1034,35 @@ public class App extends JFrame {
             g.setColor(Color.DARK_GRAY);
             
             drawer.fillScaledRect(g, s.getPosition(), 15, 15);
+        }
+
+        private void drawCrops(Graphics2D g) {
+            for (Crop c : map.getCrops()) {
+                drawCrop(g, c);
+            }
+        }
+
+        private void drawCrop(Graphics2D g, Crop c) {
+            
+            switch (c.getGrowthState()) {
+            case JUST_PLANTED:
+                g.setColor(new Color(88, 0xCC, 88));
+                break;
+            case HALFWAY:
+                g.setColor(Color.yellow);
+                break;
+            case FULL_GROWN:
+                g.setColor(Color.orange);
+                break;
+            case HARVESTED:
+                g.setColor(new Color(0xAA, 0xCC, 55));
+            }
+
+            drawer.fillScaledOval(g, c.getPosition(), 20, 10, 10, 5);
+            
+            g.setColor(Color.BLACK);
+            
+            drawer.drawScaledOval(g, c.getPosition(), 20, 10, 10, 5);
         }
     }
 
