@@ -159,4 +159,10 @@ public class ApiRecorder {
         
         record("Stone " + stoneName + " = map.placeStone(" + pointName + ");\n");
     }
+
+    void printRecordingOnConsole() {
+        System.out.println("--------------------------------------");
+        System.out.println(getRecording());
+        System.out.println("--------------------------------------");    
+    }
 }

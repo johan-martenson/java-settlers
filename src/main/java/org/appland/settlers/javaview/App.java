@@ -97,8 +97,8 @@ public class App extends JFrame {
         IDLE, BUILDING_ROAD, POINT_SELECTED
     }
 
-    enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM
+    public enum HouseType {
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS
     }
 
     
@@ -308,9 +308,7 @@ public class App extends JFrame {
                 
                 repaint();
             } else if (ke.getKeyChar() == 'd') {
-                System.out.println("--------------------------------------");
-                System.out.println(recorder.getRecording());
-                System.out.println("--------------------------------------");
+                recorder.printRecordingOnConsole();
             } else if (ke.getKeyChar() == 'w' && state == POINT_SELECTED) {
                 try {
                     placeBuilding(WOODCUTTER, selectedPoint);
@@ -408,7 +406,7 @@ public class App extends JFrame {
             }
         }
 
-        private void placeFlag(Point p) throws Exception {
+        public void placeFlag(Point p) throws Exception {
             Flag f = new Flag(p);                            
                             
             System.out.println("Placed flag at " + p);
@@ -462,7 +460,7 @@ public class App extends JFrame {
             roadPoints = new ArrayList<>();
         }
 
-        private void placeBuilding(HouseType houseType, Point p) throws Exception {
+        public void placeBuilding(HouseType houseType, Point p) throws Exception {
             Building b = null;
             String newHouse = "";
             
@@ -590,6 +588,8 @@ public class App extends JFrame {
                 sidePanel.clearInfo();
             }
 
+            sidePanel.setSelectedPoint(p);
+            
             requestFocus();
         }
 
@@ -1063,6 +1063,35 @@ public class App extends JFrame {
             g.setColor(Color.BLACK);
             
             drawer.drawScaledOval(g, c.getPosition(), 20, 10, 10, 5);
+        }
+
+        @Override
+        public void reset() {
+            try {
+                resetGame();
+            } catch (Exception ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        @Override
+        public void dumpRecording() {
+            recorder.printRecordingOnConsole();
+        }
+
+        @Override
+        public void startRoadCommand(Point selectedPoint) {
+            if (state != POINT_SELECTED) {
+                return;
+            }
+            
+            try {
+                startRoad(selectedPoint);
+                
+                state = BUILDING_ROAD;
+            } catch (Exception ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
