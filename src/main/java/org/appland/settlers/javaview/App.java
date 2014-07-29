@@ -626,17 +626,16 @@ public class App extends JFrame {
 
 	    for (y = 0; y < heightInPoints; y++) {
 
-		/* Draw upwards triangles */
-		if (y + 1 < heightInPoints) {
-		    int startX;
+                int startX;
+                if (rowOffsetFlip) {
+                    startX = 0;
+                } else {
+                    startX = 1;
+                }
 
-		    if (rowOffsetFlip) {
-			startX = 0;
-		    } else {
-			startX = 1;
-		    }
-
-		    for (x = startX; x < widthInPoints; x++) {
+                /* Draw upwards triangles */
+		if (y < heightInPoints) {
+                    for (x = startX; x < widthInPoints; x+= 2) {
 			Point p1 = new Point(x, y);
 			Point p2 = new Point(x + 2, y);
 			Point p3 = new Point(x + 1, y + 1);
@@ -648,16 +647,8 @@ public class App extends JFrame {
 		}
 
 		/* Draw downwards triangles */
-		if (y - 1 > 0) {
-		    int startX;
-
-		    if (rowOffsetFlip) {
-			startX = 0;
-		    } else {
-			startX = 1;
-		    }
-
-		    for (x = startX; x < widthInPoints; x++) {
+		if (y > 0) {
+		    for (x = startX; x < widthInPoints; x += 2) {
 			Point p1 = new Point(x, y);
 			Point p2 = new Point(x + 2, y);
 			Point p3 = new Point(x + 1, y - 1);
