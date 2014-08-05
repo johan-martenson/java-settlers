@@ -26,6 +26,7 @@ public class ApiRecorder {
     private Map<Building, String> buildingNames;
     private Map<Road, String>     roadNames;
     private Map<Stone, String>    stoneNames;
+    private int tickCount;
     
     public ApiRecorder() {
         pointNames    = new HashMap<>();
@@ -34,6 +35,7 @@ public class ApiRecorder {
         roadNames     = new HashMap<>();
         stoneNames    = new HashMap<>();
         recording = "";
+        tickCount = 0;
     }
     
     void record(String string) {
@@ -100,9 +102,13 @@ public class ApiRecorder {
     
     void clear() {
         recording = "";
+        
+        tickCount = 0;
     }
 
     void recordPlaceBuilding(Building b, String newHouse, Point p) {
+        recordComment(tickCount + " ticks from start");
+        
         registerPoint(p);
         String name = registerBuilding(b);
         
@@ -114,24 +120,26 @@ public class ApiRecorder {
     }
 
     void recordPlaceFlag(Flag f, Point p) {
+        recordComment(tickCount + " ticks from start");
+
         registerPoint(p);
         registerFlag(f);
         
         String pointName = pointNames.get(p);
         String flagName  = flagNames.get(f);
         
-        record("Flag " + flagName + " = map.placeFlag(" + pointName + ");\n\n");
+        record("Flag " + flagName + " = map.placeFlag(" + pointName + ");\n");
     }
 
     void recordPlaceRoad(Road r) {
-        System.out.println("RECORDING ROAD");
+        recordComment(tickCount + " ticks from start");
         
         String roadName = registerRoad(r);
         
         for (Point p : r.getWayPoints()) {
             registerPoint(p);
         }
-            
+        
         record("Road " + roadName + " = map.placeRoad(");
 
         boolean firstRun = true;
@@ -153,6 +161,8 @@ public class ApiRecorder {
     }
 
     void recordPlaceStone(Stone stone, Point stonePoint) {
+        recordComment(tickCount + " ticks from start");
+        
         String pointName = registerPoint(stonePoint);
         
         String stoneName = registerStone(stone);
@@ -164,5 +174,13 @@ public class ApiRecorder {
         System.out.println("--------------------------------------");
         System.out.println(getRecording());
         System.out.println("--------------------------------------");    
+    }
+
+    void recordTick() {
+        tickCount++;
+    }
+
+    private void recordComment(String string) {
+        record("\n/* " + string + " */\n");
     }
 }

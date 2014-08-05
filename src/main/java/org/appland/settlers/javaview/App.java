@@ -769,6 +769,8 @@ public class App extends JFrame {
             
                     int count = 0;
                     while (true) {
+                        recorder.recordTick();
+                        
                         if (count == 10) {
                             count = 0;
 
