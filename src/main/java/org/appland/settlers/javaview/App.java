@@ -76,7 +76,7 @@ public class App extends JFrame {
         sidePanel.setCommandListener(canvas);
         
         try {
-            canvas.initGame(20, 20);
+            canvas.initGame(40, 40);
         } catch (Exception e) {
             System.out.println(e);
             e.printStackTrace(System.out);
@@ -104,6 +104,8 @@ public class App extends JFrame {
     
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener {
 
+        private final Color BORDER_COLOR = Color.BLACK;
+        
         private UiState            state;
         private List<Point>        roadPoints;
         private boolean            showAvailableSpots;
@@ -406,6 +408,7 @@ public class App extends JFrame {
             }
         }
 
+        @Override
         public void placeFlag(Point p) throws Exception {
             Flag f = new Flag(p);                            
                             
@@ -460,6 +463,7 @@ public class App extends JFrame {
             roadPoints = new ArrayList<>();
         }
 
+        @Override
         public void placeBuilding(HouseType houseType, Point p) throws Exception {
             Building b = null;
             String newHouse = "";
@@ -849,6 +853,8 @@ public class App extends JFrame {
             
             drawPersons(g);
 
+            drawBorder(g);
+            
             if (showAvailableSpots) {
                 drawAvailableSpots(g);
             }
@@ -1085,6 +1091,28 @@ public class App extends JFrame {
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+
+        private void drawBorder(Graphics2D g) {
+            g.setColor(BORDER_COLOR);
+            
+            Point previous = null;
+            for (Point p : map.getLandBorder()) {
+                if (!isWithinScreen(p)) {
+                    continue;
+                }
+                
+                if (previous != null && p.distance(previous) < 3) {
+                    continue;
+                }
+                
+                drawer.fillScaledOval(g, p, 8, 8, -4, -4);
+                previous = p;
+            }
+        }
+
+        private boolean isWithinScreen(Point p) {
+            return p.x > 0 && p.x < widthInPoints && p.y > 0 && p.y < heightInPoints;
         }
     }
 
