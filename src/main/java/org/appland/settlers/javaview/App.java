@@ -23,6 +23,7 @@ import static java.lang.Math.floor;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
@@ -41,6 +43,7 @@ import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.UiState.IDLE;
 import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
+import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Farm;
@@ -347,6 +350,15 @@ public class App extends JFrame {
                         setState(IDLE);
                     }
                 }
+            } else if (ke.getKeyChar() == 'b') {
+                try {
+                    placeBuilding(BARRACKS, selectedPoint);
+                    setState(IDLE);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
             } else if (ke.getKeyChar() == 's') {
                 try {
                     placeBuilding(SAWMILL, selectedPoint);
@@ -494,6 +506,10 @@ public class App extends JFrame {
             case FARM:
                 b = new Farm();
                 newHouse = "new Farm()";
+                break;
+            case BARRACKS:
+                b = new Barracks();
+                newHouse = "new Barracks()";
                 break;
             }    
         
@@ -853,7 +869,7 @@ public class App extends JFrame {
             
             drawPersons(g);
 
-            drawBorder(g);
+            drawBorders(g);
             
             if (showAvailableSpots) {
                 drawAvailableSpots(g);
@@ -1093,21 +1109,23 @@ public class App extends JFrame {
             }
         }
 
-        private void drawBorder(Graphics2D g) {
+        private void drawBorders(Graphics2D g) {
             g.setColor(BORDER_COLOR);
-            
-            Point previous = null;
-            for (Point p : map.getLandBorder()) {
-                if (!isWithinScreen(p)) {
-                    continue;
+
+            for (Collection<Point> border : map.getBorders()) {
+                Point previous = null;
+                for (Point p : border) {
+                    if (!isWithinScreen(p)) {
+                        continue;
+                    }
+
+                    if (previous != null && p.distance(previous) < 3) {
+                        continue;
+                    }
+
+                    drawer.fillScaledOval(g, p, 8, 8, -4, -4);
+                    previous = p;
                 }
-                
-                if (previous != null && p.distance(previous) < 3) {
-                    continue;
-                }
-                
-                drawer.fillScaledOval(g, p, 8, 8, -4, -4);
-                previous = p;
             }
         }
 
