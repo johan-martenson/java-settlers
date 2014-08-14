@@ -1119,11 +1119,7 @@ public class App extends JFrame {
                         continue;
                     }
 
-                    if (previous != null && p.distance(previous) < 3) {
-                        continue;
-                    }
-
-                    drawer.fillScaledOval(g, p, 8, 8, -4, -4);
+                    drawer.fillScaledOval(g, p, 4, 4, -2, -2);
                     previous = p;
                 }
             }
