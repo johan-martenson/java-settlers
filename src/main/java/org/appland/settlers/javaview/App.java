@@ -39,6 +39,7 @@ import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
+import static org.appland.settlers.javaview.App.HouseType.WELL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.UiState.IDLE;
@@ -64,6 +65,7 @@ import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Tree;
+import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
 import org.appland.settlers.model.Worker;
 
@@ -101,7 +103,7 @@ public class App extends JFrame {
     }
 
     public enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL
     }
 
     
@@ -306,27 +308,41 @@ public class App extends JFrame {
         public void keyPressed(KeyEvent ke) {            
             System.out.println("KEY PRESSED");
             
-            if (ke.getKeyChar() == ' ') {
+            char key = ke.getKeyChar();
+            
+            if (key == ' ') {
                 System.out.println("Toggle show available spots");
                 
                 showAvailableSpots = !showAvailableSpots;
                 
                 repaint();
-            } else if (ke.getKeyChar() == 'd') {
+            } else if (key == 'd') {
                 recorder.printRecordingOnConsole();
-            } else if (ke.getKeyChar() == 'w' && state == POINT_SELECTED) {
-                try {
-                    placeBuilding(WOODCUTTER, selectedPoint);
-                    
-                    setState(IDLE);
-                    
-                    repaint();
-                } catch (Exception ex) {
-                    System.out.println("Exception while building woodcutter: " + ex);
+            } else if (key == 'o') {
+                if (previousKey == 'w') {
+                    try {
+                        placeBuilding(WOODCUTTER, selectedPoint);
 
+                        setState(IDLE);
+
+                        repaint();
+                    } catch (Exception ex) {
+                        System.out.println("Exception while building woodcutter: " + ex);
+
+                        setState(IDLE);
+                    }
+                }
+            } else if (key == 'e') {
+                if (previousKey == 'w') {
+                    try {
+                        placeBuilding(WELL, selectedPoint);
+                        repaint();
+                    } catch (Exception ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     setState(IDLE);
                 }
-            } else if (ke.getKeyChar() == 'o') {
+            } else if (key == 'o') {
                 if (previousKey == 'f') {
                     try {
                         placeBuilding(FORESTER, selectedPoint);
@@ -338,7 +354,7 @@ public class App extends JFrame {
                         setState(IDLE);
                     }
                 }
-            } else if (ke.getKeyChar() == 'a') {
+            } else if (key == 'a') {
                 if (previousKey == 'f') {
                     try {
                         placeBuilding(FARM, selectedPoint);
@@ -350,7 +366,7 @@ public class App extends JFrame {
                         setState(IDLE);
                     }
                 }
-            } else if (ke.getKeyChar() == 'b') {
+            } else if (key == 'b') {
                 try {
                     placeBuilding(BARRACKS, selectedPoint);
                     setState(IDLE);
@@ -359,7 +375,7 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
-            } else if (ke.getKeyChar() == 's') {
+            } else if (key == 's') {
                 try {
                     placeBuilding(SAWMILL, selectedPoint);
                     setState(IDLE);
@@ -368,7 +384,7 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
-            } else if (ke.getKeyChar() == 'q') {
+            } else if (key == 'q') {
                 try {
                     placeBuilding(QUARRY, selectedPoint);
                     setState(IDLE);
@@ -377,16 +393,16 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
-            } else if (ke.getKeyChar() == 'X') {
+            } else if (key == 'X') {
                 recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
-            } else if (ke.getKeyChar() == KeyEvent.VK_ESCAPE) {
+            } else if (key == KeyEvent.VK_ESCAPE) {
                 System.out.println("Resetting state to idle");
                 
                 setState(IDLE);
 
                 repaint();
-            } else if (ke.getKeyChar() == 'R') {
+            } else if (key == 'R') {
                 try {
                     resetGame();
                     repaint();
@@ -510,6 +526,10 @@ public class App extends JFrame {
             case BARRACKS:
                 b = new Barracks();
                 newHouse = "new Barracks()";
+                break;
+            case WELL:
+                b = new Well();
+                newHouse = "new Well()";
                 break;
             }    
         
