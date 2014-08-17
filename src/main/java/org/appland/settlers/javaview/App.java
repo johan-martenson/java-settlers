@@ -1249,7 +1249,8 @@ public class App extends JFrame {
             
             g.setClip(area);
             
-            drawer.fillScaledRect(g, new Point(0, heightInPoints), widthInPoints * drawer.scaleX, heightInPoints * drawer.scaleY);
+            //drawer.fillScaledRect(g, new Point(0, heightInPoints), widthInPoints * drawer.scaleX, heightInPoints * drawer.scaleY);
+            g.fillRect(0, 0, getWidth(), getHeight());
             
             g.setClip(oldClip);
         }
