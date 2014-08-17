@@ -6,7 +6,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
@@ -15,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
@@ -33,10 +36,12 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
@@ -44,6 +49,7 @@ import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.UiState.IDLE;
 import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
+import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Crop;
@@ -53,6 +59,8 @@ import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
+import org.appland.settlers.model.Material;
+import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
@@ -103,13 +111,23 @@ public class App extends JFrame {
     }
 
     public enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL
+        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
+        MILL, BAKERY
     }
 
     
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener {
 
         private final Color BORDER_COLOR = Color.BLACK;
+        
+        private final Color FOG_OF_WAR_COLOR = Color.BLACK;
+
+        private final Color WOOD_COLOR = new Color(0xBF8026);
+        private final Color WHEAT_COLOR = Color.ORANGE;
+        private final Color PLANCK_COLOR = Color.YELLOW;
+        private final Color WATER_COLOR = Color.BLUE;
+        private final Color FLOUR_COLOR = Color.WHITE;
+        private final Color STONE_COLOR = Color.GRAY;
         
         private UiState            state;
         private List<Point>        roadPoints;
@@ -122,7 +140,7 @@ public class App extends JFrame {
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
         private int                tick;
-        private char               previousKey;
+        private String             previousKeys;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -274,7 +292,10 @@ public class App extends JFrame {
                 Point p = f.getPosition();
                 
                 if (!f.getStackedCargo().isEmpty()) {
-                    g.setColor(Color.RED);
+                    Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
+                    
+                    g.setColor(cargoColor);
+                    
                     g.fillRect((int)(p.x*drawer.getScaleX()) - 2, getHeight() - (int)(p.y*drawer.getScaleY()) - 5, 5, 5);
                 }
     
@@ -309,64 +330,25 @@ public class App extends JFrame {
             System.out.println("KEY PRESSED");
             
             char key = ke.getKeyChar();
+            boolean keepPreviousKeys = false;
             
-            if (key == ' ') {
+            previousKeys += key;
+            
+            if (previousKeys.equals(" ")) {
                 System.out.println("Toggle show available spots");
                 
                 showAvailableSpots = !showAvailableSpots;
                 
                 repaint();
-            } else if (key == 'd') {
-                recorder.printRecordingOnConsole();
-            } else if (key == 'o') {
-                if (previousKey == 'w') {
-                    try {
-                        placeBuilding(WOODCUTTER, selectedPoint);
-
-                        setState(IDLE);
-
-                        repaint();
-                    } catch (Exception ex) {
-                        System.out.println("Exception while building woodcutter: " + ex);
-
-                        setState(IDLE);
-                    }
+            } else if (previousKeys.equals("bak")) {
+                try {
+                    placeBuilding(BAKERY, selectedPoint);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } else if (key == 'e') {
-                if (previousKey == 'w') {
-                    try {
-                        placeBuilding(WELL, selectedPoint);
-                        repaint();
-                    } catch (Exception ex) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    setState(IDLE);
-                }
-            } else if (key == 'o') {
-                if (previousKey == 'f') {
-                    try {
-                        placeBuilding(FORESTER, selectedPoint);
-                        setState(IDLE);
-
-                        repaint();
-                    } catch (Exception ex) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                        setState(IDLE);
-                    }
-                }
-            } else if (key == 'a') {
-                if (previousKey == 'f') {
-                    try {
-                        placeBuilding(FARM, selectedPoint);
-                        setState(IDLE);
-                        
-                        repaint();
-                    } catch (Exception ex) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                        setState(IDLE);
-                    }
-                }
-            } else if (key == 'b') {
+                setState(IDLE);
+            } else if (previousKeys.equals("bar")) {
                 try {
                     placeBuilding(BARRACKS, selectedPoint);
                     setState(IDLE);
@@ -374,19 +356,77 @@ public class App extends JFrame {
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
-                }
-            } else if (key == 's') {
+                }                    
+            } else if (previousKeys.equals("fo")) {
                 try {
-                    placeBuilding(SAWMILL, selectedPoint);
+                    placeBuilding(FORESTER, selectedPoint);
+                    setState(IDLE);
+
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
+            } else if (key == 'd') {
+                recorder.printRecordingOnConsole();
+            } else if (previousKeys.equals("fa")) {
+                try {
+                    placeBuilding(FARM, selectedPoint);
+                    setState(IDLE);
+                        
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    setState(IDLE);
+                }
+            } else if (previousKeys.equals("m")) {
+                try {
+                    placeBuilding(MILL, selectedPoint);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                setState(IDLE);
+            } else if (previousKeys.equals("we")) {
+                try {
+                    placeBuilding(WELL, selectedPoint);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                setState(IDLE);
+            } else if (previousKeys.equals("wo")) {
+                try {
+                    placeBuilding(WOODCUTTER, selectedPoint);
+
+                    setState(IDLE);
+
+                    repaint();
+                } catch (Exception ex) {
+                    System.out.println("Exception while building woodcutter: " + ex);
+
+                    setState(IDLE);
+                }
+            } else if (key == 'q') {
+                try {
+                    placeBuilding(QUARRY, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
-            } else if (key == 'q') {
+            } else if (key == 'R') {
                 try {
-                    placeBuilding(QUARRY, selectedPoint);
+                    resetGame();
+                    repaint();
+                } catch (Exception ex) {
+                    System.out.println("Failed to reset game. Exiting. Exception: " + ex);
+                    System.exit(1);
+                }
+            } else if (key == 's') {
+                try {
+                    placeBuilding(SAWMILL, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } catch (Exception ex) {
@@ -400,19 +440,20 @@ public class App extends JFrame {
                 System.out.println("Resetting state to idle");
                 
                 setState(IDLE);
+                
+                previousKeys = "";
 
                 repaint();
-            } else if (key == 'R') {
-                try {
-                    resetGame();
-                    repaint();
-                } catch (Exception ex) {
-                    System.out.println("Failed to reset game. Exiting. Exception: " + ex);
-                    System.exit(1);
-                }
+            } else {
+                keepPreviousKeys = true;
+                
+                setTitle("Settlers 2 (" + previousKeys +")");
             }
 
-            previousKey = ke.getKeyChar();
+            if (!keepPreviousKeys) {
+                previousKeys = "";
+                setTitle("Settlers 2");
+            }
         }
 
         @Override
@@ -531,6 +572,14 @@ public class App extends JFrame {
                 b = new Well();
                 newHouse = "new Well()";
                 break;
+            case MILL:
+                b = new Mill();
+                newHouse = "new Mill()";
+                break;
+            case BAKERY:
+                b = new Bakery();
+                newHouse = "new Bakery()";
+                break;
             }    
         
             if (b == null) {
@@ -580,6 +629,9 @@ public class App extends JFrame {
         private void drawPerson(Graphics2D g, Worker w) {
             g.setColor(Color.BLACK);
             
+            double actualX = w.getPosition().x;
+            double actualY = w.getPosition().y;            
+
             if (w.isTraveling()) {
                 Point next = null;
                 
@@ -588,26 +640,27 @@ public class App extends JFrame {
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                
+
                 Point last = w.getLastPoint();
                 
                 if (next == null) {
-                    drawer.fillScaledOval(g, last, 5, 10);
+                    actualX = last.x;
+                    actualY = last.y;
                 } else {
                     int percent = w.getPercentageOfDistanceTraveled();
                     
-                    double actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
-                    double actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
-                    
-                    g.fillOval((int)(actualX*drawer.getScaleX()) - 4, getHeight() - (int)(actualY*drawer.getScaleY()) - 10, 5, 15);
-                    
-                    if (w.getCargo() != null ) {
-                        g.setColor(Color.RED);
-                        g.fillRect((int)(actualX*drawer.getScaleX()) -2, getHeight() - (int)(actualY*drawer.getScaleY()) - 6, 5, 5);
-                    }
+                    actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
+                    actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
                 }
-            } else {
-                drawer.fillScaledOval(g, w.getPosition(), 5, 10);
+            }
+
+            g.fillOval((int)(actualX*drawer.getScaleX()) - 4, getHeight() - (int)(actualY*drawer.getScaleY()) - 10, 5, 15);
+
+            if (w.getCargo() != null ) {
+                Color cargoColor = getColorForMaterial(w.getCargo().getMaterial());
+                
+                g.setColor(cargoColor);
+                g.fillRect((int)(actualX*drawer.getScaleX()) -2, getHeight() - (int)(actualY*drawer.getScaleY()) - 6, 5, 5);
             }
         }
 
@@ -783,7 +836,7 @@ public class App extends JFrame {
             addMouseListener(this);
             addKeyListener(this);
             
-            previousKey = ' ';
+            previousKeys = "";
             
             addComponentListener(new ComponentAdapter() {
                 @Override
@@ -904,6 +957,8 @@ public class App extends JFrame {
             } else if (state == POINT_SELECTED) {
                 drawSelectedPoint(g);
             }
+            
+            drawFogOfWar(g);
         }
 
         private void drawGrid(Graphics graphics) {
@@ -1147,6 +1202,56 @@ public class App extends JFrame {
 
         private boolean isWithinScreen(Point p) {
             return p.x > 0 && p.x < widthInPoints && p.y > 0 && p.y < heightInPoints;
+        }
+
+        private Color getColorForMaterial(Material material) {
+            switch (material) {
+            case WATER:
+                return WATER_COLOR;
+            case FLOUR:
+                return FLOUR_COLOR;
+            case STONE:
+                return STONE_COLOR;
+            case WHEAT:
+                return WHEAT_COLOR;
+            case PLANCK:
+                return PLANCK_COLOR;
+            case WOOD:
+                return WOOD_COLOR;
+            default:
+                return Color.RED;
+            }
+        }
+
+        private void drawFogOfWar(Graphics2D g) {
+            
+            /* Create the area with the whole screen */
+            Area area = new Area(new Rectangle(0, 0, getWidth(), getHeight()));
+            
+            List<Point> fov = map.getFieldOfView();
+            
+            /* Create a polygon with the discovered land to cut out of the whole screen */
+            Point lastPointInFov = fov.get(fov.size() - 1);
+            
+            Path2D.Double discoveredLand = new Path2D.Double();
+            discoveredLand.moveTo(drawer.toScreenX(lastPointInFov), drawer.toScreenY(lastPointInFov));
+            
+            for (Point p : fov) {
+                discoveredLand.lineTo(drawer.toScreenX(p), drawer.toScreenY(p));
+            }
+
+            /* Remove the discovered land from the fog of war area */
+            area.subtract(new Area(discoveredLand));
+
+            g.setColor(FOG_OF_WAR_COLOR);
+            
+            Shape oldClip = g.getClip();
+            
+            g.setClip(area);
+            
+            drawer.fillScaledRect(g, new Point(0, heightInPoints), widthInPoints * drawer.scaleX, heightInPoints * drawer.scaleY);
+            
+            g.setClip(oldClip);
         }
     }
 
