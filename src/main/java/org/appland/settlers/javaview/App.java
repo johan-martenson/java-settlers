@@ -39,6 +39,7 @@ import javax.swing.*;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
+import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
@@ -54,6 +55,7 @@ import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Farm;
+import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameMap;
@@ -71,6 +73,7 @@ import static org.appland.settlers.model.Size.SMALL;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
+import static org.appland.settlers.model.Tile.Vegetation.WATER;
 import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
@@ -111,7 +114,7 @@ public class App extends JFrame {
 
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY
+        MILL, BAKERY, FISHERY
     }
 
     
@@ -127,6 +130,7 @@ public class App extends JFrame {
         private final Color WATER_COLOR = Color.BLUE;
         private final Color FLOUR_COLOR = Color.WHITE;
         private final Color STONE_COLOR = Color.GRAY;
+        private final Color FISH_COLOR = Color.DARK_GRAY;
         
         private UiState            state;
         private List<Point>        roadPoints;
@@ -325,8 +329,6 @@ public class App extends JFrame {
 
         @Override
         public void keyPressed(KeyEvent ke) {            
-            System.out.println("KEY PRESSED");
-            
             char key = ke.getKeyChar();
             boolean keepPreviousKeys = false;
             
@@ -349,12 +351,19 @@ public class App extends JFrame {
             } else if (previousKeys.equals("bar")) {
                 try {
                     placeBuilding(BARRACKS, selectedPoint);
-                    setState(IDLE);
                     repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
                 }                    
+                setState(IDLE);
+            } else if (previousKeys.equals("fi")) {
+                try {
+                    placeBuilding(FISHERY, selectedPoint);
+                    repaint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                setState(IDLE);
             } else if (previousKeys.equals("fo")) {
                 try {
                     placeBuilding(FORESTER, selectedPoint);
@@ -577,6 +586,10 @@ public class App extends JFrame {
             case BAKERY:
                 b = new Bakery();
                 newHouse = "new Bakery()";
+                break;
+            case FISHERY:
+                b = new Fishery();
+                newHouse = "new Fishery()";
                 break;
             }    
         
@@ -802,6 +815,8 @@ public class App extends JFrame {
             /* Create the initial game board */
             map = new GameMap(widthInPoints, heightInPoints);
 
+            createInitialTerrain(map);
+            
 	    terrain = createTerrainTexture(500, 500);
             
             houseImage = loadImage("house-sketched.png");
@@ -1203,6 +1218,8 @@ public class App extends JFrame {
                 return PLANCK_COLOR;
             case WOOD:
                 return WOOD_COLOR;
+            case FISH:
+                return FISH_COLOR;
             default:
                 return Color.RED;
             }
@@ -1237,6 +1254,29 @@ public class App extends JFrame {
             g.fillRect(0, 0, getWidth(), getHeight());
             
             g.setClip(oldClip);
+        }
+
+        private void createInitialTerrain(GameMap map) {
+            /* The default vegetation is grass */
+            
+            /* Create a small lake */
+            
+            Point p = new Point(10, 4);
+            
+            placeWaterOnMap(p, p.left(), p.upLeft(), map);
+            placeWaterOnMap(p, p.upLeft(), p.upRight(), map);
+            placeWaterOnMap(p, p.upRight(), p.right(), map);
+            placeWaterOnMap(p, p.right(), p.downRight(), map);
+            placeWaterOnMap(p, p.downRight(), p.downLeft(), map);
+            placeWaterOnMap(p, p.downLeft(), p.left(), map);
+        }
+        
+        private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) {        
+            Tile waterTile = map.getTerrain().getTile(p1, p2, p3);
+
+            waterTile.setVegetationType(WATER);
+
+            map.terrainIsUpdated();
         }
     }
 
