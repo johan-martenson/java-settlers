@@ -56,7 +56,6 @@ import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
-import org.appland.settlers.model.GameLogic;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
@@ -135,7 +134,6 @@ public class App extends JFrame {
         private Point              selectedPoint;
         private Map<Flag, String>  flagNames;
         private Map<Point, String> pointNames;
-        private GameLogic          gameLogic;
         private Image              houseImage;
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
@@ -797,7 +795,6 @@ public class App extends JFrame {
             showAvailableSpots = false;
             flagNames    = new HashMap<>();
             pointNames   = new HashMap<>();
-            gameLogic    = new GameLogic();
 
             drawer       = new ScaledDrawer(500, 500, w, h);
             recorder     = new ApiRecorder();
@@ -860,23 +857,11 @@ public class App extends JFrame {
                 @Override
                 public void run() {
             
-                    int count = 0;
                     while (true) {
                         recorder.recordTick();
-                        
-                        if (count == 10) {
-                            count = 0;
 
-                            try {
-                                gameLogic.gameLoop(map);
-                            } catch (Exception ex) {
-                                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                        } else {
-                            count++;
-                            map.stepTime();
-                            sidePanel.update();
-                        }
+                        map.stepTime();
+                        sidePanel.update();
 
                         repaint();
                         
@@ -1249,7 +1234,6 @@ public class App extends JFrame {
             
             g.setClip(area);
             
-            //drawer.fillScaledRect(g, new Point(0, heightInPoints), widthInPoints * drawer.scaleX, heightInPoints * drawer.scaleY);
             g.fillRect(0, 0, getWidth(), getHeight());
             
             g.setClip(oldClip);
