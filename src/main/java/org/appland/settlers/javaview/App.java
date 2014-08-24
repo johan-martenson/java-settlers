@@ -27,7 +27,6 @@ import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -694,7 +693,7 @@ public class App extends JFrame {
             } else if (map.isRoadAtPoint(p)) {
                 sidePanel.displayRoad(map.getRoadAtPoint(p));
             } else {
-                sidePanel.clearInfo();
+                sidePanel.emptyPointSelected();
             }
 
             sidePanel.setSelectedPoint(p);
@@ -1298,6 +1297,18 @@ public class App extends JFrame {
             map.terrainIsUpdated();
             
             recorder.recordSetTileVegetation(p1, p2, p3, MOUNTAIN);
+        }
+
+        @Override
+        public void removeFlagCommand(Point selectedPoint) throws Exception {
+            Flag flag = map.getFlagAtPoint(selectedPoint);
+            map.removeFlag(flag);
+        }
+
+        @Override
+        public void removeHouseCommand(Point selectedPoint) throws Exception {
+            Building b = map.getBuildingAtPoint(selectedPoint);
+            b.tearDown();
         }
     }
 

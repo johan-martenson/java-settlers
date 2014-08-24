@@ -24,4 +24,8 @@ interface CommandListener {
     public void placeFlag(Point selectedPoint) throws Exception;
 
     public void startRoadCommand(Point selectedPoint);
+
+    public void removeFlagCommand(Point selectedPoint) throws Exception;
+
+    public void removeHouseCommand(Point selectedPoint) throws Exception;
 }

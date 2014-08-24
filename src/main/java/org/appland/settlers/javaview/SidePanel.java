@@ -63,6 +63,7 @@ public class SidePanel extends JTabbedPane {
         house = null;
         
         infoPanel.displayInfo(flagAtPoint);
+        controlPanel.flagSelected();
     }
 
     void displayHouse(Building b) {
@@ -71,10 +72,13 @@ public class SidePanel extends JTabbedPane {
         house = b;
         
         infoPanel.displayInfo(b);
+        controlPanel.houseSelected();
     }
     
-    void clearInfo() {
+    void emptyPointSelected() {
         infoPanel.clear();
+    
+        controlPanel.emptyPointSelected();
     }
 
     Infoview getInfoview() {
@@ -87,6 +91,7 @@ public class SidePanel extends JTabbedPane {
         house = null;
         
         infoPanel.displayInfo(roadAtPoint);
+        controlPanel.roadSelected();
     }
 
     private class ControlPanel extends JPanel {
@@ -99,6 +104,13 @@ public class SidePanel extends JTabbedPane {
         private JButton buildForester;
         private JButton buildWoodcutter;
         
+        JPanel controlPanel;
+        JPanel constructionPanel;
+        private JButton raiseFlagButton;
+        private JButton startRoadButton;
+        private JButton removeFlagButton;
+        private JButton removeHouseButton;
+        
         public ControlPanel() {
             super();
             
@@ -109,8 +121,8 @@ public class SidePanel extends JTabbedPane {
 
             setLayout(new GridLayout(2, 1));
             
-            JPanel controlPanel = createControlPanel();
-            JPanel constructionPanel = createConstructionPanel();
+            controlPanel = createControlPanel();
+            constructionPanel = createConstructionPanel();
             
             add(controlPanel);
             add(constructionPanel);
@@ -118,6 +130,62 @@ public class SidePanel extends JTabbedPane {
             setVisible(true);
         }
 
+        void emptyPointSelected() {
+            raiseFlagButton.setVisible(true);
+            buildFarm.setVisible(true);
+            buildBarracks.setVisible(true);
+            buildQuarry.setVisible(true);
+            buildSawmill.setVisible(true);
+            buildForester.setVisible(true);
+            buildWoodcutter.setVisible(true);
+            
+            removeFlagButton.setVisible(false);
+            removeHouseButton.setVisible(false);
+            startRoadButton.setVisible(false);
+        }
+        
+        void flagSelected() {
+            removeFlagButton.setVisible(true);
+            startRoadButton.setVisible(true);
+
+            raiseFlagButton.setVisible(false);
+            removeHouseButton.setVisible(false);
+            buildFarm.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildForester.setVisible(false);
+            buildWoodcutter.setVisible(false);
+        }
+        
+        void houseSelected() {
+            removeHouseButton.setVisible(true);
+            
+            startRoadButton.setVisible(false);
+            removeFlagButton.setVisible(false);
+            raiseFlagButton.setVisible(false);
+            buildFarm.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildForester.setVisible(false);
+            buildWoodcutter.setVisible(false);
+        }
+        
+        void roadSelected() {
+            raiseFlagButton.setVisible(true);
+
+            removeFlagButton.setVisible(false);
+            startRoadButton.setVisible(false);
+            removeHouseButton.setVisible(false);
+            buildFarm.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildForester.setVisible(false);
+            buildWoodcutter.setVisible(false);
+        }
+        
         private JPanel createControlPanel() {
             JPanel panel = new JPanel();
             
@@ -171,13 +239,15 @@ public class SidePanel extends JTabbedPane {
             JPanel buildingPanel = new JPanel();
             
             /* Create flag and road panel */
-            flagAndRoadPanel.setLayout(new GridLayout(1, 2));
+            flagAndRoadPanel.setLayout(new GridLayout(3, 1));
             
-            JButton raiseFlagButton = new JButton("Raise flag");
-            JButton startRoadButtom = new JButton("Start new road");
+            raiseFlagButton  = new JButton("Raise flag");
+            removeFlagButton = new JButton("Remove flag");
+            startRoadButton  = new JButton("Start new road");
             
             flagAndRoadPanel.add(raiseFlagButton);
-            flagAndRoadPanel.add(startRoadButtom);
+            flagAndRoadPanel.add(removeFlagButton);
+            flagAndRoadPanel.add(startRoadButton);
 
             raiseFlagButton.addActionListener(new ActionListener() {
                 @Override
@@ -192,7 +262,7 @@ public class SidePanel extends JTabbedPane {
                 }
             });
             
-            startRoadButtom.addActionListener(new ActionListener() {
+            startRoadButton.addActionListener(new ActionListener() {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -202,17 +272,32 @@ public class SidePanel extends JTabbedPane {
                 }
             });
             
+            removeFlagButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.removeFlagCommand(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+            
             flagAndRoadPanel.setVisible(true);
 
             /* Create panel for construction of buildings */
             buildingPanel.setLayout(new GridLayout(2, 3));
             
-            buildWoodcutter = new JButton("Woodcutter");
-            buildForester   = new JButton("Forester");
-            buildSawmill    = new JButton("Sawmill");
-            buildQuarry     = new JButton("Quarry");
-            buildBarracks   = new JButton("Barracks");
-            buildFarm       = new JButton("Farm");
+            removeHouseButton = new JButton("Remove house");
+            buildWoodcutter   = new JButton("Woodcutter");
+            buildForester     = new JButton("Forester");
+            buildSawmill      = new JButton("Sawmill");
+            buildQuarry       = new JButton("Quarry");
+            buildBarracks     = new JButton("Barracks");
+            buildFarm         = new JButton("Farm");
             
             ActionListener buildListener = new ActionListener() {
 
@@ -240,6 +325,20 @@ public class SidePanel extends JTabbedPane {
                 }
             };
             
+            removeHouseButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.removeHouseCommand(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+            
             buildWoodcutter.addActionListener(buildListener);
             buildForester.addActionListener(buildListener);
             buildSawmill.addActionListener(buildListener);
@@ -247,6 +346,7 @@ public class SidePanel extends JTabbedPane {
             buildBarracks.addActionListener(buildListener);
             buildFarm.addActionListener(buildListener);
             
+            buildingPanel.add(removeHouseButton);
             buildingPanel.add(buildForester);
             buildingPanel.add(buildWoodcutter);
             buildingPanel.add(buildQuarry);
