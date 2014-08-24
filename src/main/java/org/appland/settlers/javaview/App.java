@@ -718,7 +718,7 @@ public class App extends JFrame {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         }
 
-	private BufferedImage createTerrainTexture(int w, int h) {
+	private BufferedImage createTerrainTexture(int w, int h) throws Exception {
 	    BufferedImage image = createOffScreenImage(w, h);
 	    Set<Tile> handled = new HashSet<>();
 	    Terrain terrain = map.getTerrain();
@@ -838,7 +838,11 @@ public class App extends JFrame {
                     
                     drawer.recalculateScale(getWidth(), getHeight());
                     
-                    terrain = createTerrainTexture(getWidth(), getHeight());
+                    try {
+                        terrain = createTerrainTexture(getWidth(), getHeight());
+                    } catch (Exception ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     
                     repaint();
                 }
@@ -1238,7 +1242,7 @@ public class App extends JFrame {
             g.setClip(oldClip);
         }
 
-        private void createInitialTerrain(GameMap map) {
+        private void createInitialTerrain(GameMap map) throws Exception {
             /* The default vegetation is grass */
             
             /* Create a small lake */
@@ -1267,7 +1271,7 @@ public class App extends JFrame {
             recorder.recordPlaceStone(stone1, stonePoint.downRight());
         }
         
-        private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) {        
+        private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) throws Exception {        
             Tile tile = map.getTerrain().getTile(p1, p2, p3);
 
             tile.setVegetationType(WATER);
@@ -1277,7 +1281,7 @@ public class App extends JFrame {
             recorder.recordSetTileVegetation(p1, p2, p3, WATER);
         }
 
-        private void placeMountainHexagonOnMap(Point p, GameMap map) {
+        private void placeMountainHexagonOnMap(Point p, GameMap map) throws Exception {
             placeMountainOnTile(p, p.left(), p.upLeft(), map);
             placeMountainOnTile(p, p.upLeft(), p.upRight(), map);
             placeMountainOnTile(p, p.upRight(), p.right(), map);
@@ -1286,7 +1290,7 @@ public class App extends JFrame {
             placeMountainOnTile(p, p.downLeft(), p.left(), map);            
         }
         
-        private void placeMountainOnTile(Point p1, Point p2, Point p3, GameMap map) {
+        private void placeMountainOnTile(Point p1, Point p2, Point p3, GameMap map) throws Exception {
             Tile tile = map.getTerrain().getTile(p1, p2, p3);
 
             tile.setVegetationType(MOUNTAIN);
