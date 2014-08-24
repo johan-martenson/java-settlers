@@ -41,6 +41,7 @@ import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
+import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
@@ -59,6 +60,7 @@ import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameMap;
+import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
 import org.appland.settlers.model.Mill;
@@ -73,6 +75,7 @@ import static org.appland.settlers.model.Size.SMALL;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
+import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
 import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.Well;
@@ -114,7 +117,7 @@ public class App extends JFrame {
 
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY, FISHERY
+        MILL, BAKERY, FISHERY, GOLDMINE
     }
 
     
@@ -131,6 +134,9 @@ public class App extends JFrame {
         private final Color FLOUR_COLOR = Color.WHITE;
         private final Color STONE_COLOR = Color.GRAY;
         private final Color FISH_COLOR = Color.DARK_GRAY;
+        
+        private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
+        private final Color GRASS_COLOR = Color.GREEN;
         
         private UiState            state;
         private List<Point>        roadPoints;
@@ -386,6 +392,14 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
+            } else if (previousKeys.equals("g")) {
+                try {
+                    placeBuilding(GOLDMINE, selectedPoint);
+                    repaint();
+                } catch (Exception e) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, e);
+                }
+                setState(IDLE);
             } else if (previousKeys.equals("m")) {
                 try {
                     placeBuilding(MILL, selectedPoint);
@@ -591,6 +605,9 @@ public class App extends JFrame {
                 b = new Fishery();
                 newHouse = "new Fishery()";
                 break;
+            case GOLDMINE:
+                b = new GoldMine();
+                newHouse = "new GoldMine()";
             }    
         
             if (b == null) {
@@ -772,7 +789,7 @@ public class App extends JFrame {
         private void drawTile(Graphics2D g, Tile t, Point p1, Point p2, Point p3) {
             switch (t.getVegetationType()) {
             case GRASS:
-                g.setColor(Color.GREEN);
+                g.setColor(GRASS_COLOR);
                 break;
             case SWAMP:
                 g.setColor(Color.GRAY);
@@ -780,6 +797,8 @@ public class App extends JFrame {
             case WATER:
                 g.setColor(Color.BLUE);
                 break;
+            case MOUNTAIN:
+                g.setColor(MOUNTAIN_COLOR);
             default:
                 g.setColor(Color.GRAY);
             }
@@ -1260,21 +1279,43 @@ public class App extends JFrame {
             /* The default vegetation is grass */
             
             /* Create a small lake */
+            Point lakeCenter = new Point(10, 4);
             
-            Point p = new Point(10, 4);
+            placeWaterOnMap(lakeCenter, lakeCenter.left(), lakeCenter.upLeft(), map);
+            placeWaterOnMap(lakeCenter, lakeCenter.upLeft(), lakeCenter.upRight(), map);
+            placeWaterOnMap(lakeCenter, lakeCenter.upRight(), lakeCenter.right(), map);
+            placeWaterOnMap(lakeCenter, lakeCenter.right(), lakeCenter.downRight(), map);
+            placeWaterOnMap(lakeCenter, lakeCenter.downRight(), lakeCenter.downLeft(), map);
+            placeWaterOnMap(lakeCenter, lakeCenter.downLeft(), lakeCenter.left(), map);
             
-            placeWaterOnMap(p, p.left(), p.upLeft(), map);
-            placeWaterOnMap(p, p.upLeft(), p.upRight(), map);
-            placeWaterOnMap(p, p.upRight(), p.right(), map);
-            placeWaterOnMap(p, p.right(), p.downRight(), map);
-            placeWaterOnMap(p, p.downRight(), p.downLeft(), map);
-            placeWaterOnMap(p, p.downLeft(), p.left(), map);
+            /* Create a small mountain */
+            Point p = new Point(5, 13);
+            Point p2 = new Point(8, 14);
+            placeMountainHexagonOnMap(p, map);
+            placeMountainHexagonOnMap(p2, map);
         }
         
         private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) {        
-            Tile waterTile = map.getTerrain().getTile(p1, p2, p3);
+            Tile tile = map.getTerrain().getTile(p1, p2, p3);
 
-            waterTile.setVegetationType(WATER);
+            tile.setVegetationType(WATER);
+
+            map.terrainIsUpdated();
+        }
+
+        private void placeMountainHexagonOnMap(Point p, GameMap map) {
+            placeMountainOnTile(p, p.left(), p.upLeft(), map);
+            placeMountainOnTile(p, p.upLeft(), p.upRight(), map);
+            placeMountainOnTile(p, p.upRight(), p.right(), map);
+            placeMountainOnTile(p, p.right(), p.downRight(), map);
+            placeMountainOnTile(p, p.downRight(), p.downLeft(), map);
+            placeMountainOnTile(p, p.downLeft(), p.left(), map);            
+        }
+        
+        private void placeMountainOnTile(Point p1, Point p2, Point p3, GameMap map) {
+            Tile tile = map.getTerrain().getTile(p1, p2, p3);
+
+            tile.setVegetationType(MOUNTAIN);
 
             map.terrainIsUpdated();
         }
