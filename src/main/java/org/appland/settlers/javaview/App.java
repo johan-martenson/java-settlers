@@ -1310,6 +1310,13 @@ public class App extends JFrame {
             Building b = map.getBuildingAtPoint(selectedPoint);
             b.tearDown();
         }
+
+        @Override
+        public void removeRoadAtPoint(Point selectedPoint) throws Exception {
+            Road r = map.getRoadAtPoint(selectedPoint);
+            
+            map.removeRoad(r);
+        }
     }
 
     public static void main(String[] args) {

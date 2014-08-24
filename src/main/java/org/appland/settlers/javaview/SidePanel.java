@@ -6,6 +6,7 @@
 
 package org.appland.settlers.javaview;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -110,6 +111,12 @@ public class SidePanel extends JTabbedPane {
         private JButton startRoadButton;
         private JButton removeFlagButton;
         private JButton removeHouseButton;
+        private JButton buildFishery;
+        private JButton buildWell;
+        private JButton buildGoldmine;
+        private JButton buildMill;
+        private JButton buildBakery;
+        private JButton removeRoadButton;
         
         public ControlPanel() {
             super();
@@ -119,29 +126,37 @@ public class SidePanel extends JTabbedPane {
             setMinimumSize(new Dimension(100, 100));
             setPreferredSize(new Dimension(100, 500));
 
-            setLayout(new GridLayout(2, 1));
+            //setLayout(new GridLayout(2, 1));
+            setLayout(new BorderLayout());
             
             controlPanel = createControlPanel();
             constructionPanel = createConstructionPanel();
             
-            add(controlPanel);
-            add(constructionPanel);
+            add(controlPanel, BorderLayout.NORTH);
+            add(constructionPanel, BorderLayout.CENTER);
             
             setVisible(true);
         }
 
         void emptyPointSelected() {
             raiseFlagButton.setVisible(true);
-            buildFarm.setVisible(true);
-            buildBarracks.setVisible(true);
-            buildQuarry.setVisible(true);
-            buildSawmill.setVisible(true);
-            buildForester.setVisible(true);
+
             buildWoodcutter.setVisible(true);
+            buildForester.setVisible(true);
+            buildBarracks.setVisible(true);
+            buildFishery.setVisible(true);
+            buildWell.setVisible(true);
+            buildGoldmine.setVisible(true);
+            buildSawmill.setVisible(true);
+            buildQuarry.setVisible(true);
+            buildMill.setVisible(true);
+            buildBakery.setVisible(true);
+            buildFarm.setVisible(true);
             
             removeFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
             startRoadButton.setVisible(false);
+            removeRoadButton.setVisible(false);
         }
         
         void flagSelected() {
@@ -150,12 +165,19 @@ public class SidePanel extends JTabbedPane {
 
             raiseFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
-            buildFarm.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildForester.setVisible(false);
+            removeRoadButton.setVisible(false);
+
             buildWoodcutter.setVisible(false);
+            buildForester.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildFishery.setVisible(false);
+            buildWell.setVisible(false);
+            buildGoldmine.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildMill.setVisible(false);
+            buildBakery.setVisible(false);
+            buildFarm.setVisible(false);
         }
         
         void houseSelected() {
@@ -164,26 +186,40 @@ public class SidePanel extends JTabbedPane {
             startRoadButton.setVisible(false);
             removeFlagButton.setVisible(false);
             raiseFlagButton.setVisible(false);
-            buildFarm.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildForester.setVisible(false);
+            removeRoadButton.setVisible(false);
+
             buildWoodcutter.setVisible(false);
+            buildForester.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildFishery.setVisible(false);
+            buildWell.setVisible(false);
+            buildGoldmine.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildMill.setVisible(false);
+            buildBakery.setVisible(false);
+            buildFarm.setVisible(false);
         }
         
         void roadSelected() {
             raiseFlagButton.setVisible(true);
-
+            removeRoadButton.setVisible(true);
+            
             removeFlagButton.setVisible(false);
             startRoadButton.setVisible(false);
             removeHouseButton.setVisible(false);
-            buildFarm.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildForester.setVisible(false);
+            
             buildWoodcutter.setVisible(false);
+            buildForester.setVisible(false);
+            buildBarracks.setVisible(false);
+            buildFishery.setVisible(false);
+            buildWell.setVisible(false);
+            buildGoldmine.setVisible(false);
+            buildSawmill.setVisible(false);
+            buildQuarry.setVisible(false);
+            buildMill.setVisible(false);
+            buildBakery.setVisible(false);
+            buildFarm.setVisible(false);
         }
         
         private JPanel createControlPanel() {
@@ -244,10 +280,12 @@ public class SidePanel extends JTabbedPane {
             raiseFlagButton  = new JButton("Raise flag");
             removeFlagButton = new JButton("Remove flag");
             startRoadButton  = new JButton("Start new road");
+            removeRoadButton = new JButton("Remove road");
             
             flagAndRoadPanel.add(raiseFlagButton);
             flagAndRoadPanel.add(removeFlagButton);
             flagAndRoadPanel.add(startRoadButton);
+            flagAndRoadPanel.add(removeRoadButton);
 
             raiseFlagButton.addActionListener(new ActionListener() {
                 @Override
@@ -286,17 +324,36 @@ public class SidePanel extends JTabbedPane {
                 }
             });
             
+            removeRoadButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.removeRoadAtPoint(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+            
             flagAndRoadPanel.setVisible(true);
 
             /* Create panel for construction of buildings */
-            buildingPanel.setLayout(new GridLayout(2, 3));
+            buildingPanel.setLayout(new GridLayout(15, 1));
             
             removeHouseButton = new JButton("Remove house");
             buildWoodcutter   = new JButton("Woodcutter");
             buildForester     = new JButton("Forester");
+            buildBarracks     = new JButton("Barracks");
+            buildFishery      = new JButton("Fisher");
+            buildWell         = new JButton("Well");
+            buildGoldmine     = new JButton("Gold Mine");
             buildSawmill      = new JButton("Sawmill");
             buildQuarry       = new JButton("Quarry");
-            buildBarracks     = new JButton("Barracks");
+            buildMill         = new JButton("Mill");
+            buildBakery       = new JButton("Bakery");
             buildFarm         = new JButton("Farm");
             
             ActionListener buildListener = new ActionListener() {
@@ -339,30 +396,52 @@ public class SidePanel extends JTabbedPane {
                 }
             });
             
+            buildWoodcutter   = new JButton("Woodcutter");
+            buildForester     = new JButton("Forester");
+            buildBarracks     = new JButton("Barracks");
+            buildFishery      = new JButton("Fisher");
+            buildWell         = new JButton("Well");
+            buildGoldmine     = new JButton("Gold Mine");
+            buildSawmill      = new JButton("Sawmill");
+            buildQuarry       = new JButton("Quarry");
+            buildMill         = new JButton("Mill");
+            buildBakery       = new JButton("Bakery");
+            buildFarm         = new JButton("Farm");
+            
             buildWoodcutter.addActionListener(buildListener);
             buildForester.addActionListener(buildListener);
-            buildSawmill.addActionListener(buildListener);
-            buildQuarry.addActionListener(buildListener);
             buildBarracks.addActionListener(buildListener);
+            buildFishery.addActionListener(buildListener);
+            buildWell.addActionListener(buildListener);
+            buildGoldmine.addActionListener(buildListener);
+            buildQuarry.addActionListener(buildListener);
+            buildMill.addActionListener(buildListener);
+            buildSawmill.addActionListener(buildListener);
+            buildBakery.addActionListener(buildListener);
             buildFarm.addActionListener(buildListener);
             
+            buildingPanel.add(new JLabel("Buildings"));
+
             buildingPanel.add(removeHouseButton);
-            buildingPanel.add(buildForester);
             buildingPanel.add(buildWoodcutter);
-            buildingPanel.add(buildQuarry);
+            buildingPanel.add(buildForester);
             buildingPanel.add(buildBarracks);
+            buildingPanel.add(buildFishery);
+            buildingPanel.add(buildWell);
+            buildingPanel.add(buildGoldmine);
+            buildingPanel.add(buildQuarry);
+            buildingPanel.add(buildMill);
             buildingPanel.add(buildSawmill);
+            buildingPanel.add(buildBakery);
             buildingPanel.add(buildFarm);
             
             buildingPanel.setVisible(true);
             
             /* Build the container panel */
-            panel.setLayout(new GridLayout(4, 1));
+            panel.setLayout(new BorderLayout());
             
-            panel.add(new JLabel("Create flags and roads"));
-            panel.add(flagAndRoadPanel);
-            panel.add(new JLabel("Create buildings"));
-            panel.add(buildingPanel);
+            panel.add(flagAndRoadPanel, BorderLayout.NORTH);
+            panel.add(buildingPanel, BorderLayout.CENTER);
             
             panel.setVisible(true);
             

@@ -28,4 +28,6 @@ interface CommandListener {
     public void removeFlagCommand(Point selectedPoint) throws Exception;
 
     public void removeHouseCommand(Point selectedPoint) throws Exception;
+
+    public void removeRoadAtPoint(Point selectedPoint) throws Exception;
 }

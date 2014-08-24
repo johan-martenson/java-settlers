@@ -135,7 +135,7 @@ public class ApiRecorder {
         registerPoint(p);
         String name = registerBuilding(b);
         
-        record(simpleClassName + " " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
+        record("Building " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
         
         recordPoint(p);
                 
@@ -235,7 +235,7 @@ public class ApiRecorder {
         int delta = tickCount - previousRecordedTicks;
         
         recordComment(tickCount + " ticks from start");
-        record("Utils.fastForward(" + delta + ", map)\n");
+        record("Utils.fastForward(" + delta + ", map);\n");
         
         previousRecordedTicks = tickCount;
     }
