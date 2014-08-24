@@ -142,8 +142,6 @@ public class App extends JFrame {
         private List<Point>        roadPoints;
         private boolean            showAvailableSpots;
         private Point              selectedPoint;
-        private Map<Flag, String>  flagNames;
-        private Map<Point, String> pointNames;
         private Image              houseImage;
         private ScaledDrawer       drawer;
         private ApiRecorder        recorder;
@@ -563,52 +561,40 @@ public class App extends JFrame {
             switch (houseType) {
             case WOODCUTTER:
                 b = new Woodcutter();
-                newHouse = "new Woodcutter()";
                 break;
             case HEADQUARTER:
                 b = new Headquarter();
-                newHouse = "new Headquarter()";
                 break;
             case FORESTER:
                 b = new ForesterHut();
-                newHouse = "new ForesterHut()";
                 break;
             case SAWMILL:
                 b = new Sawmill();
-                newHouse = "new Sawmill()";
                 break;
             case QUARRY:
                 b = new Quarry();
-                newHouse = "new Quarry()";
                 break;
             case FARM:
                 b = new Farm();
-                newHouse = "new Farm()";
                 break;
             case BARRACKS:
                 b = new Barracks();
-                newHouse = "new Barracks()";
                 break;
             case WELL:
                 b = new Well();
-                newHouse = "new Well()";
                 break;
             case MILL:
                 b = new Mill();
-                newHouse = "new Mill()";
                 break;
             case BAKERY:
                 b = new Bakery();
-                newHouse = "new Bakery()";
                 break;
             case FISHERY:
                 b = new Fishery();
-                newHouse = "new Fishery()";
                 break;
             case GOLDMINE:
                 b = new GoldMine();
-                newHouse = "new GoldMine()";
-            }    
+            }
         
             if (b == null) {
                 throw new Exception("Can't build " + houseType);
@@ -616,7 +602,7 @@ public class App extends JFrame {
 
             map.placeBuilding(b, p);
             
-            recorder.recordPlaceBuilding(b, newHouse, p);
+            recorder.recordPlaceBuilding(b, houseType, p);
         }
 
         private void drawSelectedPoint(Graphics2D g) {
@@ -626,17 +612,19 @@ public class App extends JFrame {
         }
 
         private void resetGame() throws Exception {
-            System.out.println("Resetting game");
-            
+            recorder.clear();
+
             setState(IDLE);
+            
+            recorder.recordComment("Starting new game");
             
             map = new GameMap(widthInPoints, heightInPoints);
             
-            placeBuilding(HEADQUARTER, new Point(5, 5));
+            recorder.record("GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");
             
-            recorder.clear();
-            flagNames.clear();
-            pointNames.clear();
+            createInitialTerrain(map);
+            
+            placeBuilding(HEADQUARTER, new Point(5, 5));            
         }
 
         private void setState(UiState uiState) {
@@ -825,39 +813,14 @@ public class App extends JFrame {
             tick           = 250;
             roadPoints = new ArrayList<>();
             showAvailableSpots = false;
-            flagNames    = new HashMap<>();
-            pointNames   = new HashMap<>();
-
             drawer       = new ScaledDrawer(500, 500, w, h);
             recorder     = new ApiRecorder();
 
-            /* Create the initial game board */
-            map = new GameMap(widthInPoints, heightInPoints);
-
-            createInitialTerrain(map);
-            
-	    terrain = createTerrainTexture(500, 500);
+            /* Create the initial game board */            
+            resetGame();
             
             houseImage = loadImage("house-sketched.png");
-
-            recorder.record("GameMap map = new GameMap(" + w + ", " + h + ");\n");
-            
-            Headquarter hq = new Headquarter();
-            
-            Point hqPoint = new Point(5, 5);
-
-            map.placeBuilding(hq, hqPoint);
-
-            recorder.recordPlaceBuilding(hq, "new Headquarter()", hqPoint);
-
-            Point stonePoint = new Point(12, 12);
-            
-            Stone stone0 = map.placeStone(stonePoint);
-            Stone stone1 = map.placeStone(stonePoint.downRight());
-            
-            recorder.recordPlaceStone(stone0, stonePoint);
-            recorder.recordPlaceStone(stone1, stonePoint.downRight());
-            
+	    terrain = createTerrainTexture(500, 500);
             grid = buildGrid(widthInPoints, heightInPoints);
             
             /* Create listener */
@@ -1293,6 +1256,15 @@ public class App extends JFrame {
             Point p2 = new Point(8, 14);
             placeMountainHexagonOnMap(p, map);
             placeMountainHexagonOnMap(p2, map);
+
+            /* Place stones */
+            Point stonePoint = new Point(12, 12);
+            
+            Stone stone0 = map.placeStone(stonePoint);
+            Stone stone1 = map.placeStone(stonePoint.downRight());
+            
+            recorder.recordPlaceStone(stone0, stonePoint);
+            recorder.recordPlaceStone(stone1, stonePoint.downRight());
         }
         
         private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) {        
@@ -1301,6 +1273,8 @@ public class App extends JFrame {
             tile.setVegetationType(WATER);
 
             map.terrainIsUpdated();
+
+            recorder.recordSetTileVegetation(p1, p2, p3, WATER);
         }
 
         private void placeMountainHexagonOnMap(Point p, GameMap map) {
@@ -1318,6 +1292,8 @@ public class App extends JFrame {
             tile.setVegetationType(MOUNTAIN);
 
             map.terrainIsUpdated();
+            
+            recorder.recordSetTileVegetation(p1, p2, p3, MOUNTAIN);
         }
     }
 

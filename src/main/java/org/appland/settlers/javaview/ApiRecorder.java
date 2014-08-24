@@ -8,11 +8,13 @@ package org.appland.settlers.javaview;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Stone;
+import org.appland.settlers.model.Tile;
 
 /**
  *
@@ -20,13 +22,14 @@ import org.appland.settlers.model.Stone;
  */
 public class ApiRecorder {
 
-    private Map<Point, String>    pointNames;
-    private Map<Flag, String>     flagNames;
-    private String                recording;
-    private Map<Building, String> buildingNames;
-    private Map<Road, String>     roadNames;
-    private Map<Stone, String>    stoneNames;
-    private int tickCount;
+    private final Map<Point, String>    pointNames;
+    private final Map<Flag, String>     flagNames;
+    private final Map<Building, String> buildingNames;
+    private final Map<Road, String>     roadNames;
+    private final Map<Stone, String>    stoneNames;
+    private String recording;
+    private int    tickCount;
+    private int   previousRecordedTicks;
     
     public ApiRecorder() {
         pointNames    = new HashMap<>();
@@ -36,6 +39,7 @@ public class ApiRecorder {
         stoneNames    = new HashMap<>();
         recording = "";
         tickCount = 0;
+        previousRecordedTicks = 0;
     }
     
     void record(String string) {
@@ -85,9 +89,19 @@ public class ApiRecorder {
     }
 
     public String registerBuilding(Building b) {
-        String name = "building" + buildingNames.size();
+        String name = b.getClass().getSimpleName();
+
+        name = name.toLowerCase().charAt(0) + name.substring(1);
         
-        buildingNames.put(b, name);
+        for (int i = 0; i < 1000; i++) {
+            if (!buildingNames.containsValue(name + i)) {
+                name = name + i;
+
+                buildingNames.put(b, name + i);
+                
+                break;
+            }
+        }
         
         return name;
     }
@@ -101,18 +115,27 @@ public class ApiRecorder {
     }
     
     void clear() {
+        pointNames.clear();
+        flagNames.clear();
+        buildingNames.clear();
+        roadNames.clear();
+        stoneNames.clear();
         recording = "";
-        
         tickCount = 0;
+        previousRecordedTicks = 0;
     }
 
-    void recordPlaceBuilding(Building b, String newHouse, Point p) {
-        recordComment(tickCount + " ticks from start");
+    void recordPlaceBuilding(Building b, HouseType type, Point p) {
+        recordTicks();
+        
+        String simpleClassName = b.getClass().getSimpleName();
+        
+        recordComment("Placing " + type.name().toLowerCase());
         
         registerPoint(p);
         String name = registerBuilding(b);
         
-        record("Building " + name + " = map.placeBuilding(" + newHouse + ", ");
+        record(simpleClassName + " " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
         
         recordPoint(p);
                 
@@ -120,8 +143,10 @@ public class ApiRecorder {
     }
 
     void recordPlaceFlag(Flag f, Point p) {
-        recordComment(tickCount + " ticks from start");
+        recordTicks();
 
+        recordComment("Placing flag");
+        
         registerPoint(p);
         registerFlag(f);
         
@@ -132,7 +157,9 @@ public class ApiRecorder {
     }
 
     void recordPlaceRoad(Road r) {
-        recordComment(tickCount + " ticks from start");
+        recordTicks();
+        
+        recordComment("Placing road between " + r.getStart() + " and " + r.getEnd());
         
         String roadName = registerRoad(r);
         
@@ -161,7 +188,9 @@ public class ApiRecorder {
     }
 
     void recordPlaceStone(Stone stone, Point stonePoint) {
-        recordComment(tickCount + " ticks from start");
+        recordTicks();
+        
+        recordComment("Placing stone");
         
         String pointName = registerPoint(stonePoint);
         
@@ -180,7 +209,34 @@ public class ApiRecorder {
         tickCount++;
     }
 
-    private void recordComment(String string) {
-        record("\n/* " + string + " */\n");
+    void recordComment(String string) {
+        record("\n\n/* " + string + " */\n");
+    }
+
+    void recordSetTileVegetation(Point p1, Point p2, Point p3, Tile.Vegetation vegetation) {
+        recordTicks();
+        
+        recordComment("Place a " + vegetation.name().toLowerCase() + " tile");
+        
+        String pointName1 = registerPoint(p1);
+        String pointName2 = registerPoint(p2);
+        String pointName3 = registerPoint(p3);
+        
+        record("map.getTerrain().getTile(" + pointName1 + ", " + pointName2 + ", " + pointName3 +").setVegetationType(Vegetation." + vegetation.name() + ");\n");
+        
+        record("map.terrainIsUpdated();\n");
+    }
+
+    private void recordTicks() {
+        if (tickCount == previousRecordedTicks) {
+            return;
+        }
+        
+        int delta = tickCount - previousRecordedTicks;
+        
+        recordComment(tickCount + " ticks from start");
+        record("Utils.fastForward(" + delta + ", map)\n");
+        
+        previousRecordedTicks = tickCount;
     }
 }
