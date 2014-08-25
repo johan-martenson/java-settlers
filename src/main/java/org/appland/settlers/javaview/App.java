@@ -310,7 +310,7 @@ public class App extends JFrame {
             }
         }
 
-        private void drawPossibleRoadConnections(Graphics2D g, Point point) {
+        private void drawPossibleRoadConnections(Graphics2D g, Point point) throws Exception {
             g.setColor(Color.GREEN);
             
             for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(point)) {
@@ -938,7 +938,11 @@ public class App extends JFrame {
 
                 drawLastSelectedPoint(g);
                 
-                drawPossibleRoadConnections(g, getLastSelectedWayPoint());
+                try {
+                    drawPossibleRoadConnections(g, getLastSelectedWayPoint());
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
             } else if (state == POINT_SELECTED) {
                 drawSelectedPoint(g);
             }
@@ -1302,20 +1306,39 @@ public class App extends JFrame {
         @Override
         public void removeFlagCommand(Point selectedPoint) throws Exception {
             Flag flag = map.getFlagAtPoint(selectedPoint);
-            map.removeFlag(flag);
+            try {
+                map.removeFlag(flag);
+            } catch (Exception e) {
+                System.out.println("  EXCEPTION DURING FLAG REMOVAL " + e);
+            }
+            
+            recorder.recordRemoveFlag(flag);
         }
 
         @Override
         public void removeHouseCommand(Point selectedPoint) throws Exception {
             Building b = map.getBuildingAtPoint(selectedPoint);
-            b.tearDown();
+            
+            try {
+                b.tearDown();
+            } catch (Exception e) {
+                System.out.println("  EXCEPTION DURING HOUSE REMOVAL " + e);
+            }
+            
+            recorder.recordTearDown(b);
         }
 
         @Override
         public void removeRoadAtPoint(Point selectedPoint) throws Exception {
             Road r = map.getRoadAtPoint(selectedPoint);
             
-            map.removeRoad(r);
+            try {
+                map.removeRoad(r);
+            } catch (Exception e) {
+                System.out.println("  EXCEPTION DURING REMOVE ROAD " + e);
+            }
+            
+            recorder.recordRemoveRoad(r);
         }
     }
 

@@ -22,6 +22,8 @@ import org.appland.settlers.model.Tile;
  */
 public class ApiRecorder {
 
+    private static final String INDENT = "    ";
+    
     private final Map<Point, String>    pointNames;
     private final Map<Flag, String>     flagNames;
     private final Map<Building, String> buildingNames;
@@ -29,7 +31,7 @@ public class ApiRecorder {
     private final Map<Stone, String>    stoneNames;
     private String recording;
     private int    tickCount;
-    private int   previousRecordedTicks;
+    private int    previousRecordedTicks;
     
     public ApiRecorder() {
         pointNames    = new HashMap<>();
@@ -63,7 +65,7 @@ public class ApiRecorder {
 
         pointNames.put(p, name);
 
-        record("Point " + name + " = new Point(" + p.x + ", " + p.y + ");\n");
+        record(INDENT + "Point " + name + " = new Point(" + p.x + ", " + p.y + ");\n");
         
         return name;
     }
@@ -97,7 +99,7 @@ public class ApiRecorder {
             if (!buildingNames.containsValue(name + i)) {
                 name = name + i;
 
-                buildingNames.put(b, name + i);
+                buildingNames.put(b, name);
                 
                 break;
             }
@@ -135,7 +137,7 @@ public class ApiRecorder {
         registerPoint(p);
         String name = registerBuilding(b);
         
-        record("Building " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
+        record(INDENT + "Building " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
         
         recordPoint(p);
                 
@@ -153,7 +155,7 @@ public class ApiRecorder {
         String pointName = pointNames.get(p);
         String flagName  = flagNames.get(f);
         
-        record("Flag " + flagName + " = map.placeFlag(" + pointName + ");\n");
+        record(INDENT + "Flag " + flagName + " = map.placeFlag(" + pointName + ");\n");
     }
 
     void recordPlaceRoad(Road r) {
@@ -167,7 +169,7 @@ public class ApiRecorder {
             registerPoint(p);
         }
         
-        record("Road " + roadName + " = map.placeRoad(");
+        record(INDENT + "Road " + roadName + " = map.placeRoad(");
 
         boolean firstRun = true;
 
@@ -196,7 +198,7 @@ public class ApiRecorder {
         
         String stoneName = registerStone(stone);
         
-        record("Stone " + stoneName + " = map.placeStone(" + pointName + ");\n");
+        record(INDENT + "Stone " + stoneName + " = map.placeStone(" + pointName + ");\n");
     }
 
     void printRecordingOnConsole() {
@@ -210,7 +212,7 @@ public class ApiRecorder {
     }
 
     void recordComment(String string) {
-        record("\n\n/* " + string + " */\n");
+        record("\n\n" + INDENT + "/* " + string + " */\n");
     }
 
     void recordSetTileVegetation(Point p1, Point p2, Point p3, Tile.Vegetation vegetation) {
@@ -222,9 +224,9 @@ public class ApiRecorder {
         String pointName2 = registerPoint(p2);
         String pointName3 = registerPoint(p3);
         
-        record("map.getTerrain().getTile(" + pointName1 + ", " + pointName2 + ", " + pointName3 +").setVegetationType(Vegetation." + vegetation.name() + ");\n");
+        record(INDENT + "map.getTerrain().getTile(" + pointName1 + ", " + pointName2 + ", " + pointName3 +").setVegetationType(Vegetation." + vegetation.name() + ");\n");
         
-        record("map.terrainIsUpdated();\n");
+        record(INDENT + "map.terrainIsUpdated();\n");
     }
 
     private void recordTicks() {
@@ -235,8 +237,36 @@ public class ApiRecorder {
         int delta = tickCount - previousRecordedTicks;
         
         recordComment(tickCount + " ticks from start");
-        record("Utils.fastForward(" + delta + ", map);\n");
+        record(INDENT + "Utils.fastForward(" + delta + ", map);\n");
         
         previousRecordedTicks = tickCount;
+    }
+
+    void recordRemoveFlag(Flag flag) {
+        recordTicks();
+        
+        recordComment("Remove flag at " + flag.getPosition());
+        
+        String name = flagNames.get(flag);
+        
+        record(INDENT + "map.removeFlag(" + name + ");\n");
+    }
+
+    void recordTearDown(Building b) {
+        recordTicks();
+        
+        String name = buildingNames.get(b);
+        
+        recordComment("Tear down " + name);
+        
+        record(INDENT + name + ".tearDown()\n");
+    }
+
+    void recordRemoveRoad(Road r) {
+        recordTicks();
+        
+        recordComment("Removing road between " + r.getStart() + " and " + r.getEnd());
+        
+        record(INDENT + "map.removeRoad(" + roadNames.get(r) + ");\n");
     }
 }
