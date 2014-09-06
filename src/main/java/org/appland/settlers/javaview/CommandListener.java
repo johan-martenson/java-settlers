@@ -30,4 +30,6 @@ interface CommandListener {
     public void removeHouseCommand(Point selectedPoint) throws Exception;
 
     public void removeRoadAtPoint(Point selectedPoint) throws Exception;
+
+    public void callGeologist(Point selectedPoint) throws Exception;
 }

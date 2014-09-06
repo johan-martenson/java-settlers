@@ -117,6 +117,7 @@ public class SidePanel extends JTabbedPane {
         private JButton buildMill;
         private JButton buildBakery;
         private JButton removeRoadButton;
+        private JButton callGeologistButton;
         
         public ControlPanel() {
             super();
@@ -156,12 +157,14 @@ public class SidePanel extends JTabbedPane {
             removeFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
             startRoadButton.setVisible(false);
+            callGeologistButton.setVisible(false);
             removeRoadButton.setVisible(false);
         }
         
         void flagSelected() {
             removeFlagButton.setVisible(true);
             startRoadButton.setVisible(true);
+            callGeologistButton.setVisible(true);
 
             raiseFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
@@ -187,6 +190,7 @@ public class SidePanel extends JTabbedPane {
             removeFlagButton.setVisible(false);
             raiseFlagButton.setVisible(false);
             removeRoadButton.setVisible(false);
+            callGeologistButton.setVisible(false);
 
             buildWoodcutter.setVisible(false);
             buildForester.setVisible(false);
@@ -208,6 +212,7 @@ public class SidePanel extends JTabbedPane {
             removeFlagButton.setVisible(false);
             startRoadButton.setVisible(false);
             removeHouseButton.setVisible(false);
+            callGeologistButton.setVisible(false);
             
             buildWoodcutter.setVisible(false);
             buildForester.setVisible(false);
@@ -277,15 +282,17 @@ public class SidePanel extends JTabbedPane {
             /* Create flag and road panel */
             flagAndRoadPanel.setLayout(new GridLayout(3, 1));
             
-            raiseFlagButton  = new JButton("Raise flag");
-            removeFlagButton = new JButton("Remove flag");
-            startRoadButton  = new JButton("Start new road");
-            removeRoadButton = new JButton("Remove road");
+            raiseFlagButton     = new JButton("Raise flag");
+            removeFlagButton    = new JButton("Remove flag");
+            startRoadButton     = new JButton("Start new road");
+            removeRoadButton    = new JButton("Remove road");
+            callGeologistButton = new JButton("Call geologist");
             
             flagAndRoadPanel.add(raiseFlagButton);
             flagAndRoadPanel.add(removeFlagButton);
             flagAndRoadPanel.add(startRoadButton);
             flagAndRoadPanel.add(removeRoadButton);
+            flagAndRoadPanel.add(callGeologistButton);
 
             raiseFlagButton.addActionListener(new ActionListener() {
                 @Override
@@ -331,6 +338,20 @@ public class SidePanel extends JTabbedPane {
                     if (commandListener != null) {
                         try {
                             commandListener.removeRoadAtPoint(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+            
+            callGeologistButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.callGeologist(selectedPoint);
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -481,7 +502,15 @@ public class SidePanel extends JTabbedPane {
             
             String info = "<html>";
             
-            info += b.getConstructionState() + "<br>";
+            if (b.underConstruction()) {
+                info += "Under construction<br>";
+            } else if (b.ready()) {
+                info += "Ready<br>";
+            } else if (b.burningDown()) {
+                info += "Burning down<br>";
+            } else {
+                info += "Destroyed<br>";
+            }
             
             /* Print if worker is needed */
             try {

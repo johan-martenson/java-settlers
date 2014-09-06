@@ -62,11 +62,13 @@ import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
+import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Sawmill;
+import org.appland.settlers.model.Sign;
 import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
@@ -125,6 +127,8 @@ public class App extends JFrame {
         private final Color BORDER_COLOR = Color.BLACK;
         
         private final Color FOG_OF_WAR_COLOR = Color.BLACK;
+        
+        private final Color SIGN_BACKGROUND_COLOR = new Color(0xCCAAAA);
 
         private final Color WOOD_COLOR = new Color(0xBF8026);
         private final Color WHEAT_COLOR = Color.ORANGE;
@@ -133,6 +137,9 @@ public class App extends JFrame {
         private final Color FLOUR_COLOR = Color.WHITE;
         private final Color STONE_COLOR = Color.GRAY;
         private final Color FISH_COLOR = Color.DARK_GRAY;
+        private final Color GOLD_COLOR = Color.YELLOW;
+        private final Color IRON_COLOR = Color.RED;
+        private final Color COAL_COLOR = Color.BLACK;
         
         private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
         private final Color GRASS_COLOR = Color.GREEN;
@@ -798,7 +805,7 @@ public class App extends JFrame {
         int widthInPoints;
         int heightInPoints;
         List<Point> grid;
-	BufferedImage terrain;
+	BufferedImage terrainImage;
 
         public GameCanvas() {
             super();
@@ -819,7 +826,7 @@ public class App extends JFrame {
             resetGame();
             
             houseImage = loadImage("house-sketched.png");
-	    terrain = createTerrainTexture(500, 500);
+	    terrainImage = createTerrainTexture(500, 500);
             grid = buildGrid(widthInPoints, heightInPoints);
             
             /* Create listener */
@@ -838,7 +845,7 @@ public class App extends JFrame {
                     drawer.recalculateScale(getWidth(), getHeight());
                     
                     try {
-                        terrain = createTerrainTexture(getWidth(), getHeight());
+                        terrainImage = createTerrainTexture(getWidth(), getHeight());
                     } catch (Exception ex) {
                         Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -907,8 +914,8 @@ public class App extends JFrame {
         public void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics;
 
-	    if (terrain != null) {
-		g.drawImage(terrain, 0, 0, getWidth(), getHeight(), 0, 0, terrain.getWidth(), terrain.getHeight(), null);
+	    if (terrainImage != null) {
+		g.drawImage(terrainImage, 0, 0, getWidth(), getHeight(), 0, 0, terrainImage.getWidth(), terrainImage.getHeight(), null);
 	    }
 
             drawGrid(g);
@@ -928,6 +935,8 @@ public class App extends JFrame {
             drawPersons(g);
 
             drawBorders(g);
+            
+            drawSigns(g);
             
             if (showAvailableSpots) {
                 drawAvailableSpots(g);
@@ -993,7 +1002,7 @@ public class App extends JFrame {
 
             String title = b.getClass().getSimpleName();
             
-            if (b.getConstructionState() == Building.ConstructionState.UNDER_CONSTRUCTION) {
+            if (b.underConstruction()) {
                 title = "(" + title + ")";
             }
             
@@ -1261,9 +1270,16 @@ public class App extends JFrame {
             /* Create a small mountain */
             Point p = new Point(5, 13);
             Point p2 = new Point(8, 14);
+            Point p3 = new Point(5, 15);
             placeMountainHexagonOnMap(p, map);
             placeMountainHexagonOnMap(p2, map);
+            placeMountainHexagonOnMap(p3, map);
 
+            /* Put gold at mountain */
+            surroundPointWithMineral(p, GOLD, map);
+            surroundPointWithMineral(p2, GOLD, map);
+            surroundPointWithMineral(p3, GOLD, map);
+            
             /* Place stones */
             Point stonePoint = new Point(12, 12);
             
@@ -1339,6 +1355,63 @@ public class App extends JFrame {
             }
             
             recorder.recordRemoveRoad(r);
+        }
+
+        @Override
+        public void callGeologist(Point selectedPoint) throws Exception {
+            Flag flag = map.getFlagAtPoint(selectedPoint);
+            
+            flag.callGeologist();
+            
+            recorder.recordCallGeologistFromFlag(flag);
+        }
+
+        private void surroundPointWithMineral(Point p, Material material, GameMap map) throws Exception {
+            for (Tile t : map.getTerrain().getSurroundingTiles(p)) {
+                t.setAmountMineral(material, LARGE);
+            }
+
+            map.terrainIsUpdated();
+        }
+
+        private void drawSigns(Graphics2D g) {
+            for (Sign s : map.getSigns()) {
+                g.setColor(SIGN_BACKGROUND_COLOR);
+                
+                drawer.fillScaledRect(g, s.getPosition(), 8, 8);
+                
+                switch (s.getType()) {
+                case GOLD:
+                    g.setColor(GOLD_COLOR);
+                    break;
+                case IRON:
+                    g.setColor(IRON_COLOR);
+                    break;
+                case COAL:
+                    g.setColor(COAL_COLOR);
+                    break;
+                case STONE:
+                    g.setColor(STONE_COLOR);
+                    break;
+                case WATER:
+                    g.setColor(WATER_COLOR);
+                    break;
+                default:
+                    g.setColor(Color.RED);
+                }
+
+                switch (s.getSize()) {
+                case LARGE:
+                    drawer.fillScaledRect(g, s.getPosition(), 6, 6);
+                    break;
+                case MEDIUM:
+                    drawer.fillScaledRect(g, s.getPosition(), 4, 4);
+                    break;
+                case SMALL:
+                    drawer.fillScaledRect(g, s.getPosition(), 2, 2);
+                    break;
+                }
+            }
         }
     }
 

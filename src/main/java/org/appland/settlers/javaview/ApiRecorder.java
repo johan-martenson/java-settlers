@@ -269,4 +269,14 @@ public class ApiRecorder {
         
         record(INDENT + "map.removeRoad(" + roadNames.get(r) + ");\n");
     }
+
+    void recordCallGeologistFromFlag(Flag flag) {
+        recordTicks();
+        
+        String flagName = flagNames.get(flag);
+        
+        recordComment("Calling geologist from " + flagName + " at " + flag.getPosition());
+
+        record(INDENT + flagName + ".callGeologist();\n");
+    }
 }
