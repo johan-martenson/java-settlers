@@ -373,7 +373,7 @@ public class SidePanel extends JTabbedPane {
             buildWoodcutter   = new JButton("Woodcutter");
             buildForester     = new JButton("Forester");
             buildBarracks     = new JButton("Barracks");
-            buildFishery      = new JButton("Fisher");
+            buildFishery      = new JButton("Fishery");
             buildWell         = new JButton("Well");
             buildGoldmine     = new JButton("Gold Mine");
             buildSawmill      = new JButton("Sawmill");
