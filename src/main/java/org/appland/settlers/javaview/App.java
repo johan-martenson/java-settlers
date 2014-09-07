@@ -1218,6 +1218,12 @@ public class App extends JFrame {
                 return WOOD_COLOR;
             case FISH:
                 return FISH_COLOR;
+            case GOLD:
+                return GOLD_COLOR;
+            case IRON:
+                return IRON_COLOR;
+            case COAL:
+                return COAL_COLOR;
             default:
                 return Color.RED;
             }
