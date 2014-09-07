@@ -18,11 +18,16 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
+import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
+import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
+import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
+import static org.appland.settlers.javaview.App.HouseType.WELL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
@@ -395,6 +400,16 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(QUARRY, selectedPoint);
                             } else if (ae.getSource().equals(buildFarm)) {
                                 commandListener.placeBuilding(FARM, selectedPoint);
+                            } else if (ae.getSource().equals(buildFishery)) {
+                                commandListener.placeBuilding(FISHERY, selectedPoint);
+                            } else if (ae.getSource().equals(buildWell)) {
+                                commandListener.placeBuilding(WELL, selectedPoint);
+                            } else if (ae.getSource().equals(buildGoldmine)) {
+                                commandListener.placeBuilding(GOLDMINE, selectedPoint);
+                            } else if (ae.getSource().equals(buildMill)) {
+                                commandListener.placeBuilding(MILL, selectedPoint);
+                            } else if (ae.getSource().equals(buildBakery)) {
+                                commandListener.placeBuilding(BAKERY, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
