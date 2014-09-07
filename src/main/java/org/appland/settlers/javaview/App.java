@@ -1379,6 +1379,10 @@ public class App extends JFrame {
                 g.setColor(SIGN_BACKGROUND_COLOR);
                 
                 drawer.fillScaledRect(g, s.getPosition(), 8, 8);
+
+                if (s.isEmpty()) {
+                    continue;
+                }
                 
                 switch (s.getType()) {
                 case GOLD:
