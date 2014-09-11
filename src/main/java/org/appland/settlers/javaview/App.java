@@ -21,8 +21,14 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
+import static java.lang.Math.abs;
+import static java.lang.Math.abs;
+import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
+import static java.lang.Math.round;
+import static java.lang.Math.round;
+import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,11 +43,14 @@ import java.util.logging.Logger;
 import javax.swing.*;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
+import static org.appland.settlers.javaview.App.HouseType.COALMINE;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
+import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
@@ -53,6 +62,7 @@ import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.CoalMine;
 import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Fishery;
@@ -60,7 +70,9 @@ import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.GoldMine;
+import org.appland.settlers.model.GraniteMine;
 import org.appland.settlers.model.Headquarter;
+import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
@@ -118,7 +130,7 @@ public class App extends JFrame {
 
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY, FISHERY, GOLDMINE
+        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE
     }
 
     
@@ -366,6 +378,14 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }                    
                 setState(IDLE);
+            } else if (previousKeys.equals("c")) {
+                try {
+                    placeBuilding(COALMINE, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                repaint();
+                setState(IDLE);
             } else if (previousKeys.equals("fi")) {
                 try {
                     placeBuilding(FISHERY, selectedPoint);
@@ -396,13 +416,29 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                     setState(IDLE);
                 }
-            } else if (previousKeys.equals("g")) {
+            } else if (previousKeys.equals("go")) {
                 try {
                     placeBuilding(GOLDMINE, selectedPoint);
                     repaint();
                 } catch (Exception e) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, e);
                 }
+                setState(IDLE);
+            } else if (previousKeys.equals("gr")) {
+                try {
+                    placeBuilding(GRANITEMINE, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                repaint();
+                setState(IDLE);
+            } else if (previousKeys.equals("i")) {
+                try {
+                    placeBuilding(IRONMINE, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                repaint();
                 setState(IDLE);
             } else if (previousKeys.equals("m")) {
                 try {
@@ -560,7 +596,6 @@ public class App extends JFrame {
         @Override
         public void placeBuilding(HouseType houseType, Point p) throws Exception {
             Building b = null;
-            String newHouse = "";
             
             System.out.println("Placing " + houseType + " at " + selectedPoint);
             
@@ -600,6 +635,15 @@ public class App extends JFrame {
                 break;
             case GOLDMINE:
                 b = new GoldMine();
+                break;
+            case IRONMINE:
+                b = new IronMine();
+                break;
+            case COALMINE:
+                b = new CoalMine();
+                break;
+            case GRANITEMINE:
+                b = new GraniteMine();
             }
         
             if (b == null) {
@@ -625,8 +669,8 @@ public class App extends JFrame {
             recorder.recordComment("Starting new game");
             
             map = new GameMap(widthInPoints, heightInPoints);
-            
-            recorder.record("GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");
+
+            recorder.recordNewGame(widthInPoints, heightInPoints);
             
             createInitialTerrain(map);
             

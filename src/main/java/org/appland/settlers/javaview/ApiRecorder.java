@@ -22,7 +22,7 @@ import org.appland.settlers.model.Tile;
  */
 public class ApiRecorder {
 
-    private static final String INDENT = "    ";
+    private static final String INDENT = "        ";
     
     private final Map<Point, String>    pointNames;
     private final Map<Flag, String>     flagNames;
@@ -278,5 +278,11 @@ public class ApiRecorder {
         recordComment("Calling geologist from " + flagName + " at " + flag.getPosition());
 
         record(INDENT + flagName + ".callGeologist();\n");
+    }
+
+    void recordNewGame(int widthInPoints, int heightInPoints) {
+        recordComment("Creating new game map with size " + widthInPoints + "x" + heightInPoints);
+        
+        record(INDENT + "GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");
     }
 }

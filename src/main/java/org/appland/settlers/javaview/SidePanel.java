@@ -20,10 +20,13 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
+import static org.appland.settlers.javaview.App.HouseType.COALMINE;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
+import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
+import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
@@ -119,6 +122,9 @@ public class SidePanel extends JTabbedPane {
         private JButton buildFishery;
         private JButton buildWell;
         private JButton buildGoldmine;
+        private JButton buildIronmine;
+        private JButton buildCoalmine;
+        private JButton buildGranitemine;
         private JButton buildMill;
         private JButton buildBakery;
         private JButton removeRoadButton;
@@ -132,7 +138,6 @@ public class SidePanel extends JTabbedPane {
             setMinimumSize(new Dimension(100, 100));
             setPreferredSize(new Dimension(100, 500));
 
-            //setLayout(new GridLayout(2, 1));
             setLayout(new BorderLayout());
             
             controlPanel = createControlPanel();
@@ -147,17 +152,7 @@ public class SidePanel extends JTabbedPane {
         void emptyPointSelected() {
             raiseFlagButton.setVisible(true);
 
-            buildWoodcutter.setVisible(true);
-            buildForester.setVisible(true);
-            buildBarracks.setVisible(true);
-            buildFishery.setVisible(true);
-            buildWell.setVisible(true);
-            buildGoldmine.setVisible(true);
-            buildSawmill.setVisible(true);
-            buildQuarry.setVisible(true);
-            buildMill.setVisible(true);
-            buildBakery.setVisible(true);
-            buildFarm.setVisible(true);
+            setBuildingCreationVisibility(true);
             
             removeFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
@@ -175,17 +170,7 @@ public class SidePanel extends JTabbedPane {
             removeHouseButton.setVisible(false);
             removeRoadButton.setVisible(false);
 
-            buildWoodcutter.setVisible(false);
-            buildForester.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildFishery.setVisible(false);
-            buildWell.setVisible(false);
-            buildGoldmine.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildMill.setVisible(false);
-            buildBakery.setVisible(false);
-            buildFarm.setVisible(false);
+            setBuildingCreationVisibility(false);
         }
         
         void houseSelected() {
@@ -197,17 +182,7 @@ public class SidePanel extends JTabbedPane {
             removeRoadButton.setVisible(false);
             callGeologistButton.setVisible(false);
 
-            buildWoodcutter.setVisible(false);
-            buildForester.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildFishery.setVisible(false);
-            buildWell.setVisible(false);
-            buildGoldmine.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildMill.setVisible(false);
-            buildBakery.setVisible(false);
-            buildFarm.setVisible(false);
+            setBuildingCreationVisibility(false);
         }
         
         void roadSelected() {
@@ -219,17 +194,7 @@ public class SidePanel extends JTabbedPane {
             removeHouseButton.setVisible(false);
             callGeologistButton.setVisible(false);
             
-            buildWoodcutter.setVisible(false);
-            buildForester.setVisible(false);
-            buildBarracks.setVisible(false);
-            buildFishery.setVisible(false);
-            buildWell.setVisible(false);
-            buildGoldmine.setVisible(false);
-            buildSawmill.setVisible(false);
-            buildQuarry.setVisible(false);
-            buildMill.setVisible(false);
-            buildBakery.setVisible(false);
-            buildFarm.setVisible(false);
+            setBuildingCreationVisibility(false);
         }
         
         private JPanel createControlPanel() {
@@ -376,6 +341,9 @@ public class SidePanel extends JTabbedPane {
             buildFishery      = new JButton("Fishery");
             buildWell         = new JButton("Well");
             buildGoldmine     = new JButton("Gold Mine");
+            buildIronmine     = new JButton("Iron Mine");
+            buildCoalmine     = new JButton("Coal Mine");
+            buildGranitemine  = new JButton("Granite Mine");
             buildSawmill      = new JButton("Sawmill");
             buildQuarry       = new JButton("Quarry");
             buildMill         = new JButton("Mill");
@@ -406,6 +374,12 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(WELL, selectedPoint);
                             } else if (ae.getSource().equals(buildGoldmine)) {
                                 commandListener.placeBuilding(GOLDMINE, selectedPoint);
+                            } else if (ae.getSource().equals(buildIronmine)) {
+                                commandListener.placeBuilding(IRONMINE, selectedPoint);
+                            } else if (ae.getSource().equals(buildCoalmine)) {
+                                commandListener.placeBuilding(COALMINE, selectedPoint);
+                            } else if (ae.getSource().equals(buildGranitemine)) {
+                                commandListener.placeBuilding(GRANITEMINE, selectedPoint);
                             } else if (ae.getSource().equals(buildMill)) {
                                 commandListener.placeBuilding(MILL, selectedPoint);
                             } else if (ae.getSource().equals(buildBakery)) {
@@ -431,7 +405,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+/*            
             buildWoodcutter   = new JButton("Woodcutter");
             buildForester     = new JButton("Forester");
             buildBarracks     = new JButton("Barracks");
@@ -443,13 +417,16 @@ public class SidePanel extends JTabbedPane {
             buildMill         = new JButton("Mill");
             buildBakery       = new JButton("Bakery");
             buildFarm         = new JButton("Farm");
-            
+  */          
             buildWoodcutter.addActionListener(buildListener);
             buildForester.addActionListener(buildListener);
             buildBarracks.addActionListener(buildListener);
             buildFishery.addActionListener(buildListener);
             buildWell.addActionListener(buildListener);
             buildGoldmine.addActionListener(buildListener);
+            buildIronmine.addActionListener(buildListener);
+            buildCoalmine.addActionListener(buildListener);
+            buildGranitemine.addActionListener(buildListener);
             buildQuarry.addActionListener(buildListener);
             buildMill.addActionListener(buildListener);
             buildSawmill.addActionListener(buildListener);
@@ -465,6 +442,9 @@ public class SidePanel extends JTabbedPane {
             buildingPanel.add(buildFishery);
             buildingPanel.add(buildWell);
             buildingPanel.add(buildGoldmine);
+            buildingPanel.add(buildIronmine);
+            buildingPanel.add(buildCoalmine);
+            buildingPanel.add(buildGranitemine);
             buildingPanel.add(buildQuarry);
             buildingPanel.add(buildMill);
             buildingPanel.add(buildSawmill);
@@ -482,6 +462,23 @@ public class SidePanel extends JTabbedPane {
             panel.setVisible(true);
             
             return panel;
+        }
+
+        private void setBuildingCreationVisibility(boolean b) {
+            buildWoodcutter.setVisible(b);
+            buildForester.setVisible(b);
+            buildBarracks.setVisible(b);
+            buildFishery.setVisible(b);
+            buildWell.setVisible(b);
+            buildGoldmine.setVisible(b);
+            buildIronmine.setVisible(b);
+            buildCoalmine.setVisible(b);
+            buildGranitemine.setVisible(b);
+            buildSawmill.setVisible(b);
+            buildQuarry.setVisible(b);
+            buildMill.setVisible(b);
+            buildBakery.setVisible(b);
+            buildFarm.setVisible(b);
         }
     }
 
