@@ -12,6 +12,8 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
@@ -129,6 +131,8 @@ public class SidePanel extends JTabbedPane {
         private JButton buildBakery;
         private JButton removeRoadButton;
         private JButton callGeologistButton;
+        
+        private List<JButton> houseCreationButtons;
         
         public ControlPanel() {
             super();
@@ -350,6 +354,23 @@ public class SidePanel extends JTabbedPane {
             buildBakery       = new JButton("Bakery");
             buildFarm         = new JButton("Farm");
             
+            houseCreationButtons = new LinkedList<>();
+            
+            houseCreationButtons.add(buildWoodcutter);
+            houseCreationButtons.add(buildForester);
+            houseCreationButtons.add(buildBarracks);
+            houseCreationButtons.add(buildFishery);
+            houseCreationButtons.add(buildWell);
+            houseCreationButtons.add(buildGoldmine);
+            houseCreationButtons.add(buildIronmine);
+            houseCreationButtons.add(buildCoalmine);
+            houseCreationButtons.add(buildGranitemine);
+            houseCreationButtons.add(buildSawmill);
+            houseCreationButtons.add(buildQuarry);
+            houseCreationButtons.add(buildMill);
+            houseCreationButtons.add(buildBakery);
+            houseCreationButtons.add(buildFarm);
+
             ActionListener buildListener = new ActionListener() {
 
                 @Override
@@ -405,52 +426,17 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-/*            
-            buildWoodcutter   = new JButton("Woodcutter");
-            buildForester     = new JButton("Forester");
-            buildBarracks     = new JButton("Barracks");
-            buildFishery      = new JButton("Fisher");
-            buildWell         = new JButton("Well");
-            buildGoldmine     = new JButton("Gold Mine");
-            buildSawmill      = new JButton("Sawmill");
-            buildQuarry       = new JButton("Quarry");
-            buildMill         = new JButton("Mill");
-            buildBakery       = new JButton("Bakery");
-            buildFarm         = new JButton("Farm");
-  */          
-            buildWoodcutter.addActionListener(buildListener);
-            buildForester.addActionListener(buildListener);
-            buildBarracks.addActionListener(buildListener);
-            buildFishery.addActionListener(buildListener);
-            buildWell.addActionListener(buildListener);
-            buildGoldmine.addActionListener(buildListener);
-            buildIronmine.addActionListener(buildListener);
-            buildCoalmine.addActionListener(buildListener);
-            buildGranitemine.addActionListener(buildListener);
-            buildQuarry.addActionListener(buildListener);
-            buildMill.addActionListener(buildListener);
-            buildSawmill.addActionListener(buildListener);
-            buildBakery.addActionListener(buildListener);
-            buildFarm.addActionListener(buildListener);
+
+            for (JButton b : houseCreationButtons) {
+                b.addActionListener(buildListener);
+            }
             
             buildingPanel.add(new JLabel("Buildings"));
 
-            buildingPanel.add(removeHouseButton);
-            buildingPanel.add(buildWoodcutter);
-            buildingPanel.add(buildForester);
-            buildingPanel.add(buildBarracks);
-            buildingPanel.add(buildFishery);
-            buildingPanel.add(buildWell);
-            buildingPanel.add(buildGoldmine);
-            buildingPanel.add(buildIronmine);
-            buildingPanel.add(buildCoalmine);
-            buildingPanel.add(buildGranitemine);
-            buildingPanel.add(buildQuarry);
-            buildingPanel.add(buildMill);
-            buildingPanel.add(buildSawmill);
-            buildingPanel.add(buildBakery);
-            buildingPanel.add(buildFarm);
-            
+            for (JButton b : houseCreationButtons) {
+                buildingPanel.add(b);
+            }
+
             buildingPanel.setVisible(true);
             
             /* Build the container panel */
@@ -464,21 +450,10 @@ public class SidePanel extends JTabbedPane {
             return panel;
         }
 
-        private void setBuildingCreationVisibility(boolean b) {
-            buildWoodcutter.setVisible(b);
-            buildForester.setVisible(b);
-            buildBarracks.setVisible(b);
-            buildFishery.setVisible(b);
-            buildWell.setVisible(b);
-            buildGoldmine.setVisible(b);
-            buildIronmine.setVisible(b);
-            buildCoalmine.setVisible(b);
-            buildGranitemine.setVisible(b);
-            buildSawmill.setVisible(b);
-            buildQuarry.setVisible(b);
-            buildMill.setVisible(b);
-            buildBakery.setVisible(b);
-            buildFarm.setVisible(b);
+        private void setBuildingCreationVisibility(boolean visibility) {
+            for (JButton b : houseCreationButtons) {
+                b.setVisible(visibility);
+            }
         }
     }
 

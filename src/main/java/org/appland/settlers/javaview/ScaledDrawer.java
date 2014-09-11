@@ -24,6 +24,9 @@ public class ScaledDrawer {
 
     int scaleX;
     int scaleY;
+    
+    double offsetScaleX;
+    double offsetScaleY;
 
     public ScaledDrawer(int w, int h, int nrPtsW, int nrPtsH) {
         width = w;
@@ -34,6 +37,9 @@ public class ScaledDrawer {
 
         scaleX = width / widthPoints;
         scaleY = height / heightPoints;
+    
+        offsetScaleX = scaleX / 20.0;
+        offsetScaleY = scaleY / 20.0;
     }
 
     int getHeight() {
@@ -44,10 +50,26 @@ public class ScaledDrawer {
         return p.x * scaleX;
     }
 
+    int toScreenX(Point p, int offset) {
+        return toScreenX(p) + (int)(offset * offsetScaleX);
+    }
+    
     int toScreenY(Point p) {
         return getHeight() - p.y * scaleY;
     }
 
+    int toScreenY(Point p, int offset) {
+        return toScreenY(p) + (int)(offset * offsetScaleY);
+    }
+    
+    int simpleScaleX(int x) {
+        return (int)(x*offsetScaleX);
+    }
+    
+    int simpleScaleY(int y) {
+        return (int)(y*offsetScaleY);
+    }
+    
     void drawScaledLine(Graphics graphics, Point p1, Point p2) {
         graphics.drawLine(toScreenX(p1), toScreenY(p1), toScreenX(p2), toScreenY(p2));
     }
@@ -60,27 +82,34 @@ public class ScaledDrawer {
         g.drawRect(toScreenX(p), toScreenY(p), i, i0);
     }
 
+    void drawScaledRect(Graphics2D g, Point p, int width, int height, int offsetX, int offsetY) {
+        g.drawRect(toScreenX(p, offsetX), toScreenX(p, offsetY), simpleScaleX(width), simpleScaleY(height));
+    }
+    
     void drawScaledOval(Graphics g, Point p, int i, int i0) {
         g.drawOval(toScreenX(p), toScreenY(p), i, i0);
     }
 
     void drawScaledOval(Graphics g, Point p, int i, int i0, int offsetX, int offsetY) {
-        g.drawOval(toScreenX(p) - offsetX, toScreenY(p) - offsetY, i, i0);
+        g.drawOval(toScreenX(p, offsetX), toScreenY(p, offsetY), simpleScaleX(i), simpleScaleY(i0));
     }
 
     
     void fillScaledRect(Graphics2D g, Point p, int w, int h) {
-        g.fillRect(toScreenX(p), toScreenY(p), w, h);
+        g.fillRect(toScreenX(p), toScreenY(p), simpleScaleX(w), simpleScaleY(h));
+    }
+
+    void fillScaledRect(Graphics2D g, Point p, int w, int h, int offsetX, int offsetY) {
+        g.fillRect(toScreenX(p, offsetX), toScreenY(p, offsetY), simpleScaleX(w), simpleScaleY(h));
     }
 
     void fillScaledOval(Graphics2D g, Point p, int w, int h) {
-        g.fillOval(toScreenX(p), toScreenY(p), w, h);
+        g.fillOval(toScreenX(p), toScreenY(p), simpleScaleX(w), simpleScaleY(h));
     }
 
     void fillScaledOval(Graphics2D g, Point p, int w, int h, int offsetX, int offsetY) {
-        g.fillOval(toScreenX(p) - offsetX, toScreenY(p) - offsetY, w, h);
+        g.fillOval(toScreenX(p, offsetX), toScreenY(p, offsetY), simpleScaleX(w), simpleScaleY(h));
     }
-
     
     void fillScaledTriangle(Graphics2D g, Point p1, Point p2, Point p3) {
         Path2D.Double triangle = new Path2D.Double();
@@ -105,5 +134,8 @@ public class ScaledDrawer {
         
         scaleX = width / widthPoints;
         scaleY = height / heightPoints;
+
+        offsetScaleX = scaleX / 20.0;
+        offsetScaleY = scaleY / 20.0;
     }
 }

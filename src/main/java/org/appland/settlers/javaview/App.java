@@ -3,6 +3,7 @@ package org.appland.settlers.javaview;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import static java.awt.Color.BLACK;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -22,12 +23,8 @@ import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import static java.lang.Math.abs;
 import static java.lang.Math.abs;
-import static java.lang.Math.abs;
-import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
-import static java.lang.Math.round;
-import static java.lang.Math.round;
 import static java.lang.Math.round;
 import static java.lang.Math.round;
 import java.net.URL;
@@ -40,7 +37,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.COALMINE;
@@ -140,7 +138,13 @@ public class App extends JFrame {
         
         private final Color FOG_OF_WAR_COLOR = Color.BLACK;
         
+        private final Color POSSIBLE_WAYPOINT_COLOR = Color.ORANGE;
+        
         private final Color SIGN_BACKGROUND_COLOR = new Color(0xCCAAAA);
+        
+        private final Color FLAG_POLE_COLOR = BLACK;
+        
+        private final Color FLAG_COLOR = Color.WHITE;
 
         private final Color WOOD_COLOR = new Color(0xBF8026);
         private final Color WHEAT_COLOR = Color.ORANGE;
@@ -323,21 +327,32 @@ public class App extends JFrame {
                     g.fillRect((int)(p.x*drawer.getScaleX()) - 2, getHeight() - (int)(p.y*drawer.getScaleY()) - 5, 5, 5);
                 }
     
+                g.setColor(FLAG_COLOR);
+                drawer.fillScaledRect(g, f.getPosition(), 7, 7, 0, -15);
+                
+                g.setColor(BLACK);
+                drawer.drawScaledRect(g, f.getPosition(), 7, 7, 0, -15);
+                
+                g.setColor(FLAG_POLE_COLOR);
+                drawer.fillScaledRect(g, f.getPosition(), 2, 15, -1, -15);
+                
                 g.setColor(Color.BLACK);
-            
-                drawer.fillScaledRect(g, f.getPosition(), 3, 3);
+                drawer.fillScaledRect(g, f.getPosition(), 6, 3, -3, 0);
             }
         }
 
         private void drawPossibleRoadConnections(Graphics2D g, Point point) throws Exception {
-            g.setColor(Color.GREEN);
             
             for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(point)) {
                 if (map.isFlagAtPoint(p)) {
                     continue;
                 }
                 
-                drawer.fillScaledRect(g, p, 3, 3);
+                g.setColor(POSSIBLE_WAYPOINT_COLOR);
+                drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+
+                g.setColor(Color.DARK_GRAY);
+                drawer.drawScaledOval(g, p, 10, 10, -5, -5);
             }
         }
 
@@ -365,19 +380,19 @@ public class App extends JFrame {
             } else if (previousKeys.equals("bak")) {
                 try {
                     placeBuilding(BAKERY, selectedPoint);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("bar")) {
                 try {
                     placeBuilding(BARRACKS, selectedPoint);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }                    
                 setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("c")) {
                 try {
                     placeBuilding(COALMINE, selectedPoint);
@@ -389,41 +404,37 @@ public class App extends JFrame {
             } else if (previousKeys.equals("fi")) {
                 try {
                     placeBuilding(FISHERY, selectedPoint);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("fo")) {
                 try {
                     placeBuilding(FORESTER, selectedPoint);
-                    setState(IDLE);
-
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
                 }
+                setState(IDLE);
+                repaint();
             } else if (key == 'd') {
                 recorder.printRecordingOnConsole();
             } else if (previousKeys.equals("fa")) {
                 try {
                     placeBuilding(FARM, selectedPoint);
-                    setState(IDLE);
-                        
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
                 }
+                setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("go")) {
                 try {
                     placeBuilding(GOLDMINE, selectedPoint);
-                    repaint();
                 } catch (Exception e) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, e);
                 }
                 setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("gr")) {
                 try {
                     placeBuilding(GRANITEMINE, selectedPoint);
@@ -451,32 +462,27 @@ public class App extends JFrame {
             } else if (previousKeys.equals("we")) {
                 try {
                     placeBuilding(WELL, selectedPoint);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("wo")) {
                 try {
                     placeBuilding(WOODCUTTER, selectedPoint);
-
-                    setState(IDLE);
-
-                    repaint();
                 } catch (Exception ex) {
                     System.out.println("Exception while building woodcutter: " + ex);
-
-                    setState(IDLE);
                 }
+                setState(IDLE);
+                repaint();
             } else if (key == 'q') {
                 try {
                     placeBuilding(QUARRY, selectedPoint);
-                    setState(IDLE);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
                 }
+                setState(IDLE);
+                repaint();
             } else if (key == 'R') {
                 try {
                     resetGame();
@@ -488,12 +494,11 @@ public class App extends JFrame {
             } else if (key == 's') {
                 try {
                     placeBuilding(SAWMILL, selectedPoint);
-                    setState(IDLE);
-                    repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                    setState(IDLE);
                 }
+                setState(IDLE);
+                repaint();
             } else if (key == 'X') {
                 recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
@@ -568,25 +573,6 @@ public class App extends JFrame {
             }
             
             drawer.fillScaledRect(g, key, 3, height);
-        }
-
-        private String recordPointList(List<Point> wayPoints) {
-            String result = "Arrays.asList(new Point[] {";
-
-            boolean firstRun = true;
-            
-            for (Point p : wayPoints) {
-                if (firstRun) {
-                    result = result + "new Point(" + p.x + ", " + p.y + ")";
-                    firstRun = false;
-                } else {
-                    result = result + ", new Point(" + p.x + ", " + p.y + ")";
-                }
-            }
-            
-            result = result + "})";
-
-            return result;
         }
 
         private void cancelRoadBuilding() {
@@ -1101,7 +1087,7 @@ public class App extends JFrame {
                         setState(POINT_SELECTED);
                     }
                 }
-                this.repaint();
+                repaint();
             } catch (Exception ex) {
                 System.out.println("Exception at single click: " + ex);
                 ex.printStackTrace();
@@ -1165,7 +1151,7 @@ public class App extends JFrame {
         private void drawStone(Graphics2D g, Stone s) {
             g.setColor(Color.DARK_GRAY);
             
-            drawer.fillScaledRect(g, s.getPosition(), 15, 15);
+            drawer.fillScaledRect(g, s.getPosition(), 20, 20, -10, -10);
         }
 
         private void drawCrops(Graphics2D g) {
@@ -1190,11 +1176,11 @@ public class App extends JFrame {
                 g.setColor(new Color(0xAA, 0xCC, 55));
             }
 
-            drawer.fillScaledOval(g, c.getPosition(), 20, 10, 10, 5);
+            drawer.fillScaledOval(g, c.getPosition(), 30, 15, -15, -7);
             
             g.setColor(Color.BLACK);
             
-            drawer.drawScaledOval(g, c.getPosition(), 20, 10, 10, 5);
+            drawer.drawScaledOval(g, c.getPosition(), 30, 15, -15, -7);
         }
 
         @Override
