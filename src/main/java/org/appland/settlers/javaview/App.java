@@ -70,6 +70,7 @@ import org.appland.settlers.model.GraniteMine;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
+import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Point;
@@ -1314,6 +1315,19 @@ public class App extends JFrame {
             surroundPointWithMineral(p, GOLD, map);
             surroundPointWithMineral(p2, GOLD, map);
             surroundPointWithMineral(p3, GOLD, map);
+            
+            /* Create a small mountain */
+            Point p4 = new Point(8, 16);
+            Point p5 = new Point(11, 17);
+            Point p6 = new Point(8, 18);
+            placeMountainHexagonOnMap(p4, map);
+            placeMountainHexagonOnMap(p5, map);
+            placeMountainHexagonOnMap(p6, map);
+
+            /* Put coal at mountain */
+            surroundPointWithMineral(p4, COAL, map);
+            surroundPointWithMineral(p5, COAL, map);
+            surroundPointWithMineral(p6, COAL, map);
             
             /* Place stones */
             Point stonePoint = new Point(12, 12);
