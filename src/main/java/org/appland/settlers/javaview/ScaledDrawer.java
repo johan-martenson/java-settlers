@@ -83,7 +83,7 @@ public class ScaledDrawer {
     }
 
     void drawScaledRect(Graphics2D g, Point p, int width, int height, int offsetX, int offsetY) {
-        g.drawRect(toScreenX(p, offsetX), toScreenX(p, offsetY), simpleScaleX(width), simpleScaleY(height));
+        g.drawRect(toScreenX(p, offsetX), toScreenY(p, offsetY), simpleScaleX(width), simpleScaleY(height));
     }
     
     void drawScaledOval(Graphics g, Point p, int i, int i0) {
