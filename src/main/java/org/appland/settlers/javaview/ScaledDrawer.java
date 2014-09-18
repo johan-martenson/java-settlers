@@ -7,6 +7,7 @@ package org.appland.settlers.javaview;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.geom.Path2D;
 import org.appland.settlers.model.Point;
 
@@ -137,5 +138,12 @@ public class ScaledDrawer {
 
         offsetScaleX = scaleX / 20.0;
         offsetScaleY = scaleY / 20.0;
+    }
+
+    void drawScaledImage(Graphics2D g, Image img, Point p, int w, int h, int ox, int oy) {
+        g.drawImage(img, 
+                    toScreenX(p, ox), toScreenY(p, oy), 
+                    toScreenX(p, ox) + simpleScaleX(w), toScreenY(p, oy) + simpleScaleY(h),
+                    0, 0, img.getWidth(null), img.getHeight(null), null);
     }
 }

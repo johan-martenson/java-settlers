@@ -1020,10 +1020,7 @@ public class App extends JFrame {
             g.setColor(Color.BLACK);
 
             if (houseImage != null) {
-                g.drawImage(houseImage, 
-                        p.x*drawer.getScaleX()- 25, getHeight() - p.y*drawer.getScaleY() - 25, 
-                        p.x*drawer.getScaleX() + 25, getHeight() - p.y*drawer.getScaleY() + 25, 
-                        0, 0, houseImage.getWidth(null), houseImage.getHeight(null), null);
+                drawer.drawScaledImage(g, houseImage, p.upLeft(), 50, 60, -15, -25);
             } else {
                 drawer.fillScaledRect(g, p, 15, 15);
             }
@@ -1034,7 +1031,11 @@ public class App extends JFrame {
                 title = "(" + title + ")";
             }
             
-            g.drawString(title, p.x*drawer.getScaleX() - 30, getHeight() - (p.y*drawer.getScaleY()) - 30);
+            g.drawString(title, p.x*drawer.getScaleX() - 50, getHeight() - (p.y*drawer.getScaleY()) - 40);
+            
+            if (b.ready() && b.getWorker() == null && b.getHostedMilitary() == 0) {
+                g.drawString("(unoccupied)", p.x*drawer.getScaleX() - 50, getHeight() - (p.y*drawer.getScaleY()) - 40 + g.getFontMetrics().getHeight());
+            }
         }
 
         @Override
