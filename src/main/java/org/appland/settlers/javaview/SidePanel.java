@@ -617,6 +617,8 @@ public class SidePanel extends JTabbedPane {
         addTab("Control", controlPanel);
         setMnemonicAt(1, KeyEvent.VK_2);
 
+        setSelectedComponent(controlPanel);
+        
         setVisible(true);
     }
 
