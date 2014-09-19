@@ -433,6 +433,8 @@ public class SidePanel extends JTabbedPane {
             
             buildingPanel.add(new JLabel("Buildings"));
 
+            buildingPanel.add(removeHouseButton);
+            
             for (JButton b : houseCreationButtons) {
                 buildingPanel.add(b);
             }

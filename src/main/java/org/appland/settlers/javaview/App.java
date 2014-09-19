@@ -1388,12 +1388,14 @@ public class App extends JFrame {
         public void removeHouseCommand(Point selectedPoint) throws Exception {
             Building b = map.getBuildingAtPoint(selectedPoint);
             
+            System.out.println("Removing " + b);
+            
             try {
                 b.tearDown();
             } catch (Exception e) {
                 System.out.println("  EXCEPTION DURING HOUSE REMOVAL " + e);
             }
-            
+
             recorder.recordTearDown(b);
         }
 
