@@ -1431,7 +1431,9 @@ public class App extends JFrame {
             for (Sign s : map.getSigns()) {
                 g.setColor(SIGN_BACKGROUND_COLOR);
                 
-                drawer.fillScaledRect(g, s.getPosition(), 8, 8);
+                drawer.fillScaledRect(g, s.getPosition(), 2, 8, -1, -8);
+
+                drawer.fillScaledRect(g, s.getPosition(), 8, 8, -4, -15);
 
                 if (s.isEmpty()) {
                     continue;
@@ -1459,13 +1461,13 @@ public class App extends JFrame {
 
                 switch (s.getSize()) {
                 case LARGE:
-                    drawer.fillScaledRect(g, s.getPosition(), 6, 6);
+                    drawer.fillScaledRect(g, s.getPosition(), 6, 6, -3, -14);
                     break;
                 case MEDIUM:
-                    drawer.fillScaledRect(g, s.getPosition(), 4, 4);
+                    drawer.fillScaledRect(g, s.getPosition(), 4, 4, -3, -14);
                     break;
                 case SMALL:
-                    drawer.fillScaledRect(g, s.getPosition(), 2, 2);
+                    drawer.fillScaledRect(g, s.getPosition(), 2, 2, -3, -14);
                     break;
                 }
             }
