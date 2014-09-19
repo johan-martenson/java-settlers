@@ -1056,8 +1056,12 @@ public class App extends JFrame {
                             
                             setState(IDLE);
                         }
-                    } else if (state == BUILDING_ROAD) {
+                    } else if (state == BUILDING_ROAD) {                        
                         placeFlag(p);
+
+                        if (!p.equals(roadPoints.get(roadPoints.size() - 1))) {
+                            addRoadPoint(p);
+                        }
 
                         buildRoad(roadPoints);
         
@@ -1074,7 +1078,7 @@ public class App extends JFrame {
                             buildRoad(roadPoints);
                             
                             setState(IDLE);
-                        } else {
+                        } else if (!map.isRoadAtPoint(p)) {
                             addRoadPoint(p);
                         }
                     } else if (state == IDLE) {
