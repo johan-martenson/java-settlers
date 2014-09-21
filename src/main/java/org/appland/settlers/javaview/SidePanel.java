@@ -30,6 +30,7 @@ import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
+import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
@@ -129,6 +130,7 @@ public class SidePanel extends JTabbedPane {
         private JButton buildGranitemine;
         private JButton buildMill;
         private JButton buildBakery;
+        private JButton buildPigFarm;
         private JButton removeRoadButton;
         private JButton callGeologistButton;
         
@@ -353,6 +355,7 @@ public class SidePanel extends JTabbedPane {
             buildMill         = new JButton("Mill");
             buildBakery       = new JButton("Bakery");
             buildFarm         = new JButton("Farm");
+            buildPigFarm      = new JButton("Pig Farm");
             
             houseCreationButtons = new LinkedList<>();
             
@@ -370,6 +373,7 @@ public class SidePanel extends JTabbedPane {
             houseCreationButtons.add(buildMill);
             houseCreationButtons.add(buildBakery);
             houseCreationButtons.add(buildFarm);
+            houseCreationButtons.add(buildPigFarm);
 
             ActionListener buildListener = new ActionListener() {
 
@@ -405,6 +409,8 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(MILL, selectedPoint);
                             } else if (ae.getSource().equals(buildBakery)) {
                                 commandListener.placeBuilding(BAKERY, selectedPoint);
+                            } else if (ae.getSource().equals(buildPigFarm)) {
+                                commandListener.placeBuilding(PIG_FARM, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);

@@ -48,6 +48,7 @@ import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
+import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
@@ -73,6 +74,7 @@ import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
+import org.appland.settlers.model.PigFarm;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
@@ -127,7 +129,7 @@ public class App extends JFrame {
 
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE
+        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM
     }
 
     
@@ -462,6 +464,14 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 setState(IDLE);
+            } else if (previousKeys.equals("p")) {
+                try {
+                    placeBuilding(PIG_FARM, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                setState(IDLE);
+                repaint();
             } else if (previousKeys.equals("we")) {
                 try {
                     placeBuilding(WELL, selectedPoint);
@@ -633,6 +643,9 @@ public class App extends JFrame {
                 break;
             case GRANITEMINE:
                 b = new GraniteMine();
+                break;
+            case PIG_FARM:
+                b = new PigFarm();
             }
         
             if (b == null) {
