@@ -347,6 +347,10 @@ public class App extends JFrame {
                     continue;
                 }
                 
+                if (roadPoints.contains(p)) {
+                    continue;
+                }
+                
                 g.setColor(POSSIBLE_WAYPOINT_COLOR);
                 drawer.fillScaledOval(g, p, 10, 10, -5, -5);
 
