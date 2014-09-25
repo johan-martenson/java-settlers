@@ -48,6 +48,7 @@ import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
+import static org.appland.settlers.javaview.App.HouseType.MINT;
 import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
@@ -74,6 +75,7 @@ import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
+import org.appland.settlers.model.Mint;
 import org.appland.settlers.model.PigFarm;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
@@ -129,7 +131,8 @@ public class App extends JFrame {
 
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM
+        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
+        MINT
     }
 
     
@@ -457,13 +460,21 @@ public class App extends JFrame {
                 }
                 repaint();
                 setState(IDLE);
-            } else if (previousKeys.equals("m")) {
+            } else if (previousKeys.equals("mil")) {
                 try {
                     placeBuilding(MILL, selectedPoint);
                     repaint();
                 } catch (Exception ex) {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                setState(IDLE);
+            } else if (previousKeys.equals("min")) {
+                try {
+                    placeBuilding(MINT, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                repaint();
                 setState(IDLE);
             } else if (previousKeys.equals("p")) {
                 try {
@@ -647,6 +658,9 @@ public class App extends JFrame {
                 break;
             case PIG_FARM:
                 b = new PigFarm();
+                break;
+            case MINT:
+                b = new Mint();
             }
         
             if (b == null) {

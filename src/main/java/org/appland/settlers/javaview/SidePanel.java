@@ -30,6 +30,7 @@ import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
+import static org.appland.settlers.javaview.App.HouseType.MINT;
 import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
@@ -109,12 +110,6 @@ public class SidePanel extends JTabbedPane {
     private class ControlPanel extends JPanel {
 
         boolean turboToggle;
-        private JButton buildFarm;
-        private JButton buildBarracks;
-        private JButton buildQuarry;
-        private JButton buildSawmill;
-        private JButton buildForester;
-        private JButton buildWoodcutter;
         
         JPanel controlPanel;
         JPanel constructionPanel;
@@ -122,19 +117,28 @@ public class SidePanel extends JTabbedPane {
         private JButton startRoadButton;
         private JButton removeFlagButton;
         private JButton removeHouseButton;
-        private JButton buildFishery;
-        private JButton buildWell;
-        private JButton buildGoldmine;
-        private JButton buildIronmine;
-        private JButton buildCoalmine;
-        private JButton buildGranitemine;
-        private JButton buildMill;
-        private JButton buildBakery;
-        private JButton buildPigFarm;
         private JButton removeRoadButton;
         private JButton callGeologistButton;
         
         private List<JButton> houseCreationButtons;
+
+        JButton buildWoodcutter;
+        JButton buildForester;
+        JButton buildBarracks;
+        JButton buildFishery;
+        JButton buildWell;
+        JButton buildGoldmine;
+        JButton buildIronmine;
+        JButton buildCoalmine;
+        JButton buildGranitemine;
+        JButton buildSawmill;
+        JButton buildQuarry;
+        JButton buildMill;
+        JButton buildBakery;
+        JButton buildFarm;
+        JButton buildPigFarm;
+        JButton buildMint;
+
         
         public ControlPanel() {
             super();
@@ -341,6 +345,7 @@ public class SidePanel extends JTabbedPane {
             buildingPanel.setLayout(new GridLayout(15, 1));
             
             removeHouseButton = new JButton("Remove house");
+
             buildWoodcutter   = new JButton("Woodcutter");
             buildForester     = new JButton("Forester");
             buildBarracks     = new JButton("Barracks");
@@ -356,7 +361,8 @@ public class SidePanel extends JTabbedPane {
             buildBakery       = new JButton("Bakery");
             buildFarm         = new JButton("Farm");
             buildPigFarm      = new JButton("Pig Farm");
-            
+            buildMint         = new JButton("Mint");
+
             houseCreationButtons = new LinkedList<>();
             
             houseCreationButtons.add(buildWoodcutter);
@@ -374,6 +380,7 @@ public class SidePanel extends JTabbedPane {
             houseCreationButtons.add(buildBakery);
             houseCreationButtons.add(buildFarm);
             houseCreationButtons.add(buildPigFarm);
+            houseCreationButtons.add(buildMint);
 
             ActionListener buildListener = new ActionListener() {
 
@@ -411,6 +418,8 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(BAKERY, selectedPoint);
                             } else if (ae.getSource().equals(buildPigFarm)) {
                                 commandListener.placeBuilding(PIG_FARM, selectedPoint);
+                            } else if (ae.getSource().equals(buildMint)) {
+                                commandListener.placeBuilding(MINT, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
