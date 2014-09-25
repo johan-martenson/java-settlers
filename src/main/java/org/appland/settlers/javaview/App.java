@@ -157,6 +157,7 @@ public class App extends JFrame {
         private final Color GOLD_COLOR = Color.YELLOW;
         private final Color IRON_COLOR = Color.RED;
         private final Color COAL_COLOR = Color.BLACK;
+        private final Color PIG_COLOR = Color.PINK;
         
         private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
         private final Color GRASS_COLOR = Color.GREEN;
@@ -322,9 +323,9 @@ public class App extends JFrame {
                 
                 if (!f.getStackedCargo().isEmpty()) {
                     Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
-                    
+
                     g.setColor(cargoColor);
-                    
+
                     g.fillRect((int)(p.x*drawer.getScaleX()) - 2, getHeight() - (int)(p.y*drawer.getScaleY()) - 5, 5, 5);
                 }
     
@@ -1275,6 +1276,8 @@ public class App extends JFrame {
                 return IRON_COLOR;
             case COAL:
                 return COAL_COLOR;
+            case PIG:
+                return PIG_COLOR;
             default:
                 return Color.RED;
             }

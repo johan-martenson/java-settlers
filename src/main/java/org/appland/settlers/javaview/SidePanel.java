@@ -484,10 +484,10 @@ public class SidePanel extends JTabbedPane {
             
             titleLabel.setText("none");
             
-            setLayout(new GridLayout(2, 1));
+            setLayout(new BorderLayout());
             
-            add(titleLabel);
-            add(infoLabel);
+            add(titleLabel, BorderLayout.NORTH);
+            add(infoLabel, BorderLayout.CENTER);
 
             setVisible(true);
         }
@@ -520,8 +520,13 @@ public class SidePanel extends JTabbedPane {
             if (b instanceof Storage) {
                 info += "<br><b>Inventory</b><br>";
                 
+                Storage s = (Storage)b;
+
                 for (Material m : Material.values()) {
-                    Storage s = (Storage)b;
+                    if (s.getAmount(m) == 0) {
+                        continue;
+                    }
+                    
                     info += "" + m.name() + ": " + s.getAmount(m) + "<br>";
                 }
             }
