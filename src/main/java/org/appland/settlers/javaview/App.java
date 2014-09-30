@@ -165,6 +165,12 @@ public class App extends JFrame {
         private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
         private final Color GRASS_COLOR = Color.GREEN;
         
+        private final Color SMALL_ROAD_COLOR = Color.ORANGE;
+        private final Color MAIN_ROAD_COLOR = Color.LIGHT_GRAY;
+        
+        private final int MAIN_ROAD_WIDTH = 7;
+        private final int SMALL_ROAD_WIDTH = 4;
+        
         private UiState            state;
         private List<Point>        roadPoints;
         private boolean            showAvailableSpots;
@@ -290,10 +296,15 @@ public class App extends JFrame {
         private void drawRoad(Graphics2D g, Road r) {
             List<Point> wayPoints = r.getWayPoints();
             
-            g.setColor(Color.ORANGE);
             Stroke oldStroke = g.getStroke();
             
-            g.setStroke(new BasicStroke(4));
+            if (r.isMainRoad()) {
+                g.setStroke(new BasicStroke(MAIN_ROAD_WIDTH));
+                g.setColor(MAIN_ROAD_COLOR);
+            } else {
+                g.setStroke(new BasicStroke(SMALL_ROAD_WIDTH));
+                g.setColor(SMALL_ROAD_COLOR);
+            }
             
             Point previous = null;
 
