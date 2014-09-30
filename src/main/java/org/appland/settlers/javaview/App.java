@@ -52,6 +52,7 @@ import static org.appland.settlers.javaview.App.HouseType.MINT;
 import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
+import static org.appland.settlers.javaview.App.HouseType.SLAUGHTER_HOUSE;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
@@ -86,6 +87,7 @@ import org.appland.settlers.model.Size;
 import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
 import static org.appland.settlers.model.Size.SMALL;
+import org.appland.settlers.model.SlaughterHouse;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
@@ -132,7 +134,7 @@ public class App extends JFrame {
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
         MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
-        MINT
+        MINT, SLAUGHTER_HOUSE
     }
 
     
@@ -495,6 +497,22 @@ public class App extends JFrame {
                 }
                 setState(IDLE);
                 repaint();
+            } else if (previousKeys.equals("sa")) {
+                try {
+                    placeBuilding(SAWMILL, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                setState(IDLE);
+                repaint();
+            } else if (previousKeys.equals("sl")) {
+                try {
+                    placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                repaint();
+                setState(IDLE);
             } else if (previousKeys.equals("we")) {
                 try {
                     placeBuilding(WELL, selectedPoint);
@@ -527,14 +545,6 @@ public class App extends JFrame {
                     System.out.println("Failed to reset game. Exiting. Exception: " + ex);
                     System.exit(1);
                 }
-            } else if (key == 's') {
-                try {
-                    placeBuilding(SAWMILL, selectedPoint);
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                setState(IDLE);
-                repaint();
             } else if (key == 'X') {
                 recorder.record("\n\n\n\n/*   MARKER   */\n");
                 System.out.println("Added marker to api recording");
@@ -672,6 +682,9 @@ public class App extends JFrame {
                 break;
             case MINT:
                 b = new Mint();
+                break;
+            case SLAUGHTER_HOUSE:
+                b = new SlaughterHouse();
             }
         
             if (b == null) {
