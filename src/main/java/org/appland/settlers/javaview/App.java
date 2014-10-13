@@ -705,7 +705,7 @@ public class App extends JFrame {
         private void drawSelectedPoint(Graphics2D g) {
             g.setColor(Color.BLUE);
             
-            drawer.fillScaledOval(g, selectedPoint, 4, 4);
+            drawer.fillScaledOval(g, selectedPoint, 8, 8, -4, -4);
         }
 
         private void resetGame() throws Exception {
