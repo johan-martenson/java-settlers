@@ -63,6 +63,7 @@ import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.CoalMine;
 import org.appland.settlers.model.Crop;
+import org.appland.settlers.model.Donkey;
 import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
@@ -163,6 +164,7 @@ public class App extends JFrame {
         private final Color IRON_COLOR = Color.RED;
         private final Color COAL_COLOR = Color.BLACK;
         private final Color PIG_COLOR = Color.PINK;
+        private final Color DONKEY_COLOR = Color.DARK_GRAY;
         
         private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
         private final Color GRASS_COLOR = Color.GREEN;
@@ -573,19 +575,23 @@ public class App extends JFrame {
         }
 
         private void drawAvailableSpots(Graphics2D g) {
-            Map<Point, Size> houses = map.getAvailableHousePoints();
-            List<Point> flags = map.getAvailableFlagPoints();
-            
-            for (Entry<Point, Size> pair : houses.entrySet()) {
-                drawAvailableHouse(g, pair.getKey(), pair.getValue());
-            }
-        
-            for (Point p : flags) {
-                if (houses.keySet().contains(p)) {
-                    continue;
+            try {
+                Map<Point, Size> houses = map.getAvailableHousePoints();
+                List<Point> flags = map.getAvailableFlagPoints();
+                
+                for (Entry<Point, Size> pair : houses.entrySet()) {
+                    drawAvailableHouse(g, pair.getKey(), pair.getValue());
                 }
-            
-                drawAvailableFlag(g, p);
+                
+                for (Point p : flags) {
+                    if (houses.keySet().contains(p)) {
+                        continue;
+                    }
+                    
+                    drawAvailableFlag(g, p);
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -603,22 +609,22 @@ public class App extends JFrame {
         private void drawAvailableFlag(Graphics2D g, Point p) {
             g.setColor(Color.ORANGE);
 
-            drawer.fillScaledRect(g, p, 2, 2);
+            drawer.fillScaledRect(g, p, 2, 10, -1, -5);
         }
         
 
         private void drawAvailableHouse(Graphics2D g, Point key, Size value) {
-            int height = 3;
+            int height = 4;
             
             g.setColor(Color.YELLOW);
             
             if (value == MEDIUM) {
-                height = 5;
+                height = 8;
             } else if (value == LARGE) {
-                height = 9;
+                height = 12;
             }
             
-            drawer.fillScaledRect(g, key, 3, height);
+            drawer.fillScaledRect(g, key, 10, height, -5, -(height/2));
         }
 
         private void cancelRoadBuilding() {
@@ -735,6 +741,10 @@ public class App extends JFrame {
 
         private void drawPerson(Graphics2D g, Worker w) {
             g.setColor(Color.BLACK);
+            
+            if (w instanceof Donkey) {
+                g.setColor(DONKEY_COLOR);
+            }
             
             double actualX = w.getPosition().x;
             double actualY = w.getPosition().y;            
@@ -1406,8 +1416,6 @@ public class App extends JFrame {
 
             tile.setVegetationType(WATER);
 
-            map.terrainIsUpdated();
-
             recorder.recordSetTileVegetation(p1, p2, p3, WATER);
         }
 
@@ -1424,8 +1432,6 @@ public class App extends JFrame {
             Tile tile = map.getTerrain().getTile(p1, p2, p3);
 
             tile.setVegetationType(MOUNTAIN);
-
-            map.terrainIsUpdated();
             
             recorder.recordSetTileVegetation(p1, p2, p3, MOUNTAIN);
         }
@@ -1483,8 +1489,6 @@ public class App extends JFrame {
             for (Tile t : map.getTerrain().getSurroundingTiles(p)) {
                 t.setAmountMineral(material, LARGE);
             }
-
-            map.terrainIsUpdated();
         }
 
         private void drawSigns(Graphics2D g) {
