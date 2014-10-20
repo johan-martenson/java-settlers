@@ -32,4 +32,6 @@ interface CommandListener {
     public void removeRoadAtPoint(Point selectedPoint) throws Exception;
 
     public void callGeologist(Point selectedPoint) throws Exception;
+
+    public void stopProduction(Point selectedPoint);
 }

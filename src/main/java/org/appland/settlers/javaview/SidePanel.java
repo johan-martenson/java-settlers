@@ -118,6 +118,7 @@ public class SidePanel extends JTabbedPane {
         private JButton startRoadButton;
         private JButton removeFlagButton;
         private JButton removeHouseButton;
+        private JButton stopProductionButton;
         private JButton removeRoadButton;
         private JButton callGeologistButton;
         
@@ -168,6 +169,7 @@ public class SidePanel extends JTabbedPane {
             
             removeFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
+            stopProductionButton.setVisible(false);
             startRoadButton.setVisible(false);
             callGeologistButton.setVisible(false);
             removeRoadButton.setVisible(false);
@@ -180,6 +182,7 @@ public class SidePanel extends JTabbedPane {
 
             raiseFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
+            stopProductionButton.setVisible(false);
             removeRoadButton.setVisible(false);
 
             setBuildingCreationVisibility(false);
@@ -187,6 +190,7 @@ public class SidePanel extends JTabbedPane {
         
         void houseSelected() {
             removeHouseButton.setVisible(true);
+            stopProductionButton.setVisible(true);
             
             startRoadButton.setVisible(false);
             removeFlagButton.setVisible(false);
@@ -204,6 +208,7 @@ public class SidePanel extends JTabbedPane {
             removeFlagButton.setVisible(false);
             startRoadButton.setVisible(false);
             removeHouseButton.setVisible(false);
+            stopProductionButton.setVisible(false);
             callGeologistButton.setVisible(false);
             
             setBuildingCreationVisibility(false);
@@ -347,6 +352,7 @@ public class SidePanel extends JTabbedPane {
             buildingPanel.setLayout(new GridLayout(15, 1));
             
             removeHouseButton = new JButton("Remove house");
+            stopProductionButton = new JButton("Production on/off");
 
             buildWoodcutter     = new JButton("Woodcutter");
             buildForester       = new JButton("Forester");
@@ -448,6 +454,16 @@ public class SidePanel extends JTabbedPane {
                 }
             });
 
+            stopProductionButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        commandListener.stopProduction(selectedPoint);
+                    }
+                }
+            });
+                        
             for (JButton b : houseCreationButtons) {
                 b.addActionListener(buildListener);
             }
@@ -455,6 +471,7 @@ public class SidePanel extends JTabbedPane {
             buildingPanel.add(new JLabel("Buildings"));
 
             buildingPanel.add(removeHouseButton);
+            buildingPanel.add(stopProductionButton);
             
             for (JButton b : houseCreationButtons) {
                 buildingPanel.add(b);
@@ -520,6 +537,10 @@ public class SidePanel extends JTabbedPane {
                 info += "Burning down<br>";
             } else {
                 info += "Destroyed<br>";
+            }
+
+            if (!b.isProductionEnabled()) {
+                info += "<br>Production is stopped<br>";
             }
             
             /* Print if worker is needed */

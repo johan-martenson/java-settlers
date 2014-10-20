@@ -1536,6 +1536,17 @@ public class App extends JFrame {
                 }
             }
         }
+
+        @Override
+        public void stopProduction(Point selectedPoint) {
+            Building b = map.getBuildingAtPoint(selectedPoint);
+            
+            if (b.isProductionEnabled()) {
+                b.stopProduction();
+            } else {
+                b.resumeProduction();
+            }
+        }
     }
 
     public static void main(String[] args) {
