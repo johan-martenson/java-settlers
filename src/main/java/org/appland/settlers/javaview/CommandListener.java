@@ -33,5 +33,5 @@ interface CommandListener {
 
     public void callGeologist(Point selectedPoint) throws Exception;
 
-    public void stopProduction(Point selectedPoint);
+    public void stopProduction(Point selectedPoint)throws Exception;
 }

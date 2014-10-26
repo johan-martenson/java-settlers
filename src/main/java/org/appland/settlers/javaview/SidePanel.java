@@ -459,7 +459,11 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     if (commandListener != null) {
-                        commandListener.stopProduction(selectedPoint);
+                        try {
+                            commandListener.stopProduction(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                 }
             });

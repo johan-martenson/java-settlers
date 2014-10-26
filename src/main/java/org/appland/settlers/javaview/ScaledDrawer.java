@@ -146,4 +146,11 @@ public class ScaledDrawer {
                     toScreenX(p, ox) + simpleScaleX(w), toScreenY(p, oy) + simpleScaleY(h),
                     0, 0, img.getWidth(null), img.getHeight(null), null);
     }
+
+    void changeZoom(int wip, int hip) {
+        widthPoints = wip;
+        heightPoints = hip;
+        
+        recalculateScale(width, height);
+    }
 }
