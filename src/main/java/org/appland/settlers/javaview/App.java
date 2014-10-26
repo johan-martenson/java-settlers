@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.COALMINE;
+import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
@@ -46,6 +47,7 @@ import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.CoalMine;
+import org.appland.settlers.model.DonkeyFarm;
 import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
@@ -110,7 +112,7 @@ public class App extends JFrame {
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
         MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
-        MINT, SLAUGHTER_HOUSE
+        MINT, SLAUGHTER_HOUSE, DONKEY_FARM
     }
 
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener {
@@ -245,8 +247,12 @@ public class App extends JFrame {
                     repaint();
                 } else if (previousKeys.equals("c")) {
                     placeBuilding(COALMINE, selectedPoint);
-                    repaint();
                     setState(IDLE);
+                    repaint();
+                } else if (previousKeys.equals("d")) {
+                    placeBuilding(DONKEY_FARM, selectedPoint);
+                    setState(IDLE);
+                    repaint();
                 } else if (previousKeys.equals("fi")) {
                     placeBuilding(FISHERY, selectedPoint);
                     setState(IDLE);
@@ -413,14 +419,17 @@ public class App extends JFrame {
                 break;
             case SLAUGHTER_HOUSE:
                 b = new SlaughterHouse();
+                break;
+            case DONKEY_FARM:
+                b = new DonkeyFarm();
             }
-        
+
             if (b == null) {
                 throw new Exception("Can't build " + houseType);
             }
 
             map.placeBuilding(b, p);
-            
+
             recorder.recordPlaceBuilding(b, houseType, p);
         }
 

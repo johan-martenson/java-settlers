@@ -573,7 +573,6 @@ public class GameDrawer {
             rowOffsetFlip = !rowOffsetFlip;
         }
 
-            
         terrainPrerenderedWidthInPoints = wip;
         terrainPrerenderedHeightInPoints = hip;
             
@@ -601,12 +600,15 @@ public class GameDrawer {
     }
 
     private void drawPersons(Graphics2D g) {
-        for (Worker w : map.getAllWorkers()) {
-            if (w.isInsideBuilding()) {
-                continue;
-            }
 
-            drawPerson(g, w);
+        synchronized (map.getAllWorkers()) {
+            for (Worker w : map.getAllWorkers()) {
+                if (w.isInsideBuilding()) {
+                    continue;
+                }
+
+                drawPerson(g, w);
+            }
         }
     }
 

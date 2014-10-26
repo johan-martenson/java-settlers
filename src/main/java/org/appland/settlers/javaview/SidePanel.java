@@ -23,6 +23,7 @@ import javax.swing.JTabbedPane;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.COALMINE;
+import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
@@ -141,8 +142,8 @@ public class SidePanel extends JTabbedPane {
         JButton buildPigFarm;
         JButton buildMint;
         JButton buildSlaughterHouse;
+        JButton buildDonkeyFarm;
 
-        
         public ControlPanel() {
             super();
             
@@ -371,6 +372,7 @@ public class SidePanel extends JTabbedPane {
             buildPigFarm        = new JButton("Pig Farm");
             buildMint           = new JButton("Mint");
             buildSlaughterHouse = new JButton("Slaughter House");
+            buildDonkeyFarm     = new JButton("Donkey Farm");
 
             houseCreationButtons = new LinkedList<>();
             
@@ -391,6 +393,7 @@ public class SidePanel extends JTabbedPane {
             houseCreationButtons.add(buildPigFarm);
             houseCreationButtons.add(buildMint);
             houseCreationButtons.add(buildSlaughterHouse);
+            houseCreationButtons.add(buildDonkeyFarm);
 
             ActionListener buildListener = new ActionListener() {
 
@@ -432,6 +435,8 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(MINT, selectedPoint);
                             } else if (ae.getSource().equals(buildSlaughterHouse)) {
                                 commandListener.placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
+                            } else if (ae.getSource().equals(buildDonkeyFarm)) {
+                                commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -439,7 +444,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             };
-            
+
             removeHouseButton.addActionListener(new ActionListener() {
 
                 @Override
