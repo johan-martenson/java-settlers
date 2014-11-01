@@ -33,5 +33,7 @@ interface CommandListener {
 
     public void callGeologist(Point selectedPoint) throws Exception;
 
-    public void stopProduction(Point selectedPoint)throws Exception;
+    public void stopProduction(Point selectedPoint) throws Exception;
+
+    public void callScout(Point selectedPoint) throws Exception;
 }

@@ -285,4 +285,14 @@ public class ApiRecorder {
         
         record(INDENT + "GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");
     }
+
+    void recordCallScoutFromFlag(Flag flag) {
+        recordTicks();
+        
+        String flagName = flagNames.get(flag);
+        
+        recordComment("Calling scout from " + flagName + " at " + flag.getPosition());
+
+        record(INDENT + flagName + ".callScout();\n");
+    }
 }

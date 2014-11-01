@@ -122,6 +122,7 @@ public class SidePanel extends JTabbedPane {
         private JButton stopProductionButton;
         private JButton removeRoadButton;
         private JButton callGeologistButton;
+        private JButton callScoutButton;
         
         private List<JButton> houseCreationButtons;
 
@@ -173,6 +174,7 @@ public class SidePanel extends JTabbedPane {
             stopProductionButton.setVisible(false);
             startRoadButton.setVisible(false);
             callGeologistButton.setVisible(false);
+            callScoutButton.setVisible(false);
             removeRoadButton.setVisible(false);
         }
         
@@ -180,6 +182,7 @@ public class SidePanel extends JTabbedPane {
             removeFlagButton.setVisible(true);
             startRoadButton.setVisible(true);
             callGeologistButton.setVisible(true);
+            callScoutButton.setVisible(true);
 
             raiseFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
@@ -198,6 +201,7 @@ public class SidePanel extends JTabbedPane {
             raiseFlagButton.setVisible(false);
             removeRoadButton.setVisible(false);
             callGeologistButton.setVisible(false);
+            callScoutButton.setVisible(false);
 
             setBuildingCreationVisibility(false);
         }
@@ -211,6 +215,7 @@ public class SidePanel extends JTabbedPane {
             removeHouseButton.setVisible(false);
             stopProductionButton.setVisible(false);
             callGeologistButton.setVisible(false);
+            callScoutButton.setVisible(false);
             
             setBuildingCreationVisibility(false);
         }
@@ -275,12 +280,14 @@ public class SidePanel extends JTabbedPane {
             startRoadButton     = new JButton("Start new road");
             removeRoadButton    = new JButton("Remove road");
             callGeologistButton = new JButton("Call geologist");
-            
+            callScoutButton     = new JButton("Call scout");
+
             flagAndRoadPanel.add(raiseFlagButton);
             flagAndRoadPanel.add(removeFlagButton);
             flagAndRoadPanel.add(startRoadButton);
             flagAndRoadPanel.add(removeRoadButton);
             flagAndRoadPanel.add(callGeologistButton);
+            flagAndRoadPanel.add(callScoutButton);
 
             raiseFlagButton.addActionListener(new ActionListener() {
                 @Override
@@ -347,6 +354,20 @@ public class SidePanel extends JTabbedPane {
                 }
             });
             
+            callScoutButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.callScout(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });            
+
             flagAndRoadPanel.setVisible(true);
 
             /* Create panel for construction of buildings */

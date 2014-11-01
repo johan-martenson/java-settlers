@@ -823,6 +823,15 @@ public class App extends JFrame {
 
             repaint();
         }
+
+        @Override
+        public void callScout(Point selectedPoint) throws Exception {
+            Flag flag = map.getFlagAtPoint(selectedPoint);
+            
+            flag.callScout();
+            
+            recorder.recordCallScoutFromFlag(flag);
+        }
     }
 
     public static void main(String[] args) {
