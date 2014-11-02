@@ -21,6 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import java.util.Timer;
+import java.util.TimerTask;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.COALMINE;
@@ -117,6 +119,8 @@ public class App extends JFrame {
 
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener {
         
+        private final int INPUT_CLEAR_DELAY = 5000;
+        
         private UiState     state;
         private List<Point> roadPoints;
         private boolean     showAvailableSpots;
@@ -125,6 +129,8 @@ public class App extends JFrame {
         private int         tick;
         private String      previousKeys;
         private GameDrawer  gameDrawer;
+        private boolean     turboModeEnabled;
+        private Timer       clearInputTimer;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -132,6 +138,8 @@ public class App extends JFrame {
 
         @Override
         public void setTurboMode(boolean toggle) {
+            turboModeEnabled = toggle;
+
             if (toggle) {
                 tick = 50;
             } else {
@@ -220,11 +228,11 @@ public class App extends JFrame {
         }
 
         @Override
-        public void keyTyped(KeyEvent ke) {
+        public void keyPressed(KeyEvent ke) {
         }
 
         @Override
-        public void keyPressed(KeyEvent ke) {            
+        public void keyTyped(KeyEvent ke) {            
             char key = ke.getKeyChar();
             boolean keepPreviousKeys = false;
             
@@ -253,6 +261,8 @@ public class App extends JFrame {
                     placeBuilding(DONKEY_FARM, selectedPoint);
                     setState(IDLE);
                     repaint();
+                } else if (previousKeys.equals("D")) {
+                    recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fi")) {
                     placeBuilding(FISHERY, selectedPoint);
                     setState(IDLE);
@@ -299,6 +309,8 @@ public class App extends JFrame {
                     placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
                     repaint();
                     setState(IDLE);
+                } else if (previousKeys.equals("T")) {
+                    setTurboMode(!turboModeEnabled);
                 } else if (previousKeys.equals("we")) {
                     placeBuilding(WELL, selectedPoint);
                     setState(IDLE);
@@ -329,6 +341,10 @@ public class App extends JFrame {
                     keepPreviousKeys = true;
 
                     setTitle("Settlers 2 (" + previousKeys +")");
+                
+                    clearInputTimer.purge();
+                    
+                    clearInputTimer.schedule(new ClearInputTask(), INPUT_CLEAR_DELAY);
                 }
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
@@ -340,6 +356,16 @@ public class App extends JFrame {
             }
         }
 
+        class ClearInputTask extends TimerTask {
+
+            @Override
+            public void run() {
+                previousKeys = "";
+
+                setTitle("Settlers 2");
+            }
+        }
+        
         @Override
         public void keyReleased(KeyEvent ke) {
         }
@@ -492,14 +518,15 @@ public class App extends JFrame {
         public void initGame(int w, int h) throws Exception {
             System.out.println("Create game map");
 
-            widthInPoints  = w;
-            heightInPoints = h;
-            tick           = 250;
-            roadPoints = new ArrayList<>();
+            widthInPoints      = w;
+            heightInPoints     = h;
+            tick               = 250;
+            turboModeEnabled   = false;
+            roadPoints         = new ArrayList<>();
             showAvailableSpots = false;
-            recorder     = new ApiRecorder();
-
-            gameDrawer = new GameDrawer(map, w, h, 40, 40);
+            recorder           = new ApiRecorder();
+            gameDrawer         = new GameDrawer(map, w, h, 40, 40);
+            clearInputTimer    = new Timer("Clear input timer");
 
             /* Create the initial game board */
             resetGame();
