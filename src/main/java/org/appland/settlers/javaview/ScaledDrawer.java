@@ -153,4 +153,12 @@ public class ScaledDrawer {
         
         recalculateScale(width, height);
     }
+
+    int offsetScaleX(int i) {
+        return (int)(i * offsetScaleX);
+    }
+
+    int offsetScaleY(int i) {
+        return (int)(i * offsetScaleY);
+    }
 }

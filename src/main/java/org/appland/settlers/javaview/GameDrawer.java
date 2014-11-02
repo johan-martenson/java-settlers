@@ -255,20 +255,20 @@ public class GameDrawer {
         Point p = t.getPosition();
 
         int base = 5;
-        int treeHeight = 30;
+        int treeHeight = 35;
 
         if (t.getSize() == SMALL) {
             base = 2;
             treeHeight = 15;
         } else if (t.getSize() == MEDIUM) {
             base = 3;
-            treeHeight = 24;
+            treeHeight = 25;
         }
 
         Path2D.Double triangle = new Path2D.Double();
-        triangle.moveTo(drawer.toScreenX(p) - base, drawer.toScreenY(p));
-        triangle.lineTo(drawer.toScreenX(p) + base, drawer.toScreenY(p));
-        triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - treeHeight   );
+        triangle.moveTo(drawer.toScreenX(p) - drawer.simpleScaleX(base), drawer.toScreenY(p));
+        triangle.lineTo(drawer.toScreenX(p) + drawer.simpleScaleX(base), drawer.toScreenY(p));
+        triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - drawer.simpleScaleY(treeHeight));
         triangle.closePath();
         g.fill(triangle);
     }
@@ -318,14 +318,12 @@ public class GameDrawer {
         g.setColor(BORDER_COLOR);
 
         for (Collection<Point> border : map.getBorders()) {
-            Point previous = null;
             for (Point p : border) {
                 if (!isWithinScreen(p)) {
                     continue;
                 }
 
                 drawer.fillScaledOval(g, p, 4, 4, -2, -2);
-                previous = p;
             }
         }
     }
@@ -424,14 +422,6 @@ public class GameDrawer {
         for (Flag f : map.getFlags()) {
             Point p = f.getPosition();
 
-            if (!f.getStackedCargo().isEmpty()) {
-                Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
-
-                g.setColor(cargoColor);
-
-                g.fillRect((int)(p.x*drawer.getScaleX()) - 2, height - (int)(p.y*drawer.getScaleY()) - 5, 5, 5);
-            }
-
             g.setColor(FLAG_COLOR);
             drawer.fillScaledRect(g, f.getPosition(), 7, 7, 0, -15);
 
@@ -443,6 +433,17 @@ public class GameDrawer {
 
             g.setColor(Color.BLACK);
             drawer.fillScaledRect(g, f.getPosition(), 6, 3, -3, 0);
+
+            if (!f.getStackedCargo().isEmpty()) {
+                Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
+
+                g.setColor(cargoColor);
+
+                g.fillRect((int)(p.x*drawer.getScaleX()) - drawer.offsetScaleX(2),
+                         height - (int)(p.y*drawer.getScaleY()) - drawer.offsetScaleY(6),
+                       drawer.simpleScaleX(5),
+                       drawer.simpleScaleY(5));
+            }
         }
     }
 
@@ -644,13 +645,19 @@ public class GameDrawer {
             }
         }
 
-        g.fillOval((int)(actualX*drawer.getScaleX()) - 4, height - (int)(actualY*drawer.getScaleY()) - 10, 5, 15);
+        g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
+                   height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
+                   drawer.simpleScaleX(5), 
+                   drawer.simpleScaleY(15));
 
         if (w.getCargo() != null ) {
             Color cargoColor = getColorForMaterial(w.getCargo().getMaterial());
 
             g.setColor(cargoColor);
-            g.fillRect((int)(actualX*drawer.getScaleX()) -2, height - (int)(actualY*drawer.getScaleY()) - 6, 5, 5);
+            g.fillRect((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(2),
+                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(6),
+                       drawer.simpleScaleX(5),
+                       drawer.simpleScaleY(5));
         }
     }
 
