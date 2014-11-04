@@ -32,6 +32,7 @@ import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
+import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
 import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
@@ -57,6 +58,7 @@ import org.appland.settlers.model.ForesterHut;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.GraniteMine;
+import org.appland.settlers.model.GuardHouse;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
@@ -114,7 +116,7 @@ public class App extends JFrame {
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
         MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
-        MINT, SLAUGHTER_HOUSE, DONKEY_FARM
+        MINT, SLAUGHTER_HOUSE, DONKEY_FARM, GUARD_HOUSE
     }
 
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener {
@@ -285,6 +287,10 @@ public class App extends JFrame {
                     placeBuilding(GRANITEMINE, selectedPoint);
                     repaint();
                     setState(IDLE);
+                } else if (previousKeys.equals("gu")) {
+                    placeBuilding(GUARD_HOUSE, selectedPoint);
+                    setState(IDLE);
+                    repaint();
                 } else if (previousKeys.equals("i")) {
                     placeBuilding(IRONMINE, selectedPoint);
                     repaint();
@@ -448,6 +454,9 @@ public class App extends JFrame {
                 break;
             case DONKEY_FARM:
                 b = new DonkeyFarm();
+                break;
+            case GUARD_HOUSE:
+                b = new GuardHouse();
             }
 
             if (b == null) {

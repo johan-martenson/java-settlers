@@ -602,8 +602,8 @@ public class GameDrawer {
 
     private void drawPersons(Graphics2D g) {
 
-        synchronized (map.getAllWorkers()) {
-            for (Worker w : map.getAllWorkers()) {
+        synchronized (map.getWorkers()) {
+            for (Worker w : map.getWorkers()) {
                 if (w.isInsideBuilding()) {
                     continue;
                 }

@@ -29,6 +29,7 @@ import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
+import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
 import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.App.HouseType.MILL;
 import static org.appland.settlers.javaview.App.HouseType.MINT;
@@ -144,6 +145,7 @@ public class SidePanel extends JTabbedPane {
         JButton buildMint;
         JButton buildSlaughterHouse;
         JButton buildDonkeyFarm;
+        JButton buildGuardHouse;
 
         public ControlPanel() {
             super();
@@ -394,6 +396,7 @@ public class SidePanel extends JTabbedPane {
             buildMint           = new JButton("Mint");
             buildSlaughterHouse = new JButton("Slaughter House");
             buildDonkeyFarm     = new JButton("Donkey Farm");
+            buildGuardHouse     = new JButton("Build Guard House");
 
             houseCreationButtons = new LinkedList<>();
             
@@ -415,6 +418,7 @@ public class SidePanel extends JTabbedPane {
             houseCreationButtons.add(buildMint);
             houseCreationButtons.add(buildSlaughterHouse);
             houseCreationButtons.add(buildDonkeyFarm);
+            houseCreationButtons.add(buildGuardHouse);
 
             ActionListener buildListener = new ActionListener() {
 
@@ -458,6 +462,8 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
                             } else if (ae.getSource().equals(buildDonkeyFarm)) {
                                 commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
+                            } else if (ae.getSource().equals(buildGuardHouse)) {
+                                commandListener.placeBuilding(GUARD_HOUSE, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
