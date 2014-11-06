@@ -30,6 +30,7 @@ import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
+import static org.appland.settlers.javaview.App.HouseType.FORTRESS;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
@@ -41,6 +42,7 @@ import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.SLAUGHTER_HOUSE;
+import static org.appland.settlers.javaview.App.HouseType.WATCH_TOWER;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
@@ -55,6 +57,7 @@ import org.appland.settlers.model.Farm;
 import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.ForesterHut;
+import org.appland.settlers.model.Fortress;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.GraniteMine;
@@ -77,6 +80,7 @@ import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
 import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
+import org.appland.settlers.model.WatchTower;
 import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
 
@@ -116,7 +120,7 @@ public class App extends JFrame {
     public enum HouseType {
         WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
         MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
-        MINT, SLAUGHTER_HOUSE, DONKEY_FARM, GUARD_HOUSE
+        MINT, SLAUGHTER_HOUSE, DONKEY_FARM, GUARD_HOUSE, WATCH_TOWER, FORTRESS
     }
 
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener {
@@ -269,8 +273,12 @@ public class App extends JFrame {
                     placeBuilding(FISHERY, selectedPoint);
                     setState(IDLE);
                     repaint();
-                } else if (previousKeys.equals("fo")) {
+                } else if (previousKeys.equals("fore")) {
                     placeBuilding(FORESTER, selectedPoint);
+                    setState(IDLE);
+                    repaint();
+                } else if (previousKeys.equals("fort")) {
+                    placeBuilding(FORTRESS, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (key == 'd') {
@@ -317,6 +325,10 @@ public class App extends JFrame {
                     setState(IDLE);
                 } else if (previousKeys.equals("T")) {
                     setTurboMode(!turboModeEnabled);
+                } else if (previousKeys.equals("wa")) {
+                    placeBuilding(WATCH_TOWER, selectedPoint);
+                    setState(IDLE);
+                    repaint();
                 } else if (previousKeys.equals("we")) {
                     placeBuilding(WELL, selectedPoint);
                     setState(IDLE);
@@ -457,6 +469,12 @@ public class App extends JFrame {
                 break;
             case GUARD_HOUSE:
                 b = new GuardHouse();
+                break;
+            case WATCH_TOWER:
+                b = new WatchTower();
+                break;
+            case FORTRESS:
+                b = new Fortress();
             }
 
             if (b == null) {

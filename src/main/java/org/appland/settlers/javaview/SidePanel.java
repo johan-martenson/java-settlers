@@ -27,6 +27,7 @@ import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
 import static org.appland.settlers.javaview.App.HouseType.FARM;
 import static org.appland.settlers.javaview.App.HouseType.FISHERY;
 import static org.appland.settlers.javaview.App.HouseType.FORESTER;
+import static org.appland.settlers.javaview.App.HouseType.FORTRESS;
 import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
@@ -37,6 +38,7 @@ import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
 import static org.appland.settlers.javaview.App.HouseType.QUARRY;
 import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
 import static org.appland.settlers.javaview.App.HouseType.SLAUGHTER_HOUSE;
+import static org.appland.settlers.javaview.App.HouseType.WATCH_TOWER;
 import static org.appland.settlers.javaview.App.HouseType.WELL;
 import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import org.appland.settlers.model.Building;
@@ -146,6 +148,8 @@ public class SidePanel extends JTabbedPane {
         JButton buildSlaughterHouse;
         JButton buildDonkeyFarm;
         JButton buildGuardHouse;
+        JButton buildWatchTower;
+        JButton buildFortress;
 
         public ControlPanel() {
             super();
@@ -396,7 +400,9 @@ public class SidePanel extends JTabbedPane {
             buildMint           = new JButton("Mint");
             buildSlaughterHouse = new JButton("Slaughter House");
             buildDonkeyFarm     = new JButton("Donkey Farm");
-            buildGuardHouse     = new JButton("Build Guard House");
+            buildGuardHouse     = new JButton("Guard House");
+            buildWatchTower     = new JButton("Watch Tower");
+            buildFortress       = new JButton("Fortress");
 
             houseCreationButtons = new LinkedList<>();
             
@@ -419,6 +425,8 @@ public class SidePanel extends JTabbedPane {
             houseCreationButtons.add(buildSlaughterHouse);
             houseCreationButtons.add(buildDonkeyFarm);
             houseCreationButtons.add(buildGuardHouse);
+            houseCreationButtons.add(buildWatchTower);
+            houseCreationButtons.add(buildFortress);
 
             ActionListener buildListener = new ActionListener() {
 
@@ -464,6 +472,10 @@ public class SidePanel extends JTabbedPane {
                                 commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
                             } else if (ae.getSource().equals(buildGuardHouse)) {
                                 commandListener.placeBuilding(GUARD_HOUSE, selectedPoint);
+                            } else if (ae.getSource().equals(buildWatchTower)) {
+                                commandListener.placeBuilding(WATCH_TOWER, selectedPoint);
+                            } else if (ae.getSource().equals(buildFortress)) {
+                                commandListener.placeBuilding(FORTRESS, selectedPoint);
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
