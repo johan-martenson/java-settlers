@@ -137,10 +137,10 @@ public class SidePanel extends JTabbedPane {
 
     private class ControlPanel extends JPanel {
 
-        boolean turboToggle;
+        private boolean turboToggle;
 
-        JPanel controlPanel;
-        JPanel constructionPanel;
+        private final JPanel controlPanel;
+        private final JPanel constructionPanel;
         private JButton raiseFlagButton;
         private JButton startRoadButton;
         private JButton removeFlagButton;
