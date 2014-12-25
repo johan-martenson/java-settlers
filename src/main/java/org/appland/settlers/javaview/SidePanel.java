@@ -57,13 +57,13 @@ import org.appland.settlers.model.Storage;
  */
 public class SidePanel extends JTabbedPane {
 
-    private final Infoview infoPanel;
-    private final ControlPanel controlPanel;
-    private CommandListener commandListener;
+    private final Infoview        infoPanel;
+    private final ControlPanel    controlPanel;
+    private final CommandListener commandListener;
 
-    private Point selectedPoint;
+    private Point   selectedPoint;
     private GameMap map;
-    private Player player;
+    private Player  player;
 
     void update() throws Exception {
 
@@ -316,11 +316,9 @@ public class SidePanel extends JTabbedPane {
             turboButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        turboToggle = !turboToggle;
+                    turboToggle = !turboToggle;
 
-                        commandListener.setTurboMode(turboToggle);
-                    }
+                    commandListener.setTurboMode(turboToggle);
                 }
             });
 
@@ -328,9 +326,7 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        commandListener.dumpRecording();
-                    }
+                    commandListener.dumpRecording();
                 }
             });
 
@@ -338,9 +334,7 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        commandListener.reset();
-                    }
+                    commandListener.reset();
                 }
             });
 
@@ -372,12 +366,10 @@ public class SidePanel extends JTabbedPane {
             raiseFlagButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.placeFlag(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.placeFlag(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -386,9 +378,7 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        commandListener.startRoadCommand(selectedPoint);
-                    }
+                    commandListener.startRoadCommand(selectedPoint);
                 }
             });
 
@@ -396,12 +386,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.removeFlagCommand(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.removeFlagCommand(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -410,12 +398,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.removeRoadAtPoint(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.removeRoadAtPoint(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -424,12 +410,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.callGeologist(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.callGeologist(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -438,12 +422,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.callScout(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.callScout(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -509,54 +491,52 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            if (ae.getSource().equals(buildBarracks)) {
-                                commandListener.placeBuilding(BARRACKS, selectedPoint);
-                            } else if (ae.getSource().equals(buildWoodcutter)) {
-                                commandListener.placeBuilding(WOODCUTTER, selectedPoint);
-                            } else if (ae.getSource().equals(buildForester)) {
-                                commandListener.placeBuilding(FORESTER, selectedPoint);
-                            } else if (ae.getSource().equals(buildSawmill)) {
-                                commandListener.placeBuilding(SAWMILL, selectedPoint);
-                            } else if (ae.getSource().equals(buildQuarry)) {
-                                commandListener.placeBuilding(QUARRY, selectedPoint);
-                            } else if (ae.getSource().equals(buildFarm)) {
-                                commandListener.placeBuilding(FARM, selectedPoint);
-                            } else if (ae.getSource().equals(buildFishery)) {
-                                commandListener.placeBuilding(FISHERY, selectedPoint);
-                            } else if (ae.getSource().equals(buildWell)) {
-                                commandListener.placeBuilding(WELL, selectedPoint);
-                            } else if (ae.getSource().equals(buildGoldmine)) {
-                                commandListener.placeBuilding(GOLDMINE, selectedPoint);
-                            } else if (ae.getSource().equals(buildIronmine)) {
-                                commandListener.placeBuilding(IRONMINE, selectedPoint);
-                            } else if (ae.getSource().equals(buildCoalmine)) {
-                                commandListener.placeBuilding(COALMINE, selectedPoint);
-                            } else if (ae.getSource().equals(buildGranitemine)) {
-                                commandListener.placeBuilding(GRANITEMINE, selectedPoint);
-                            } else if (ae.getSource().equals(buildMill)) {
-                                commandListener.placeBuilding(MILL, selectedPoint);
-                            } else if (ae.getSource().equals(buildBakery)) {
-                                commandListener.placeBuilding(BAKERY, selectedPoint);
-                            } else if (ae.getSource().equals(buildPigFarm)) {
-                                commandListener.placeBuilding(PIG_FARM, selectedPoint);
-                            } else if (ae.getSource().equals(buildMint)) {
-                                commandListener.placeBuilding(MINT, selectedPoint);
-                            } else if (ae.getSource().equals(buildSlaughterHouse)) {
-                                commandListener.placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
-                            } else if (ae.getSource().equals(buildDonkeyFarm)) {
-                                commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
-                            } else if (ae.getSource().equals(buildGuardHouse)) {
-                                commandListener.placeBuilding(GUARD_HOUSE, selectedPoint);
-                            } else if (ae.getSource().equals(buildWatchTower)) {
-                                commandListener.placeBuilding(WATCH_TOWER, selectedPoint);
-                            } else if (ae.getSource().equals(buildFortress)) {
-                                commandListener.placeBuilding(FORTRESS, selectedPoint);
-                            }
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    try {
+                        if (ae.getSource().equals(buildBarracks)) {
+                            commandListener.placeBuilding(BARRACKS, selectedPoint);
+                        } else if (ae.getSource().equals(buildWoodcutter)) {
+                            commandListener.placeBuilding(WOODCUTTER, selectedPoint);
+                        } else if (ae.getSource().equals(buildForester)) {
+                            commandListener.placeBuilding(FORESTER, selectedPoint);
+                        } else if (ae.getSource().equals(buildSawmill)) {
+                            commandListener.placeBuilding(SAWMILL, selectedPoint);
+                        } else if (ae.getSource().equals(buildQuarry)) {
+                            commandListener.placeBuilding(QUARRY, selectedPoint);
+                        } else if (ae.getSource().equals(buildFarm)) {
+                            commandListener.placeBuilding(FARM, selectedPoint);
+                        } else if (ae.getSource().equals(buildFishery)) {
+                            commandListener.placeBuilding(FISHERY, selectedPoint);
+                        } else if (ae.getSource().equals(buildWell)) {
+                            commandListener.placeBuilding(WELL, selectedPoint);
+                        } else if (ae.getSource().equals(buildGoldmine)) {
+                            commandListener.placeBuilding(GOLDMINE, selectedPoint);
+                        } else if (ae.getSource().equals(buildIronmine)) {
+                            commandListener.placeBuilding(IRONMINE, selectedPoint);
+                        } else if (ae.getSource().equals(buildCoalmine)) {
+                            commandListener.placeBuilding(COALMINE, selectedPoint);
+                        } else if (ae.getSource().equals(buildGranitemine)) {
+                            commandListener.placeBuilding(GRANITEMINE, selectedPoint);
+                        } else if (ae.getSource().equals(buildMill)) {
+                            commandListener.placeBuilding(MILL, selectedPoint);
+                        } else if (ae.getSource().equals(buildBakery)) {
+                            commandListener.placeBuilding(BAKERY, selectedPoint);
+                        } else if (ae.getSource().equals(buildPigFarm)) {
+                            commandListener.placeBuilding(PIG_FARM, selectedPoint);
+                        } else if (ae.getSource().equals(buildMint)) {
+                            commandListener.placeBuilding(MINT, selectedPoint);
+                        } else if (ae.getSource().equals(buildSlaughterHouse)) {
+                            commandListener.placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
+                        } else if (ae.getSource().equals(buildDonkeyFarm)) {
+                            commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
+                        } else if (ae.getSource().equals(buildGuardHouse)) {
+                            commandListener.placeBuilding(GUARD_HOUSE, selectedPoint);
+                        } else if (ae.getSource().equals(buildWatchTower)) {
+                            commandListener.placeBuilding(WATCH_TOWER, selectedPoint);
+                        } else if (ae.getSource().equals(buildFortress)) {
+                            commandListener.placeBuilding(FORTRESS, selectedPoint);
                         }
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             };
@@ -565,12 +545,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.removeHouseCommand(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.removeHouseCommand(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -579,12 +557,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.stopProduction(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.stopProduction(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
@@ -593,12 +569,10 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (commandListener != null) {
-                        try {
-                            commandListener.attackHouse(selectedPoint);
-                        } catch (Exception ex) {
-                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                    try {
+                        commandListener.attackHouse(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             });
