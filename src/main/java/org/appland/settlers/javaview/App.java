@@ -93,9 +93,7 @@ public class App extends JFrame {
         super();
         
         GameCanvas canvas = new GameCanvas();
-        sidePanel = new SidePanel();
-
-        sidePanel.setCommandListener(canvas);
+        sidePanel = new SidePanel(canvas);
         
         try {
             canvas.initGame(100, 100);
@@ -411,6 +409,26 @@ public class App extends JFrame {
             recorder.recordAttack(controlledPlayer, buildingToAttack);
         }
 
+        @Override
+        public void evacuate(Point selectedPoint) throws Exception {
+
+            /* Find military building to evacuate */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            /* Order evacuation */
+            building.evacuate();
+        }
+
+        @Override
+        public void cancelEvacuation(Point selectedPoint) {
+
+            /* Find military building to re-populate */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            /* Order re-population */
+            building.cancelEvacuation();
+        }
+
         class ClearInputTask extends TimerTask {
 
             @Override
@@ -572,25 +590,11 @@ public class App extends JFrame {
             state = uiState;            
         }
 
-        private void selectPoint(Point p) {
+        private void selectPoint(Point p) throws Exception {
             selectedPoint = p;
-            
-            if (map.isFlagAtPoint(p)) {
-                try {
-                    sidePanel.displayFlag(map.getFlagAtPoint(p));
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            } else if (map.isBuildingAtPoint(p)) {
-                sidePanel.displayHouse(map.getBuildingAtPoint(p));
-            } else if (map.isRoadAtPoint(p)) {
-                sidePanel.displayRoad(map.getRoadAtPoint(p));
-            } else {
-                sidePanel.emptyPointSelected();
-            }
 
             sidePanel.setSelectedPoint(p);
-            
+
             requestFocus();
         }
 
@@ -652,7 +656,12 @@ public class App extends JFrame {
                         recorder.recordTick();
 
                         map.stepTime();
-                        sidePanel.update();
+
+                        try {
+                            sidePanel.update();
+                        } catch (Exception ex) {
+                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        }
 
                         repaint();
                         

@@ -38,4 +38,8 @@ interface CommandListener {
     public void callScout(Point selectedPoint) throws Exception;
 
     public void attackHouse(Point selectedPoint);
+
+    public void evacuate(Point selectedPoint) throws Exception;
+
+    public void cancelEvacuation(Point selectedPoint);
 }

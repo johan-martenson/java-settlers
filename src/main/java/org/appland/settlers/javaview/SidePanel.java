@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
@@ -57,48 +56,60 @@ import org.appland.settlers.model.Storage;
  * @author johan
  */
 public class SidePanel extends JTabbedPane {
+
     private final Infoview infoPanel;
     private final ControlPanel controlPanel;
     private CommandListener commandListener;
 
-    private Flag     flag;
-    private Road     road;
-    private Building house;
-    private Point    selectedPoint;
-    private GameMap  map;
-    private Player   player;
-    
-    void update() {
-        if (flag != null) {
-            infoPanel.displayInfo(flag);
-        } else if (house != null) {
-            infoPanel.displayInfo(house);
-        } else if (road != null) {
-            infoPanel.displayInfo(road);
+    private Point selectedPoint;
+    private GameMap map;
+    private Player player;
+
+    void update() throws Exception {
+
+        if (selectedPoint == null) {
+            return;
+        }
+
+        if (player.isWithinBorder(selectedPoint)) {
+            if (map.isFlagAtPoint(selectedPoint)) {
+                Flag flag = map.getFlagAtPoint(selectedPoint);
+
+                displayFlag(flag);
+                infoPanel.displayInfo(flag);
+            } else if (map.isBuildingAtPoint(selectedPoint)) {
+                Building building = map.getBuildingAtPoint(selectedPoint);
+
+                displayHouse(building);
+                infoPanel.displayInfo(building);
+            } else if (map.isRoadAtPoint(selectedPoint)) {
+                Road road = map.getRoadAtPoint(selectedPoint);
+
+                displayRoad(road);
+                infoPanel.displayInfo(road);
+            } else {
+                emptyPointSelected();
+            }
+        } else {
+            if (map.isBuildingAtPoint(selectedPoint)) {
+                displayEnemyHouse(map.getBuildingAtPoint(selectedPoint));
+            }
         }
     }
-    
-    void displayFlag(Flag flagAtPoint) {
-        flag = flagAtPoint;
-        road = null;
-        house = null;
-        
-        infoPanel.displayInfo(flagAtPoint);
+
+    void displayFlag(Flag flag) {
+        infoPanel.displayInfo(flag);
         controlPanel.flagSelected();
     }
 
-    void displayHouse(Building b) {
-        flag = null;
-        road = null;
-        house = b;
-        
-        infoPanel.displayInfo(b);
-        controlPanel.houseSelected();
+    void displayHouse(Building building) {
+        infoPanel.displayInfo(building);
+        controlPanel.buildingSelected(building);
     }
-    
+
     void emptyPointSelected() {
         infoPanel.clear();
-    
+
         controlPanel.emptyPointSelected();
     }
 
@@ -106,13 +117,14 @@ public class SidePanel extends JTabbedPane {
         return infoPanel;
     }
 
-    void displayRoad(Road roadAtPoint) {
-        flag = null;
-        road = roadAtPoint;
-        house = null;
-        
-        infoPanel.displayInfo(roadAtPoint);
+    void displayRoad(Road road) {
+        infoPanel.displayInfo(road);
         controlPanel.roadSelected();
+    }
+
+    private void displayEnemyHouse(Building building) throws Exception {
+        infoPanel.displayInfo(building);
+        controlPanel.enemyBuildingSelected(building);
     }
 
     void setMap(GameMap m) {
@@ -126,7 +138,7 @@ public class SidePanel extends JTabbedPane {
     private class ControlPanel extends JPanel {
 
         boolean turboToggle;
-        
+
         JPanel controlPanel;
         JPanel constructionPanel;
         private JButton raiseFlagButton;
@@ -137,7 +149,7 @@ public class SidePanel extends JTabbedPane {
         private JButton removeRoadButton;
         private JButton callGeologistButton;
         private JButton callScoutButton;
-        
+
         private List<JButton> houseCreationButtons;
 
         private JButton buildWoodcutter;
@@ -161,24 +173,27 @@ public class SidePanel extends JTabbedPane {
         private JButton buildGuardHouse;
         private JButton buildWatchTower;
         private JButton buildFortress;
+
         private JButton attackHouseButton;
+        private JButton evacuateButton;
+        private JButton cancelEvacuationButton;
 
         public ControlPanel() {
             super();
-            
+
             turboToggle = false;
-            
+
             setMinimumSize(new Dimension(100, 100));
             setPreferredSize(new Dimension(100, 500));
 
             setLayout(new BorderLayout());
-            
+
             controlPanel = createControlPanel();
             constructionPanel = createConstructionPanel();
-            
+
             add(controlPanel, BorderLayout.NORTH);
             add(constructionPanel, BorderLayout.CENTER);
-            
+
             setVisible(true);
         }
 
@@ -186,7 +201,11 @@ public class SidePanel extends JTabbedPane {
             raiseFlagButton.setVisible(true);
 
             setBuildingCreationVisibility(true);
-            
+
+            attackHouseButton.setVisible(false);
+            evacuateButton.setVisible(false);
+            cancelEvacuationButton.setVisible(false);
+
             removeFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
             stopProductionButton.setVisible(false);
@@ -195,13 +214,17 @@ public class SidePanel extends JTabbedPane {
             callScoutButton.setVisible(false);
             removeRoadButton.setVisible(false);
         }
-        
+
         void flagSelected() {
             removeFlagButton.setVisible(true);
             startRoadButton.setVisible(true);
             callGeologistButton.setVisible(true);
             callScoutButton.setVisible(true);
 
+            attackHouseButton.setVisible(false);
+            evacuateButton.setVisible(false);
+            cancelEvacuationButton.setVisible(false);
+
             raiseFlagButton.setVisible(false);
             removeHouseButton.setVisible(false);
             stopProductionButton.setVisible(false);
@@ -209,11 +232,21 @@ public class SidePanel extends JTabbedPane {
 
             setBuildingCreationVisibility(false);
         }
-        
-        void houseSelected() {
+
+        void buildingSelected(Building building) {
             removeHouseButton.setVisible(true);
             stopProductionButton.setVisible(true);
-            
+
+            if (building.isMilitaryBuilding() && building.ready()) {
+                evacuateButton.setVisible(true);
+                cancelEvacuationButton.setVisible(true);
+            } else {
+                evacuateButton.setVisible(false);
+                cancelEvacuationButton.setVisible(false);
+            }
+
+            attackHouseButton.setVisible(false);
+
             startRoadButton.setVisible(false);
             removeFlagButton.setVisible(false);
             raiseFlagButton.setVisible(false);
@@ -224,11 +257,20 @@ public class SidePanel extends JTabbedPane {
             setBuildingCreationVisibility(false);
         }
 
-        void enemyHouseSelected() {
+        void enemyBuildingSelected(Building building) throws Exception {
             removeHouseButton.setVisible(false);
             stopProductionButton.setVisible(false);
 
-            attackHouseButton.setVisible(true);
+            evacuateButton.setVisible(false);
+            cancelEvacuationButton.setVisible(false);
+
+            if (building.isMilitaryBuilding()                         && 
+                player.getAvailableAttackersForBuilding(building) > 0 &&
+                building.ready()) {
+                attackHouseButton.setVisible(true);
+            } else {
+                attackHouseButton.setVisible(false);
+            }
 
             startRoadButton.setVisible(false);
             removeFlagButton.setVisible(false);
@@ -243,41 +285,45 @@ public class SidePanel extends JTabbedPane {
         void roadSelected() {
             raiseFlagButton.setVisible(true);
             removeRoadButton.setVisible(true);
-            
+
+            attackHouseButton.setVisible(false);
+            evacuateButton.setVisible(false);
+            cancelEvacuationButton.setVisible(false);
+
             removeFlagButton.setVisible(false);
             startRoadButton.setVisible(false);
             removeHouseButton.setVisible(false);
             stopProductionButton.setVisible(false);
             callGeologistButton.setVisible(false);
             callScoutButton.setVisible(false);
-            
+
             setBuildingCreationVisibility(false);
         }
-        
+
         private JPanel createControlPanel() {
             JPanel panel = new JPanel();
-            
+
             panel.setLayout(new GridLayout(1, 3));
-            
+
             JButton turboButton = new JButton("Toggle turbo");
             JButton dumpRecordingButton = new JButton("Dump recording");
             JButton resetButton = new JButton("Reset the game");
-            
+
             panel.add(turboButton);
             panel.add(dumpRecordingButton);
             panel.add(resetButton);
-            
+
             turboButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     if (commandListener != null) {
                         turboToggle = !turboToggle;
-                        
+
                         commandListener.setTurboMode(turboToggle);
                     }
                 }
             });
-            
+
             dumpRecordingButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -297,24 +343,24 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             return panel;
         }
 
         private JPanel createConstructionPanel() {
-            JPanel panel = new JPanel();            
+            JPanel panel = new JPanel();
             JPanel flagAndRoadPanel = new JPanel();
             JPanel buildingPanel = new JPanel();
-            
+
             /* Create flag and road panel */
             flagAndRoadPanel.setLayout(new GridLayout(3, 1));
-            
-            raiseFlagButton     = new JButton("Raise flag");
-            removeFlagButton    = new JButton("Remove flag");
-            startRoadButton     = new JButton("Start new road");
-            removeRoadButton    = new JButton("Remove road");
+
+            raiseFlagButton = new JButton("Raise flag");
+            removeFlagButton = new JButton("Remove flag");
+            startRoadButton = new JButton("Start new road");
+            removeRoadButton = new JButton("Remove road");
             callGeologistButton = new JButton("Call geologist");
-            callScoutButton     = new JButton("Call scout");
+            callScoutButton = new JButton("Call scout");
 
             flagAndRoadPanel.add(raiseFlagButton);
             flagAndRoadPanel.add(removeFlagButton);
@@ -335,7 +381,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             startRoadButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -345,7 +391,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             removeFlagButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -359,7 +405,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             removeRoadButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -373,7 +419,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             callGeologistButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -387,7 +433,7 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-            
+
             callScoutButton.addActionListener(new ActionListener() {
 
                 @Override
@@ -400,16 +446,18 @@ public class SidePanel extends JTabbedPane {
                         }
                     }
                 }
-            });            
+            });
 
             flagAndRoadPanel.setVisible(true);
 
             /* Create panel for construction of buildings */
             buildingPanel.setLayout(new GridLayout(15, 1));
-            
-            removeHouseButton    = new JButton("Remove house");
-            stopProductionButton = new JButton("Production on/off");
-            attackHouseButton    = new JButton("Attack");
+
+            removeHouseButton      = new JButton("Remove house");
+            stopProductionButton   = new JButton("Production on/off");
+            attackHouseButton      = new JButton("Attack");
+            evacuateButton         = new JButton("Evacuate");
+            cancelEvacuationButton = new JButton("Cancel evacuation");
 
             buildWoodcutter     = new JButton("Woodcutter");
             buildForester       = new JButton("Forester");
@@ -434,7 +482,7 @@ public class SidePanel extends JTabbedPane {
             buildFortress       = new JButton("Fortress");
 
             houseCreationButtons = new LinkedList<>();
-            
+
             houseCreationButtons.add(buildWoodcutter);
             houseCreationButtons.add(buildForester);
             houseCreationButtons.add(buildBarracks);
@@ -555,30 +603,52 @@ public class SidePanel extends JTabbedPane {
                 }
             });
 
+            evacuateButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.evacuate(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            cancelEvacuationButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.cancelEvacuation(selectedPoint);
+                }
+            });
+            
             for (JButton b : houseCreationButtons) {
                 b.addActionListener(buildListener);
             }
-            
+
             buildingPanel.add(new JLabel("Buildings"));
 
             buildingPanel.add(removeHouseButton);
             buildingPanel.add(stopProductionButton);
             buildingPanel.add(attackHouseButton);
-            
+            buildingPanel.add(evacuateButton);
+            buildingPanel.add(cancelEvacuationButton);
+
             for (JButton b : houseCreationButtons) {
                 buildingPanel.add(b);
             }
 
             buildingPanel.setVisible(true);
-            
+
             /* Build the container panel */
             panel.setLayout(new BorderLayout());
-            
+
             panel.add(flagAndRoadPanel, BorderLayout.NORTH);
             panel.add(buildingPanel, BorderLayout.CENTER);
-            
+
             panel.setVisible(true);
-            
+
             return panel;
         }
 
@@ -590,26 +660,23 @@ public class SidePanel extends JTabbedPane {
     }
 
     public class Infoview extends JPanel {
+
         private final JLabel titleLabel;
         private final JLabel infoLabel;
 
         public Infoview() {
             super();
-            
-            flag = null;
-            house = null;
-            road = null;
-            
+
             setMinimumSize(new Dimension(200, 100));
             setPreferredSize(new Dimension(300, 500));
-            
+
             titleLabel = new JLabel();
             infoLabel = new JLabel();
-            
+
             titleLabel.setText("none");
-            
+
             setLayout(new BorderLayout());
-            
+
             add(titleLabel, BorderLayout.NORTH);
             add(infoLabel, BorderLayout.CENTER);
 
@@ -618,9 +685,9 @@ public class SidePanel extends JTabbedPane {
 
         void displayInfo(Building b) {
             titleLabel.setText(b.getClass().getSimpleName());
-            
+
             String info = "<html>";
-            
+
             if (b.underConstruction()) {
                 info += "Under construction<br>";
             } else if (b.ready()) {
@@ -634,7 +701,7 @@ public class SidePanel extends JTabbedPane {
             if (!b.isProductionEnabled()) {
                 info += "<br>Production is stopped<br>";
             }
-            
+
             /* Print if worker is needed */
             try {
                 if (b.needsWorker()) {
@@ -643,62 +710,67 @@ public class SidePanel extends JTabbedPane {
             } catch (Exception ex) {
                 Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
+            /* Print deployed militaries if it's a military building */
+            if (b.isMilitaryBuilding()) {
+                info += b.getHostedMilitary() + " of " + b.getMaxHostedMilitary() + " deployed <br>";
+            }
+
             /* Print inventory */
             if (b instanceof Storage) {
                 info += "<br><b>Inventory</b><br>";
-                
-                Storage s = (Storage)b;
+
+                Storage s = (Storage) b;
 
                 for (Material m : Material.values()) {
                     if (s.getAmount(m) == 0) {
                         continue;
                     }
-                    
+
                     info += "" + m.name() + ": " + s.getAmount(m) + "<br>";
                 }
             }
-            
+
             /* Print material needed */
             for (Material m : Material.values()) {
                 if (b.needsMaterial(m)) {
                     info += "<br>" + m.name() + " is needed<br>";
                 }
             }
-            
+
             infoLabel.setText(info);
         }
-        
+
         void displayInfo(Flag f) {
             titleLabel.setText(f.getClass().getSimpleName() + " - " + f.getPosition());
-            
+
             String info = "<html>";
-            
+
             for (Cargo c : f.getStackedCargo()) {
                 info += "" + c.getMaterial() + " to " + c.getTarget().getClass().getSimpleName();
-                
+
                 if (c.isDeliveryPromised()) {
                     info += " (promised)";
                 }
 
                 info += "<BR>";
             }
-            
+
             info += "</html>";
-            
+
             infoLabel.setText(info);
         }
 
         void displayInfo(Road r) {
             titleLabel.setText("Road - " + r.getStart() + " to " + r.getEnd());
-            
+
             Courier courier = r.getCourier();
-            
+
             String info = "<html>";
-            
+
             if (courier != null) {
                 info += "Assigned courier: <br>" + r.getCourier();
-                
+
                 if (courier.isExactlyAtPoint()) {
                     info += "Is at " + courier.getPosition() + "<br>";
                 } else {
@@ -708,20 +780,20 @@ public class SidePanel extends JTabbedPane {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-                
+
                 info += "Target is " + courier.getTarget() + "<br>";
-                
+
                 info += "Has arrived: " + courier.isArrived() + "<br>";
-                
+
                 if (courier.getCargo() == null) {
                     info += "Carrying no cargo<br>";
                 } else {
                     info += "Carrying cargo of type " + courier.getCargo().getMaterial() + "<br>";
                     info += "Cargo is targeted for " + courier.getCargo().getTarget() + "<br>";
                 }
-                
+
                 Cargo cargo = courier.getPromisedDelivery();
-                
+
                 if (cargo != null) {
                     info += "Has promised to pick up " + cargo.getMaterial() + "cargo at " + cargo.getPosition() + "<br>";
                 } else {
@@ -730,9 +802,9 @@ public class SidePanel extends JTabbedPane {
             } else {
                 info += "No assigned courier";
             }
-            
+
             info += "</html>";
-            
+
             infoLabel.setText(info);
         }
 
@@ -742,16 +814,16 @@ public class SidePanel extends JTabbedPane {
         }
     }
 
-    public SidePanel() {
+    SidePanel(CommandListener cl) {
         super();
 
         selectedPoint = null;
-        
-        commandListener = null;
-        
+
+        commandListener = cl;
+
         infoPanel = new Infoview();
         controlPanel = new ControlPanel();
-        
+
         addTab("Info", infoPanel);
         setMnemonicAt(0, KeyEvent.VK_1);
 
@@ -759,15 +831,11 @@ public class SidePanel extends JTabbedPane {
         setMnemonicAt(1, KeyEvent.VK_2);
 
         setSelectedComponent(controlPanel);
-        
+
         setVisible(true);
     }
 
-    void setCommandListener(CommandListener cl) {
-        commandListener = cl;
-    }
-
-    void setSelectedPoint(Point p) {
-        selectedPoint = p;
+    void setSelectedPoint(Point point) throws Exception {
+        selectedPoint = point;
     }
 }
