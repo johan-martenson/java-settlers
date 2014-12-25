@@ -12,6 +12,7 @@ import java.util.Map;
 import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
+import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
@@ -26,11 +27,13 @@ public class ApiRecorder {
 
     private static final String INDENT = "        ";
     
-    private final Map<Point, String>    pointNames;
-    private final Map<Flag, String>     flagNames;
+    private final Map<Point,    String> pointNames;
+    private final Map<Flag,     String> flagNames;
     private final Map<Building, String> buildingNames;
-    private final Map<Road, String>     roadNames;
-    private final Map<Stone, String>    stoneNames;
+    private final Map<Road,     String> roadNames;
+    private final Map<Stone,    String> stoneNames;
+    private final Map<Player,   String> playerNames;
+
     private String recording;
     private int    tickCount;
     private int    previousRecordedTicks;
@@ -41,6 +44,8 @@ public class ApiRecorder {
         buildingNames = new HashMap<>();
         roadNames     = new HashMap<>();
         stoneNames    = new HashMap<>();
+        playerNames   = new HashMap<>();
+
         recording = "";
         tickCount = 0;
         previousRecordedTicks = 0;
@@ -285,7 +290,19 @@ public class ApiRecorder {
     void recordNewGame(List<Player> players, int widthInPoints, int heightInPoints) {
         recordComment("Creating new game map with size " + widthInPoints + "x" + heightInPoints);
         
-        record(INDENT + "GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");
+        registerPlayers(players);
+
+        for (Player player : players) {
+            record(INDENT + "Player " + playerNames.get(player) + " = new Player(" + player.getName() + ");\n");
+        }
+
+        record(INDENT + "List<Player> players = new LinkedList<>();");
+
+        for (Player player : players) {
+            record(INDENT + "players.add(" + playerNames.get(player) + ");");
+        }
+
+        record(INDENT + "GameMap map = new GameMap(players, " + widthInPoints + ", " + heightInPoints + ");\n");
     }
 
     void recordCallScoutFromFlag(Flag flag) {
@@ -296,5 +313,37 @@ public class ApiRecorder {
         recordComment("Calling scout from " + flagName + " at " + flag.getPosition());
 
         record(INDENT + flagName + ".callScout();\n");
+    }
+
+    void recordAttack(Player controlledPlayer, Building buildingToAttack) {
+        recordTicks();
+
+        String playerName = playerNames.get(controlledPlayer);
+
+        String buildingName = buildingNames.get(buildingToAttack);
+
+        recordComment(playerName + " attacks " + buildingName);
+
+        record(INDENT + playerName + ".attack(" + buildingName + ");\n");
+    }
+
+    private void registerPlayers(List<Player> players) {
+        for (Player p : players) {
+            registerPlayer(p);
+        }
+    }
+
+    private String registerPlayer(Player player) {
+        if (playerNames.containsKey(player)) {
+            return playerNames.get(player);
+        }
+        
+        String name = "player" + playerNames.size();
+
+        playerNames.put(player, name);
+
+        record(INDENT + "Player " + name + " = new Player(" + player.getName() + ");\n");
+
+        return name;
     }
 }

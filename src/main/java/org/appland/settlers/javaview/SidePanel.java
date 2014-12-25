@@ -45,7 +45,9 @@ import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
 import org.appland.settlers.model.Courier;
 import org.appland.settlers.model.Flag;
+import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
+import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Storage;
@@ -59,11 +61,12 @@ public class SidePanel extends JTabbedPane {
     private final ControlPanel controlPanel;
     private CommandListener commandListener;
 
-    private Flag flag;
-    private Road road;
+    private Flag     flag;
+    private Road     road;
     private Building house;
-    
-    private Point selectedPoint;
+    private Point    selectedPoint;
+    private GameMap  map;
+    private Player   player;
     
     void update() {
         if (flag != null) {
@@ -112,6 +115,14 @@ public class SidePanel extends JTabbedPane {
         controlPanel.roadSelected();
     }
 
+    void setMap(GameMap m) {
+        map = m;
+    }
+
+    void setPlayer(Player p) {
+        player = p;
+    }
+
     private class ControlPanel extends JPanel {
 
         boolean turboToggle;
@@ -129,27 +140,28 @@ public class SidePanel extends JTabbedPane {
         
         private List<JButton> houseCreationButtons;
 
-        JButton buildWoodcutter;
-        JButton buildForester;
-        JButton buildBarracks;
-        JButton buildFishery;
-        JButton buildWell;
-        JButton buildGoldmine;
-        JButton buildIronmine;
-        JButton buildCoalmine;
-        JButton buildGranitemine;
-        JButton buildSawmill;
-        JButton buildQuarry;
-        JButton buildMill;
-        JButton buildBakery;
-        JButton buildFarm;
-        JButton buildPigFarm;
-        JButton buildMint;
-        JButton buildSlaughterHouse;
-        JButton buildDonkeyFarm;
-        JButton buildGuardHouse;
-        JButton buildWatchTower;
-        JButton buildFortress;
+        private JButton buildWoodcutter;
+        private JButton buildForester;
+        private JButton buildBarracks;
+        private JButton buildFishery;
+        private JButton buildWell;
+        private JButton buildGoldmine;
+        private JButton buildIronmine;
+        private JButton buildCoalmine;
+        private JButton buildGranitemine;
+        private JButton buildSawmill;
+        private JButton buildQuarry;
+        private JButton buildMill;
+        private JButton buildBakery;
+        private JButton buildFarm;
+        private JButton buildPigFarm;
+        private JButton buildMint;
+        private JButton buildSlaughterHouse;
+        private JButton buildDonkeyFarm;
+        private JButton buildGuardHouse;
+        private JButton buildWatchTower;
+        private JButton buildFortress;
+        private JButton attackHouseButton;
 
         public ControlPanel() {
             super();
@@ -211,7 +223,23 @@ public class SidePanel extends JTabbedPane {
 
             setBuildingCreationVisibility(false);
         }
-        
+
+        void enemyHouseSelected() {
+            removeHouseButton.setVisible(false);
+            stopProductionButton.setVisible(false);
+
+            attackHouseButton.setVisible(true);
+
+            startRoadButton.setVisible(false);
+            removeFlagButton.setVisible(false);
+            raiseFlagButton.setVisible(false);
+            removeRoadButton.setVisible(false);
+            callGeologistButton.setVisible(false);
+            callScoutButton.setVisible(false);
+
+            setBuildingCreationVisibility(false);
+        }
+
         void roadSelected() {
             raiseFlagButton.setVisible(true);
             removeRoadButton.setVisible(true);
@@ -379,8 +407,9 @@ public class SidePanel extends JTabbedPane {
             /* Create panel for construction of buildings */
             buildingPanel.setLayout(new GridLayout(15, 1));
             
-            removeHouseButton = new JButton("Remove house");
+            removeHouseButton    = new JButton("Remove house");
             stopProductionButton = new JButton("Production on/off");
+            attackHouseButton    = new JButton("Attack");
 
             buildWoodcutter     = new JButton("Woodcutter");
             buildForester       = new JButton("Forester");
@@ -511,7 +540,21 @@ public class SidePanel extends JTabbedPane {
                     }
                 }
             });
-                        
+
+            attackHouseButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    if (commandListener != null) {
+                        try {
+                            commandListener.attackHouse(selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            });
+
             for (JButton b : houseCreationButtons) {
                 b.addActionListener(buildListener);
             }
@@ -520,6 +563,7 @@ public class SidePanel extends JTabbedPane {
 
             buildingPanel.add(removeHouseButton);
             buildingPanel.add(stopProductionButton);
+            buildingPanel.add(attackHouseButton);
             
             for (JButton b : houseCreationButtons) {
                 buildingPanel.add(b);

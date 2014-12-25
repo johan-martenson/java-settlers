@@ -393,6 +393,24 @@ public class App extends JFrame {
             map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
         }
 
+        @Override
+        public void attackHouse(Point selectedPoint) {
+
+            /* Find building to attack */
+            Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
+
+            /* Record?
+            
+            assertEquals(map.getBuildingAtPoint(<point-with-my-name>), <building-with-my-name>)
+            
+            */
+            
+            /* Order attack */
+            controlledPlayer.attack(buildingToAttack);
+
+            recorder.recordAttack(controlledPlayer, buildingToAttack);
+        }
+
         class ClearInputTask extends TimerTask {
 
             @Override
@@ -527,11 +545,13 @@ public class App extends JFrame {
             controlledPlayer = player0;
 
             gameDrawer.setPlayer(controlledPlayer);
+            sidePanel.setPlayer(controlledPlayer);
 
             /* Create game map */
             map = new GameMap(players, widthInPoints, heightInPoints);
 
             gameDrawer.setMap(map);
+            sidePanel.setMap(map);
 
             recorder.recordNewGame(players, widthInPoints, heightInPoints);
 

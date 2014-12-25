@@ -36,4 +36,6 @@ interface CommandListener {
     public void stopProduction(Point selectedPoint) throws Exception;
 
     public void callScout(Point selectedPoint) throws Exception;
+
+    public void attackHouse(Point selectedPoint);
 }
