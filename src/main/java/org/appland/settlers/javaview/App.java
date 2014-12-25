@@ -264,6 +264,10 @@ public class App extends JFrame {
                     repaint();
                 } else if (previousKeys.equals("+")) {
                     addBonusResourcesForPlayer(controlledPlayer);
+                } else if (previousKeys.equals("A")) {
+                    if (map.isBuildingAtPoint(selectedPoint) && !controlledPlayer.isWithinBorder(selectedPoint)) {
+                        attackHouse(selectedPoint);
+                    }
                 } else if (previousKeys.equals("bak")) {
                     placeBuilding(controlledPlayer, BAKERY, selectedPoint);
                     setState(IDLE);
