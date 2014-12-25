@@ -52,6 +52,7 @@ import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.Cargo;
 import org.appland.settlers.model.CoalMine;
 import org.appland.settlers.model.DonkeyFarm;
 import org.appland.settlers.model.Farm;
@@ -67,7 +68,16 @@ import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
+import static org.appland.settlers.model.Material.COIN;
+import static org.appland.settlers.model.Material.FISH;
+import static org.appland.settlers.model.Material.FLOUR;
+import static org.appland.settlers.model.Material.GENERAL;
 import static org.appland.settlers.model.Material.GOLD;
+import static org.appland.settlers.model.Material.MEAT;
+import static org.appland.settlers.model.Material.PLANCK;
+import static org.appland.settlers.model.Material.STONE;
+import static org.appland.settlers.model.Material.WHEAT;
+import static org.appland.settlers.model.Material.WOOD;
 import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Mint;
 import org.appland.settlers.model.PigFarm;
@@ -252,6 +262,8 @@ public class App extends JFrame {
                     showAvailableSpots = !showAvailableSpots;
 
                     repaint();
+                } else if (previousKeys.equals("+")) {
+                    addBonusResourcesForPlayer(controlledPlayer);
                 } else if (previousKeys.equals("bak")) {
                     placeBuilding(controlledPlayer, BAKERY, selectedPoint);
                     setState(IDLE);
@@ -427,6 +439,40 @@ public class App extends JFrame {
 
             /* Order re-population */
             building.cancelEvacuation();
+        }
+
+        private void addBonusResourcesForPlayer(Player controlledPlayer) throws Exception {
+            Building headquarter = null;
+
+            /* Find headquarter */
+            for (Building b : controlledPlayer.getBuildings()) {
+                if (b instanceof Headquarter) {
+                    headquarter = b;
+
+                    break;
+                }
+            }
+
+            /* Fill headquarter with bonus resources */
+            if (headquarter != null) {
+                fillStorageWithMaterial(headquarter, WOOD,    100);
+                fillStorageWithMaterial(headquarter, PLANCK,  100);
+                fillStorageWithMaterial(headquarter, STONE,   100);
+                fillStorageWithMaterial(headquarter, GOLD,    100);
+                fillStorageWithMaterial(headquarter, COAL,    100);
+                fillStorageWithMaterial(headquarter, COIN,    100);
+                fillStorageWithMaterial(headquarter, FISH,    100);
+                fillStorageWithMaterial(headquarter, WHEAT,   100);
+                fillStorageWithMaterial(headquarter, FLOUR,   100);
+                fillStorageWithMaterial(headquarter, MEAT,    100);
+                fillStorageWithMaterial(headquarter, GENERAL, 100);
+            }
+        }
+
+        private void fillStorageWithMaterial(Building headquarter, Material material, int amount) throws Exception {
+            for (int i = 0; i < amount; i++) {
+                headquarter.putCargo(new Cargo(material, map));
+            }
         }
 
         class ClearInputTask extends TimerTask {
@@ -655,9 +701,9 @@ public class App extends JFrame {
                     while (true) {
                         recorder.recordTick();
 
-                        map.stepTime();
 
                         try {
+                            map.stepTime();
                             sidePanel.update();
                         } catch (Exception ex) {
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
