@@ -16,6 +16,7 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,6 +71,7 @@ import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Mint;
 import org.appland.settlers.model.PigFarm;
+import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
@@ -96,7 +98,7 @@ public class App extends JFrame {
         sidePanel.setCommandListener(canvas);
         
         try {
-            canvas.initGame(40, 40);
+            canvas.initGame(100, 100);
         } catch (Exception e) {
             System.out.println(e);
             e.printStackTrace(System.out);
@@ -137,6 +139,7 @@ public class App extends JFrame {
         private GameDrawer  gameDrawer;
         private boolean     turboModeEnabled;
         private Timer       clearInputTimer;
+        private Player      controlledPlayer;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -195,7 +198,7 @@ public class App extends JFrame {
         private void buildRoad(List<Point> wayPoints) throws Exception {
             System.out.println("Building road (" + wayPoints + ")");
             
-            Road r = map.placeRoad(wayPoints);
+            Road r = map.placeRoad(controlledPlayer, wayPoints);
             
             recorder.recordPlaceRoad(r);
 
@@ -209,7 +212,7 @@ public class App extends JFrame {
                 Point last = getLastSelectedWayPoint();
 
                 if (!point.isAdjacent(last)) {
-                    List<Point> pointsBetween = map.findAutoSelectedRoad(last, point, roadPoints);
+                    List<Point> pointsBetween = map.findAutoSelectedRoad(controlledPlayer, last, point, roadPoints);
                     
                     boolean firstRun = true;
                     
@@ -252,93 +255,93 @@ public class App extends JFrame {
 
                     repaint();
                 } else if (previousKeys.equals("bak")) {
-                    placeBuilding(BAKERY, selectedPoint);
+                    placeBuilding(controlledPlayer, BAKERY, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("bar")) {
-                    placeBuilding(BARRACKS, selectedPoint);
+                    placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("c")) {
-                    placeBuilding(COALMINE, selectedPoint);
+                    placeBuilding(controlledPlayer, COALMINE, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("d")) {
-                    placeBuilding(DONKEY_FARM, selectedPoint);
+                    placeBuilding(controlledPlayer, DONKEY_FARM, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("D")) {
                     recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fi")) {
-                    placeBuilding(FISHERY, selectedPoint);
+                    placeBuilding(controlledPlayer, FISHERY, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("fore")) {
-                    placeBuilding(FORESTER, selectedPoint);
+                    placeBuilding(controlledPlayer, FORESTER, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("fort")) {
-                    placeBuilding(FORTRESS, selectedPoint);
+                    placeBuilding(controlledPlayer, FORTRESS, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (key == 'd') {
                     recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fa")) {
-                    placeBuilding(FARM, selectedPoint);
+                    placeBuilding(controlledPlayer, FARM, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("go")) {
-                    placeBuilding(GOLDMINE, selectedPoint);
+                    placeBuilding(controlledPlayer, GOLDMINE, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("gr")) {
-                    placeBuilding(GRANITEMINE, selectedPoint);
+                    placeBuilding(controlledPlayer, GRANITEMINE, selectedPoint);
                     repaint();
                     setState(IDLE);
                 } else if (previousKeys.equals("gu")) {
-                    placeBuilding(GUARD_HOUSE, selectedPoint);
+                    placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("i")) {
-                    placeBuilding(IRONMINE, selectedPoint);
+                    placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
                     repaint();
                     setState(IDLE);
                 } else if (previousKeys.equals("mil")) {
-                    placeBuilding(MILL, selectedPoint);
+                    placeBuilding(controlledPlayer, MILL, selectedPoint);
                     repaint();
                     setState(IDLE);
                 } else if (previousKeys.equals("min")) {
-                    placeBuilding(MINT, selectedPoint);
+                    placeBuilding(controlledPlayer, MINT, selectedPoint);
                     repaint();
                     setState(IDLE);
                 } else if (previousKeys.equals("p")) {
-                    placeBuilding(PIG_FARM, selectedPoint);
+                    placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("sa")) {
-                    placeBuilding(SAWMILL, selectedPoint);
+                    placeBuilding(controlledPlayer, SAWMILL, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("sl")) {
-                    placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
+                    placeBuilding(controlledPlayer, SLAUGHTER_HOUSE, selectedPoint);
                     repaint();
                     setState(IDLE);
                 } else if (previousKeys.equals("T")) {
                     setTurboMode(!turboModeEnabled);
                 } else if (previousKeys.equals("wa")) {
-                    placeBuilding(WATCH_TOWER, selectedPoint);
+                    placeBuilding(controlledPlayer, WATCH_TOWER, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("we")) {
-                    placeBuilding(WELL, selectedPoint);
+                    placeBuilding(controlledPlayer, WELL, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("wo")) {
-                    placeBuilding(WOODCUTTER, selectedPoint);
+                    placeBuilding(controlledPlayer, WOODCUTTER, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (key == 'q') {
-                    placeBuilding(QUARRY, selectedPoint);
+                    placeBuilding(controlledPlayer, QUARRY, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (key == 'R') {
@@ -374,6 +377,22 @@ public class App extends JFrame {
             }
         }
 
+        private void placeOpponent(Player opponent, GameMap map) throws Exception {
+
+            /* Place opponent's headquarter */
+            Building headquarter1 = new Headquarter(opponent);
+            Point point1 = new Point(45, 21);
+            map.placeBuilding(headquarter1, point1);
+
+            /* Place barracks for opponent */
+            Point point3 = new Point(29, 21);
+            Building barracks0 = new Barracks(opponent);
+            map.placeBuilding(barracks0, point3);
+
+            /* Connect the barracks with the headquarter */
+            map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
+        }
+
         class ClearInputTask extends TimerTask {
 
             @Override
@@ -390,13 +409,11 @@ public class App extends JFrame {
 
         @Override
         public void placeFlag(Point p) throws Exception {
-            Flag f = new Flag(p);                            
-                            
             System.out.println("Placed flag at " + p);
 
-            map.placeFlag(f);
+            Flag flag = map.placeFlag(controlledPlayer, p);
             
-            recorder.recordPlaceFlag(f, p);
+            recorder.recordPlaceFlag(flag, p);
         }
 
         private void cancelRoadBuilding() {
@@ -404,77 +421,81 @@ public class App extends JFrame {
         }
 
         @Override
-        public void placeBuilding(HouseType houseType, Point p) throws Exception {
+        public void placeBuilding(HouseType type, Point p) throws Exception {
+            placeBuilding(controlledPlayer, type, p);
+        }
+
+        private void placeBuilding(Player player, HouseType houseType, Point p) throws Exception {
             Building b = null;
             
             System.out.println("Placing " + houseType + " at " + selectedPoint);
             
             switch (houseType) {
             case WOODCUTTER:
-                b = new Woodcutter();
+                b = new Woodcutter(player);
                 break;
             case HEADQUARTER:
-                b = new Headquarter();
+                b = new Headquarter(player);
                 break;
             case FORESTER:
-                b = new ForesterHut();
+                b = new ForesterHut(player);
                 break;
             case SAWMILL:
-                b = new Sawmill();
+                b = new Sawmill(player);
                 break;
             case QUARRY:
-                b = new Quarry();
+                b = new Quarry(player);
                 break;
             case FARM:
-                b = new Farm();
+                b = new Farm(player);
                 break;
             case BARRACKS:
-                b = new Barracks();
+                b = new Barracks(player);
                 break;
             case WELL:
-                b = new Well();
+                b = new Well(player);
                 break;
             case MILL:
-                b = new Mill();
+                b = new Mill(player);
                 break;
             case BAKERY:
-                b = new Bakery();
+                b = new Bakery(player);
                 break;
             case FISHERY:
-                b = new Fishery();
+                b = new Fishery(player);
                 break;
             case GOLDMINE:
-                b = new GoldMine();
+                b = new GoldMine(player);
                 break;
             case IRONMINE:
-                b = new IronMine();
+                b = new IronMine(player);
                 break;
             case COALMINE:
-                b = new CoalMine();
+                b = new CoalMine(player);
                 break;
             case GRANITEMINE:
-                b = new GraniteMine();
+                b = new GraniteMine(player);
                 break;
             case PIG_FARM:
-                b = new PigFarm();
+                b = new PigFarm(player);
                 break;
             case MINT:
-                b = new Mint();
+                b = new Mint(player);
                 break;
             case SLAUGHTER_HOUSE:
-                b = new SlaughterHouse();
+                b = new SlaughterHouse(player);
                 break;
             case DONKEY_FARM:
-                b = new DonkeyFarm();
+                b = new DonkeyFarm(player);
                 break;
             case GUARD_HOUSE:
-                b = new GuardHouse();
+                b = new GuardHouse(player);
                 break;
             case WATCH_TOWER:
-                b = new WatchTower();
+                b = new WatchTower(player);
                 break;
             case FORTRESS:
-                b = new Fortress();
+                b = new Fortress(player);
             }
 
             if (b == null) {
@@ -492,16 +513,36 @@ public class App extends JFrame {
             setState(IDLE);
             
             recorder.recordComment("Starting new game");
-            
-            map = new GameMap(widthInPoints, heightInPoints);
 
-            recorder.recordNewGame(widthInPoints, heightInPoints);
+            /* Create players */
+            Player player0 = new Player("Player 0");
+            Player player1 = new Player("Player 1");
 
-            createInitialTerrain(map);
+            List<Player> players = new LinkedList<>();
 
-            placeBuilding(HEADQUARTER, new Point(5, 5));
+            players.add(player0);
+            players.add(player1);
+
+            /* Choose the player to control */
+            controlledPlayer = player0;
+
+            gameDrawer.setPlayer(controlledPlayer);
+
+            /* Create game map */
+            map = new GameMap(players, widthInPoints, heightInPoints);
 
             gameDrawer.setMap(map);
+
+            recorder.recordNewGame(players, widthInPoints, heightInPoints);
+
+            /* Create the terrain */
+            createInitialTerrain(map);
+
+            /* Place player to be controlled */
+            placeBuilding(controlledPlayer, HEADQUARTER, new Point(5, 5));
+
+            /* Place the opponent */
+            placeOpponent(player1, map);
 
             repaint();
         }

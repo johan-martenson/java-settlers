@@ -7,10 +7,12 @@
 package org.appland.settlers.javaview;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
+import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Stone;
@@ -280,7 +282,7 @@ public class ApiRecorder {
         record(INDENT + flagName + ".callGeologist();\n");
     }
 
-    void recordNewGame(int widthInPoints, int heightInPoints) {
+    void recordNewGame(List<Player> players, int widthInPoints, int heightInPoints) {
         recordComment("Creating new game map with size " + widthInPoints + "x" + heightInPoints);
         
         record(INDENT + "GameMap map = new GameMap(" + widthInPoints + ", " + heightInPoints + ");\n");

@@ -34,6 +34,7 @@ import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
+import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Sign;
@@ -99,6 +100,7 @@ public class GameDrawer {
     private int           widthInPoints;
     private int           terrainPrerenderedWidthInPoints;
     private int           terrainPrerenderedHeightInPoints;
+    private Player        player;
 
     GameDrawer(GameMap m, int w, int h, int wP, int hP) {
         map    = m;
@@ -317,7 +319,7 @@ public class GameDrawer {
     private void drawBorders(Graphics2D g) {
         g.setColor(BORDER_COLOR);
 
-        for (Collection<Point> border : map.getBorders()) {
+        for (Collection<Point> border : player.getBorders()) {
             for (Point p : border) {
                 if (!isWithinScreen(p)) {
                     continue;
@@ -333,7 +335,7 @@ public class GameDrawer {
         /* Create the area with the whole screen */
         Area area = new Area(new Rectangle(0, 0, width, height));
 
-        List<Point> fov = map.getFieldOfView();
+        List<Point> fov = player.getFieldOfView();
 
         /* Create a polygon with the discovered land to cut out of the whole screen */
         Point lastPointInFov = fov.get(fov.size() - 1);
@@ -449,7 +451,7 @@ public class GameDrawer {
 
     private void drawPossibleRoadConnections(Graphics2D g, Point point, List<Point> roadPoints) throws Exception {
 
-        for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(point)) {
+        for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(player, point)) {
             if (map.isFlagAtPoint(p)) {
                 continue;
             }
@@ -663,8 +665,8 @@ public class GameDrawer {
 
     private void drawAvailableSpots(Graphics2D g) {
         try {
-            Map<Point, Size> houses = map.getAvailableHousePoints();
-            List<Point> flags = map.getAvailableFlagPoints();
+            Map<Point, Size> houses = map.getAvailableHousePoints(player);
+            List<Point> flags = map.getAvailableFlagPoints(player);
 
             for (Map.Entry<Point, Size> pair : houses.entrySet()) {
                 drawAvailableHouse(g, pair.getKey(), pair.getValue());
@@ -816,5 +818,9 @@ public class GameDrawer {
 
         grid = buildGrid(widthInPoints, heightInPoints);
         terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
+    }
+
+    void setPlayer(Player controlledPlayer) {
+        player = controlledPlayer;
     }
 }
