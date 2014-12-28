@@ -328,12 +328,23 @@ public class SidePanel extends JTabbedPane {
             Building building = map.getBuildingAtPoint(selectedPoint);
 
             /* Only enable the military options if it's a military building */
-            boolean militaryBuilding = building.isMilitaryBuilding();
+            if (building.isMilitaryBuilding()) {
+                startCoins.setEnabled(true);
+                stopCoins.setEnabled(true);
 
-            startCoins.setEnabled(militaryBuilding);
-            stopCoins.setEnabled(militaryBuilding);
-            evacuateButton.setEnabled(militaryBuilding);
-            cancelEvacuationButton.setEnabled(militaryBuilding);
+                if (building.isEvacuated()) {
+                    evacuateButton.setEnabled(false);
+                    cancelEvacuationButton.setEnabled(true);
+                } else {
+                    evacuateButton.setEnabled(true);
+                    cancelEvacuationButton.setEnabled(false);
+                }
+            } else {
+                startCoins.setEnabled(false);
+                stopCoins.setEnabled(false);
+                evacuateButton.setEnabled(false);
+                cancelEvacuationButton.setEnabled(false);                
+            }
 
             /* Only set regular production options for capable buildings */
             //stopProductionButton.setEnabled(!militaryBuilding);
@@ -376,6 +387,11 @@ public class SidePanel extends JTabbedPane {
             /* Print deployed militaries if it's a military building */
             if (building.isMilitaryBuilding()) {
                 info += building.getHostedMilitary() + " of " + building.getMaxHostedMilitary() + " deployed <br>";
+
+                /* Print if the building is evacuated */
+                if (building.isEvacuated()) {
+                    info += "Evacuation activated<br>";
+                }
             }
 
             /* Print material the building needs */
