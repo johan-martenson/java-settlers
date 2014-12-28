@@ -102,21 +102,14 @@ public class GameDrawer {
     private int           terrainPrerenderedHeightInPoints;
     private Player        player;
 
-    GameDrawer(GameMap m, int w, int h, int wP, int hP) {
-        map    = m;
+    GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
         height = h;
 
         widthInPoints  = wP;
         heightInPoints = hP;
-        
+
         drawer = new ScaledDrawer(500, 500, w, h);
-        
-        try {
-            terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
-        } catch (Exception ex) {
-            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
-        }
         
         houseImage = loadImage("house-sketched.png");
             
@@ -790,6 +783,12 @@ public class GameDrawer {
 
     void setMap(GameMap m) {
         map = m;
+
+        try {
+            terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
+        } catch (Exception ex) {
+            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     void zoomIn(int notches) throws Exception {

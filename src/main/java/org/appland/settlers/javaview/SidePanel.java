@@ -1,55 +1,29 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import static org.appland.settlers.javaview.App.HouseType.BAKERY;
-import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
-import static org.appland.settlers.javaview.App.HouseType.COALMINE;
-import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
-import static org.appland.settlers.javaview.App.HouseType.FARM;
-import static org.appland.settlers.javaview.App.HouseType.FISHERY;
-import static org.appland.settlers.javaview.App.HouseType.FORESTER;
-import static org.appland.settlers.javaview.App.HouseType.FORTRESS;
-import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
-import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
-import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
-import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
-import static org.appland.settlers.javaview.App.HouseType.MILL;
-import static org.appland.settlers.javaview.App.HouseType.MINT;
-import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
-import static org.appland.settlers.javaview.App.HouseType.QUARRY;
-import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
-import static org.appland.settlers.javaview.App.HouseType.SLAUGHTER_HOUSE;
-import static org.appland.settlers.javaview.App.HouseType.WATCH_TOWER;
-import static org.appland.settlers.javaview.App.HouseType.WELL;
-import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
-import org.appland.settlers.model.Cargo;
-import org.appland.settlers.model.Courier;
-import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
-import org.appland.settlers.model.Road;
-import org.appland.settlers.model.Storage;
 
 /**
  *
@@ -57,13 +31,19 @@ import org.appland.settlers.model.Storage;
  */
 public class SidePanel extends JTabbedPane {
 
-    private final Infoview        infoPanel;
-    private final ControlPanel    controlPanel;
-    private final CommandListener commandListener;
+    private final ControlPanel         controlPanel;
+    private final CommandListener      commandListener;
+    private final SpotToBuildOnPanel   toBuild;
+    private final FlagSpotPanel        flagSpotPanel;
+    private final OwnBuildingSpotPanel ownBuildingSpotPanel;
+    private final RoadSpotPanel        roadSpotPanel;
+    private final EnemyBuildingPanel   enemyBuildingPanel;
+    private final NonePanel            nonePanel;
 
     private Point   selectedPoint;
     private GameMap map;
     private Player  player;
+    private boolean stayOnSelected;
 
     void update() throws Exception {
 
@@ -71,60 +51,27 @@ public class SidePanel extends JTabbedPane {
             return;
         }
 
+        if (stayOnSelected) {
+            return;
+        }
+
         if (player.isWithinBorder(selectedPoint)) {
             if (map.isFlagAtPoint(selectedPoint)) {
-                Flag flag = map.getFlagAtPoint(selectedPoint);
-
-                displayFlag(flag);
-                infoPanel.displayInfo(flag);
+                setSelectedComponent(flagSpotPanel);
             } else if (map.isBuildingAtPoint(selectedPoint)) {
-                Building building = map.getBuildingAtPoint(selectedPoint);
-
-                displayHouse(building);
-                infoPanel.displayInfo(building);
+                setSelectedComponent(ownBuildingSpotPanel);
             } else if (map.isRoadAtPoint(selectedPoint)) {
-                Road road = map.getRoadAtPoint(selectedPoint);
-
-                displayRoad(road);
-                infoPanel.displayInfo(road);
+                setSelectedComponent(roadSpotPanel);
             } else {
-                emptyPointSelected();
+                setSelectedComponent(toBuild);
             }
         } else {
             if (map.isBuildingAtPoint(selectedPoint)) {
-                displayEnemyHouse(map.getBuildingAtPoint(selectedPoint));
+                setSelectedComponent(enemyBuildingPanel);
+            } else {
+                setSelectedComponent(nonePanel);
             }
         }
-    }
-
-    void displayFlag(Flag flag) {
-        infoPanel.displayInfo(flag);
-        controlPanel.flagSelected();
-    }
-
-    void displayHouse(Building building) {
-        infoPanel.displayInfo(building);
-        controlPanel.buildingSelected(building);
-    }
-
-    void emptyPointSelected() {
-        infoPanel.clear();
-
-        controlPanel.emptyPointSelected();
-    }
-
-    Infoview getInfoview() {
-        return infoPanel;
-    }
-
-    void displayRoad(Road road) {
-        infoPanel.displayInfo(road);
-        controlPanel.roadSelected();
-    }
-
-    private void displayEnemyHouse(Building building) throws Exception {
-        infoPanel.displayInfo(building);
-        controlPanel.enemyBuildingSelected(building);
     }
 
     void setMap(GameMap m) {
@@ -135,48 +82,479 @@ public class SidePanel extends JTabbedPane {
         player = p;
     }
 
+    private class NonePanel extends JPanel {
+
+        public NonePanel() {
+            JPanel panel = new JPanel();
+
+            panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            add(panel);
+
+            /* Create buttons */
+
+            /* Add buttons to the panel */
+
+            /* Add action listeners */
+
+            /* Show the panel */
+            panel.setVisible(true);
+        }
+    }
+    
+    private class EnemyBuildingPanel extends JPanel {
+
+        private final JLabel  titleField;
+        private final JButton attackButton;
+        
+        public EnemyBuildingPanel() {
+            JPanel panel = new JPanel();
+
+            panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            /* Create title field */
+            titleField = new JLabel("");
+
+            /* Create buttons */
+            attackButton = new JButton("Attack");
+
+            /* Add buttons to the panel */
+            panel.add(attackButton);
+
+            /* Add action listeners */
+            attackButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.attackHouse(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            /* Populate the tab */
+            setLayout(new BorderLayout());
+
+            add(titleField, BorderLayout.NORTH);
+            add(panel, BorderLayout.CENTER);
+
+            /* Show the panel */
+            panel.setVisible(true);
+        }
+
+        private void updateButtons() {
+
+            /* Get selected building */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            try {
+                /* Only enable attack button if the building can be attacked */
+                if (building.isMilitaryBuilding()                         &&
+                        player.getAvailableAttackersForBuilding(building) > 0 &&
+                        building.ready()) {
+                    attackButton.setVisible(true);
+                } else {
+                    attackButton.setVisible(false);
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        private void updateInfoField() {
+
+            /* Get selected building */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            /* Update the title */
+            titleField.setText(Utils.BuildingNameAsHeading(building));
+        }
+    }
+    
+    private class RoadSpotPanel extends JPanel {
+        private final JButton removeRoadButton;
+
+        public RoadSpotPanel() {
+            JPanel panel = new JPanel();
+
+            panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            add(panel);
+
+            /* Create buttons */
+            removeRoadButton = new JButton("Remove road");
+
+            /* Add buttons to the panel */
+            panel.add(removeRoadButton);
+
+            /* Add action listeners */
+            removeRoadButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.removeRoadAtPoint(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            /* Show the panel */
+            panel.setVisible(true);
+        }
+    }
+    
+    private class OwnBuildingSpotPanel extends JPanel {
+
+        private final JLabel  titleField;
+        private final JLabel  infoField;
+
+        private final JButton removeHouseButton;
+        private final JButton stopProductionButton;
+        private final JButton evacuateButton;
+        private final JButton cancelEvacuationButton;
+        private final JButton stopCoins;
+        private final JButton startCoins;
+
+        public OwnBuildingSpotPanel() {
+            JPanel control = new JPanel();
+            JPanel info    = new JPanel();
+
+            control.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            /* Create title field */
+            titleField = new JLabel("");
+
+            /* Create info field */
+            infoField = new JLabel("");
+
+            /* Add info field to the panel */
+            info.add(infoField);
+
+            /* Create buttons */
+            removeHouseButton      = new JButton("Remove building");
+            stopProductionButton   = new JButton("Stop production");
+            evacuateButton         = new JButton("Evacuate building");
+            cancelEvacuationButton = new JButton("Cancel evacuation");
+            stopCoins              = new JButton("Stop coins");
+            startCoins             = new JButton("Resume coins");
+
+            /* Add buttons to the panel */
+            control.add(removeHouseButton);
+            control.add(stopProductionButton);
+            control.add(evacuateButton);
+            control.add(cancelEvacuationButton);
+            control.add(stopCoins);
+            control.add(startCoins);
+
+            /* Add action listeners */
+            removeHouseButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.removeHouseCommand(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            stopProductionButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.stopProduction(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            evacuateButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.evacuate(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            cancelEvacuationButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.cancelEvacuation(selectedPoint);
+                }
+            });
+
+            stopCoins.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.stopCoins(selectedPoint);
+                }
+            });
+
+            startCoins.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.startCoins(selectedPoint);
+                }
+            });
+
+            /* Add the panels */
+            setLayout(new BorderLayout());
+
+            add(titleField, BorderLayout.NORTH);
+            add(info, BorderLayout.CENTER);
+            add(control, BorderLayout.SOUTH);
+
+            /* Show the panel */
+            setVisible(true);
+        }
+
+        private void updateButtons() {
+
+            /* Get the selected building */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            /* Only enable the military options if it's a military building */
+            boolean militaryBuilding = building.isMilitaryBuilding();
+
+            startCoins.setEnabled(militaryBuilding);
+            stopCoins.setEnabled(militaryBuilding);
+            evacuateButton.setEnabled(militaryBuilding);
+            cancelEvacuationButton.setEnabled(militaryBuilding);
+
+            /* Only set regular production options for capable buildings */
+            //stopProductionButton.setEnabled(!militaryBuilding);
+        }
+
+        private void updateInfoField() {
+
+            /* Get the selected building */
+            Building building = map.getBuildingAtPoint(selectedPoint);
+
+            /* Start the title */
+            String title = Utils.BuildingNameAsHeading(building);
+
+            /* Adapt the title to the state of the building */
+            if (building.underConstruction()) {
+                title = "(" + title + ")";
+            } else if (building.burningDown()) {
+                title = "Burning " + title;
+            } else if (building.destroyed()) {
+                title = "Destroyed" + title;
+            }
+
+            /* Put together the info text */
+            String info = "<html>";
+
+            /* Indicate if production is disabled */
+            if (!building.isProductionEnabled()) {
+                info += "<br>Production is stopped<br>";
+            }
+
+            /* Print if worker is needed */
+            try {
+                if (building.needsWorker()) {
+                    info += "Needs " + building.getWorkerType().name() + "<br>";
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            /* Print deployed militaries if it's a military building */
+            if (building.isMilitaryBuilding()) {
+                info += building.getHostedMilitary() + " of " + building.getMaxHostedMilitary() + " deployed <br>";
+            }
+
+            /* Print material the building needs */
+            List<Material> materialNeeded = new LinkedList<>();
+
+            for (Material m : Material.values()) {
+                if (building.needsMaterial(m)) {
+                    materialNeeded.add(m);
+                }
+            }
+
+            if (!materialNeeded.isEmpty()) {
+                info += "Needs: ";
+
+                boolean firstRun = true;
+                for (Material m : materialNeeded) {
+                    if (!firstRun) {
+                        info += ", ";
+                    }
+
+                    info += m.name();
+                    firstRun = false;
+                }
+            }
+
+            /* Set the title */
+            titleField.setText(title);
+
+            /* Set the info text */
+            infoField.setText(info);
+        }
+    }
+    
+    private class FlagSpotPanel extends JPanel {
+
+        JButton startRoadButton;
+        JButton removeFlagButton;
+        JButton callScoutButton;
+        JButton callGeologistButton;
+
+        public FlagSpotPanel() {
+            JPanel panel = new JPanel();
+
+            panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            add(panel);
+
+            /* Create buttons */
+            removeFlagButton    = new JButton("Remove flag");
+            startRoadButton     = new JButton("Start new road");
+            callGeologistButton = new JButton("Call geologist");
+            callScoutButton     = new JButton("Call scout");
+
+            /* Add buttons to the panel */
+            panel.add(removeFlagButton);
+            panel.add(startRoadButton);
+            panel.add(callGeologistButton);
+            panel.add(callScoutButton);
+
+            /* Add action listeners */
+            startRoadButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.startRoadCommand(selectedPoint);
+                }
+            });
+
+            removeFlagButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.removeFlagCommand(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            callGeologistButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.callGeologist(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            callScoutButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.callScout(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            /* Show the panel */
+            panel.setVisible(true);
+        }
+    }
+    
+    private class SpotToBuildOnPanel extends JPanel {
+        private final JButton raiseFlagButton;
+        private final Map<JButton, HouseType> buttonToHouseType;
+
+        SpotToBuildOnPanel() {
+
+            /* Create panel to hold the buttons */
+            JPanel panel = new JPanel();
+
+            panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+
+            /* Add button for raising a flag */
+            raiseFlagButton = new JButton("Raise flag");
+
+            panel.add(raiseFlagButton);
+
+            raiseFlagButton.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    try {
+                        commandListener.placeFlag(selectedPoint);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
+            /* Place house buttons */
+            buttonToHouseType = new HashMap<>();
+
+            for (HouseType type : HouseType.values()) {
+                JButton buildingButton = new JButton(Utils.prettifyBuildingName(type));
+
+                panel.add(buildingButton);
+
+                buttonToHouseType.put(buildingButton, type);
+            }
+
+            /* Add action handler to house buttons */
+            for (JButton button : buttonToHouseType.keySet()) {
+                button.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        try {
+                            commandListener.placeBuilding(buttonToHouseType.get(ae.getSource()), selectedPoint);
+                        } catch (Exception ex) {
+                            Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                });
+            }
+
+            /* Fix the dimensions */
+            setMinimumSize(new Dimension(100, 100));
+            setPreferredSize(new Dimension(100, 500));
+
+            /* Place the panel in the tab */
+            add(panel);
+
+            /* Make it visible */
+            setVisible(true);
+        }
+    }
+
     private class ControlPanel extends JPanel {
 
         private boolean turboToggle;
-
         private final JPanel controlPanel;
-        private final JPanel constructionPanel;
-        private JButton raiseFlagButton;
-        private JButton startRoadButton;
-        private JButton removeFlagButton;
-        private JButton removeHouseButton;
-        private JButton stopProductionButton;
-        private JButton removeRoadButton;
-        private JButton callGeologistButton;
-        private JButton callScoutButton;
-
-        private List<JButton> houseCreationButtons;
-
-        private JButton buildWoodcutter;
-        private JButton buildForester;
-        private JButton buildBarracks;
-        private JButton buildFishery;
-        private JButton buildWell;
-        private JButton buildGoldmine;
-        private JButton buildIronmine;
-        private JButton buildCoalmine;
-        private JButton buildGranitemine;
-        private JButton buildSawmill;
-        private JButton buildQuarry;
-        private JButton buildMill;
-        private JButton buildBakery;
-        private JButton buildFarm;
-        private JButton buildPigFarm;
-        private JButton buildMint;
-        private JButton buildSlaughterHouse;
-        private JButton buildDonkeyFarm;
-        private JButton buildGuardHouse;
-        private JButton buildWatchTower;
-        private JButton buildFortress;
-
-        private JButton attackHouseButton;
-        private JButton evacuateButton;
-        private JButton cancelEvacuationButton;
 
         public ControlPanel() {
             super();
@@ -189,121 +567,17 @@ public class SidePanel extends JTabbedPane {
             setLayout(new BorderLayout());
 
             controlPanel = createControlPanel();
-            constructionPanel = createConstructionPanel();
 
             add(controlPanel, BorderLayout.NORTH);
-            add(constructionPanel, BorderLayout.CENTER);
-
+            
+            /* Show the control panel */
             setVisible(true);
-        }
-
-        void emptyPointSelected() {
-            raiseFlagButton.setVisible(true);
-
-            setBuildingCreationVisibility(true);
-
-            attackHouseButton.setVisible(false);
-            evacuateButton.setVisible(false);
-            cancelEvacuationButton.setVisible(false);
-
-            removeFlagButton.setVisible(false);
-            removeHouseButton.setVisible(false);
-            stopProductionButton.setVisible(false);
-            startRoadButton.setVisible(false);
-            callGeologistButton.setVisible(false);
-            callScoutButton.setVisible(false);
-            removeRoadButton.setVisible(false);
-        }
-
-        void flagSelected() {
-            removeFlagButton.setVisible(true);
-            startRoadButton.setVisible(true);
-            callGeologistButton.setVisible(true);
-            callScoutButton.setVisible(true);
-
-            attackHouseButton.setVisible(false);
-            evacuateButton.setVisible(false);
-            cancelEvacuationButton.setVisible(false);
-
-            raiseFlagButton.setVisible(false);
-            removeHouseButton.setVisible(false);
-            stopProductionButton.setVisible(false);
-            removeRoadButton.setVisible(false);
-
-            setBuildingCreationVisibility(false);
-        }
-
-        void buildingSelected(Building building) {
-            removeHouseButton.setVisible(true);
-            stopProductionButton.setVisible(true);
-
-            if (building.isMilitaryBuilding() && building.ready()) {
-                evacuateButton.setVisible(true);
-                cancelEvacuationButton.setVisible(true);
-            } else {
-                evacuateButton.setVisible(false);
-                cancelEvacuationButton.setVisible(false);
-            }
-
-            attackHouseButton.setVisible(false);
-
-            startRoadButton.setVisible(false);
-            removeFlagButton.setVisible(false);
-            raiseFlagButton.setVisible(false);
-            removeRoadButton.setVisible(false);
-            callGeologistButton.setVisible(false);
-            callScoutButton.setVisible(false);
-
-            setBuildingCreationVisibility(false);
-        }
-
-        void enemyBuildingSelected(Building building) throws Exception {
-            removeHouseButton.setVisible(false);
-            stopProductionButton.setVisible(false);
-
-            evacuateButton.setVisible(false);
-            cancelEvacuationButton.setVisible(false);
-
-            if (building.isMilitaryBuilding()                         && 
-                player.getAvailableAttackersForBuilding(building) > 0 &&
-                building.ready()) {
-                attackHouseButton.setVisible(true);
-            } else {
-                attackHouseButton.setVisible(false);
-            }
-
-            startRoadButton.setVisible(false);
-            removeFlagButton.setVisible(false);
-            raiseFlagButton.setVisible(false);
-            removeRoadButton.setVisible(false);
-            callGeologistButton.setVisible(false);
-            callScoutButton.setVisible(false);
-
-            setBuildingCreationVisibility(false);
-        }
-
-        void roadSelected() {
-            raiseFlagButton.setVisible(true);
-            removeRoadButton.setVisible(true);
-
-            attackHouseButton.setVisible(false);
-            evacuateButton.setVisible(false);
-            cancelEvacuationButton.setVisible(false);
-
-            removeFlagButton.setVisible(false);
-            startRoadButton.setVisible(false);
-            removeHouseButton.setVisible(false);
-            stopProductionButton.setVisible(false);
-            callGeologistButton.setVisible(false);
-            callScoutButton.setVisible(false);
-
-            setBuildingCreationVisibility(false);
         }
 
         private JPanel createControlPanel() {
             JPanel panel = new JPanel();
 
-            panel.setLayout(new GridLayout(1, 3));
+            panel.setLayout(new GridLayout(3, 1));
 
             JButton turboButton = new JButton("Toggle turbo");
             JButton dumpRecordingButton = new JButton("Dump recording");
@@ -340,452 +614,6 @@ public class SidePanel extends JTabbedPane {
 
             return panel;
         }
-
-        private JPanel createConstructionPanel() {
-            JPanel panel = new JPanel();
-            JPanel flagAndRoadPanel = new JPanel();
-            JPanel buildingPanel = new JPanel();
-
-            /* Create flag and road panel */
-            flagAndRoadPanel.setLayout(new GridLayout(3, 1));
-
-            raiseFlagButton = new JButton("Raise flag");
-            removeFlagButton = new JButton("Remove flag");
-            startRoadButton = new JButton("Start new road");
-            removeRoadButton = new JButton("Remove road");
-            callGeologistButton = new JButton("Call geologist");
-            callScoutButton = new JButton("Call scout");
-
-            flagAndRoadPanel.add(raiseFlagButton);
-            flagAndRoadPanel.add(removeFlagButton);
-            flagAndRoadPanel.add(startRoadButton);
-            flagAndRoadPanel.add(removeRoadButton);
-            flagAndRoadPanel.add(callGeologistButton);
-            flagAndRoadPanel.add(callScoutButton);
-
-            raiseFlagButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.placeFlag(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            startRoadButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    commandListener.startRoadCommand(selectedPoint);
-                }
-            });
-
-            removeFlagButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.removeFlagCommand(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            removeRoadButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.removeRoadAtPoint(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            callGeologistButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.callGeologist(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            callScoutButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.callScout(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            flagAndRoadPanel.setVisible(true);
-
-            /* Create panel for construction of buildings */
-            buildingPanel.setLayout(new GridLayout(15, 1));
-
-            removeHouseButton      = new JButton("Remove house");
-            stopProductionButton   = new JButton("Production on/off");
-            attackHouseButton      = new JButton("Attack");
-            evacuateButton         = new JButton("Evacuate");
-            cancelEvacuationButton = new JButton("Cancel evacuation");
-
-            buildWoodcutter     = new JButton("Woodcutter");
-            buildForester       = new JButton("Forester");
-            buildBarracks       = new JButton("Barracks");
-            buildFishery        = new JButton("Fishery");
-            buildWell           = new JButton("Well");
-            buildGoldmine       = new JButton("Gold Mine");
-            buildIronmine       = new JButton("Iron Mine");
-            buildCoalmine       = new JButton("Coal Mine");
-            buildGranitemine    = new JButton("Granite Mine");
-            buildSawmill        = new JButton("Sawmill");
-            buildQuarry         = new JButton("Quarry");
-            buildMill           = new JButton("Mill");
-            buildBakery         = new JButton("Bakery");
-            buildFarm           = new JButton("Farm");
-            buildPigFarm        = new JButton("Pig Farm");
-            buildMint           = new JButton("Mint");
-            buildSlaughterHouse = new JButton("Slaughter House");
-            buildDonkeyFarm     = new JButton("Donkey Farm");
-            buildGuardHouse     = new JButton("Guard House");
-            buildWatchTower     = new JButton("Watch Tower");
-            buildFortress       = new JButton("Fortress");
-
-            houseCreationButtons = new LinkedList<>();
-
-            houseCreationButtons.add(buildWoodcutter);
-            houseCreationButtons.add(buildForester);
-            houseCreationButtons.add(buildBarracks);
-            houseCreationButtons.add(buildFishery);
-            houseCreationButtons.add(buildWell);
-            houseCreationButtons.add(buildGoldmine);
-            houseCreationButtons.add(buildIronmine);
-            houseCreationButtons.add(buildCoalmine);
-            houseCreationButtons.add(buildGranitemine);
-            houseCreationButtons.add(buildSawmill);
-            houseCreationButtons.add(buildQuarry);
-            houseCreationButtons.add(buildMill);
-            houseCreationButtons.add(buildBakery);
-            houseCreationButtons.add(buildFarm);
-            houseCreationButtons.add(buildPigFarm);
-            houseCreationButtons.add(buildMint);
-            houseCreationButtons.add(buildSlaughterHouse);
-            houseCreationButtons.add(buildDonkeyFarm);
-            houseCreationButtons.add(buildGuardHouse);
-            houseCreationButtons.add(buildWatchTower);
-            houseCreationButtons.add(buildFortress);
-
-            ActionListener buildListener = new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        if (ae.getSource().equals(buildBarracks)) {
-                            commandListener.placeBuilding(BARRACKS, selectedPoint);
-                        } else if (ae.getSource().equals(buildWoodcutter)) {
-                            commandListener.placeBuilding(WOODCUTTER, selectedPoint);
-                        } else if (ae.getSource().equals(buildForester)) {
-                            commandListener.placeBuilding(FORESTER, selectedPoint);
-                        } else if (ae.getSource().equals(buildSawmill)) {
-                            commandListener.placeBuilding(SAWMILL, selectedPoint);
-                        } else if (ae.getSource().equals(buildQuarry)) {
-                            commandListener.placeBuilding(QUARRY, selectedPoint);
-                        } else if (ae.getSource().equals(buildFarm)) {
-                            commandListener.placeBuilding(FARM, selectedPoint);
-                        } else if (ae.getSource().equals(buildFishery)) {
-                            commandListener.placeBuilding(FISHERY, selectedPoint);
-                        } else if (ae.getSource().equals(buildWell)) {
-                            commandListener.placeBuilding(WELL, selectedPoint);
-                        } else if (ae.getSource().equals(buildGoldmine)) {
-                            commandListener.placeBuilding(GOLDMINE, selectedPoint);
-                        } else if (ae.getSource().equals(buildIronmine)) {
-                            commandListener.placeBuilding(IRONMINE, selectedPoint);
-                        } else if (ae.getSource().equals(buildCoalmine)) {
-                            commandListener.placeBuilding(COALMINE, selectedPoint);
-                        } else if (ae.getSource().equals(buildGranitemine)) {
-                            commandListener.placeBuilding(GRANITEMINE, selectedPoint);
-                        } else if (ae.getSource().equals(buildMill)) {
-                            commandListener.placeBuilding(MILL, selectedPoint);
-                        } else if (ae.getSource().equals(buildBakery)) {
-                            commandListener.placeBuilding(BAKERY, selectedPoint);
-                        } else if (ae.getSource().equals(buildPigFarm)) {
-                            commandListener.placeBuilding(PIG_FARM, selectedPoint);
-                        } else if (ae.getSource().equals(buildMint)) {
-                            commandListener.placeBuilding(MINT, selectedPoint);
-                        } else if (ae.getSource().equals(buildSlaughterHouse)) {
-                            commandListener.placeBuilding(SLAUGHTER_HOUSE, selectedPoint);
-                        } else if (ae.getSource().equals(buildDonkeyFarm)) {
-                            commandListener.placeBuilding(DONKEY_FARM, selectedPoint);
-                        } else if (ae.getSource().equals(buildGuardHouse)) {
-                            commandListener.placeBuilding(GUARD_HOUSE, selectedPoint);
-                        } else if (ae.getSource().equals(buildWatchTower)) {
-                            commandListener.placeBuilding(WATCH_TOWER, selectedPoint);
-                        } else if (ae.getSource().equals(buildFortress)) {
-                            commandListener.placeBuilding(FORTRESS, selectedPoint);
-                        }
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            };
-
-            removeHouseButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.removeHouseCommand(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            stopProductionButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.stopProduction(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            attackHouseButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.attackHouse(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            evacuateButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    try {
-                        commandListener.evacuate(selectedPoint);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            });
-
-            cancelEvacuationButton.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    commandListener.cancelEvacuation(selectedPoint);
-                }
-            });
-            
-            for (JButton b : houseCreationButtons) {
-                b.addActionListener(buildListener);
-            }
-
-            buildingPanel.add(new JLabel("Buildings"));
-
-            buildingPanel.add(removeHouseButton);
-            buildingPanel.add(stopProductionButton);
-            buildingPanel.add(attackHouseButton);
-            buildingPanel.add(evacuateButton);
-            buildingPanel.add(cancelEvacuationButton);
-
-            for (JButton b : houseCreationButtons) {
-                buildingPanel.add(b);
-            }
-
-            buildingPanel.setVisible(true);
-
-            /* Build the container panel */
-            panel.setLayout(new BorderLayout());
-
-            panel.add(flagAndRoadPanel, BorderLayout.NORTH);
-            panel.add(buildingPanel, BorderLayout.CENTER);
-
-            panel.setVisible(true);
-
-            return panel;
-        }
-
-        private void setBuildingCreationVisibility(boolean visibility) {
-            for (JButton b : houseCreationButtons) {
-                b.setVisible(visibility);
-            }
-        }
-    }
-
-    public class Infoview extends JPanel {
-
-        private final JLabel titleLabel;
-        private final JLabel infoLabel;
-
-        public Infoview() {
-            super();
-
-            setMinimumSize(new Dimension(200, 100));
-            setPreferredSize(new Dimension(300, 500));
-
-            titleLabel = new JLabel();
-            infoLabel = new JLabel();
-
-            titleLabel.setText("none");
-
-            setLayout(new BorderLayout());
-
-            add(titleLabel, BorderLayout.NORTH);
-            add(infoLabel, BorderLayout.CENTER);
-
-            setVisible(true);
-        }
-
-        void displayInfo(Building b) {
-            titleLabel.setText(b.getClass().getSimpleName());
-
-            String info = "<html>";
-
-            if (b.underConstruction()) {
-                info += "Under construction<br>";
-            } else if (b.ready()) {
-                info += "Ready<br>";
-            } else if (b.burningDown()) {
-                info += "Burning down<br>";
-            } else {
-                info += "Destroyed<br>";
-            }
-
-            if (!b.isProductionEnabled()) {
-                info += "<br>Production is stopped<br>";
-            }
-
-            /* Print if worker is needed */
-            try {
-                if (b.needsWorker()) {
-                    info += "Needs " + b.getWorkerType().name() + "<br>";
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            /* Print deployed militaries if it's a military building */
-            if (b.isMilitaryBuilding()) {
-                info += b.getHostedMilitary() + " of " + b.getMaxHostedMilitary() + " deployed <br>";
-            }
-
-            /* Print inventory */
-            if (b instanceof Storage) {
-                info += "<br><b>Inventory</b><br>";
-
-                Storage s = (Storage) b;
-
-                for (Material m : Material.values()) {
-                    if (s.getAmount(m) == 0) {
-                        continue;
-                    }
-
-                    info += "" + m.name() + ": " + s.getAmount(m) + "<br>";
-                }
-            }
-
-            /* Print material needed */
-            for (Material m : Material.values()) {
-                if (b.needsMaterial(m)) {
-                    info += "<br>" + m.name() + " is needed<br>";
-                }
-            }
-
-            infoLabel.setText(info);
-        }
-
-        void displayInfo(Flag f) {
-            titleLabel.setText(f.getClass().getSimpleName() + " - " + f.getPosition());
-
-            String info = "<html>";
-
-            for (Cargo c : f.getStackedCargo()) {
-                info += "" + c.getMaterial() + " to " + c.getTarget().getClass().getSimpleName();
-
-                if (c.isDeliveryPromised()) {
-                    info += " (promised)";
-                }
-
-                info += "<BR>";
-            }
-
-            info += "</html>";
-
-            infoLabel.setText(info);
-        }
-
-        void displayInfo(Road r) {
-            titleLabel.setText("Road - " + r.getStart() + " to " + r.getEnd());
-
-            Courier courier = r.getCourier();
-
-            String info = "<html>";
-
-            if (courier != null) {
-                info += "Assigned courier: <br>" + r.getCourier();
-
-                if (courier.isExactlyAtPoint()) {
-                    info += "Is at " + courier.getPosition() + "<br>";
-                } else {
-                    try {
-                        info += "Is between" + courier.getLastPoint() + " and " + courier.getNextPoint() + "<br>";
-                    } catch (Exception ex) {
-                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-
-                info += "Target is " + courier.getTarget() + "<br>";
-
-                info += "Has arrived: " + courier.isArrived() + "<br>";
-
-                if (courier.getCargo() == null) {
-                    info += "Carrying no cargo<br>";
-                } else {
-                    info += "Carrying cargo of type " + courier.getCargo().getMaterial() + "<br>";
-                    info += "Cargo is targeted for " + courier.getCargo().getTarget() + "<br>";
-                }
-
-                Cargo cargo = courier.getPromisedDelivery();
-
-                if (cargo != null) {
-                    info += "Has promised to pick up " + cargo.getMaterial() + "cargo at " + cargo.getPosition() + "<br>";
-                } else {
-                    info += "Has not promised to pick up any cargo <br>";
-                }
-            } else {
-                info += "No assigned courier";
-            }
-
-            info += "</html>";
-
-            infoLabel.setText(info);
-        }
-
-        private void clear() {
-            titleLabel.setText("");
-            infoLabel.setText("");
-        }
     }
 
     SidePanel(CommandListener cl) {
@@ -795,21 +623,57 @@ public class SidePanel extends JTabbedPane {
 
         commandListener = cl;
 
-        infoPanel = new Infoview();
-        controlPanel = new ControlPanel();
-
-        addTab("Info", infoPanel);
-        setMnemonicAt(0, KeyEvent.VK_1);
-
+        /* Create panels */
+        controlPanel         = new ControlPanel();
+        toBuild              = new SpotToBuildOnPanel();
+        flagSpotPanel        = new FlagSpotPanel();
+        ownBuildingSpotPanel = new OwnBuildingSpotPanel();
+        roadSpotPanel        = new RoadSpotPanel();
+        enemyBuildingPanel   = new EnemyBuildingPanel();
+        nonePanel            = new NonePanel();
+        
+        /* Add key shortcuts for the panels */
         addTab("Control", controlPanel);
-        setMnemonicAt(1, KeyEvent.VK_2);
 
+        /* Add the panels as tabs */
+        addTab("Empty Spot", toBuild);
+        addTab("Flag", flagSpotPanel);
+        addTab("Own Building", ownBuildingSpotPanel);
+        addTab("Road", roadSpotPanel);
+        addTab("Enemy building", enemyBuildingPanel);
+        addTab("None", nonePanel);
+        
+        /* Set which tab to show on startup */
         setSelectedComponent(controlPanel);
 
+        /* Add listener for the tab change */
+        addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent ce) {
+                Component component = getSelectedComponent();
+
+                if (component.equals(controlPanel)) {
+
+                    /* Keep the control tab selected until a new spot is selected */
+                    stayOnSelected = true;
+                } else if (component.equals(enemyBuildingPanel)) {
+                    enemyBuildingPanel.updateButtons();
+                    enemyBuildingPanel.updateInfoField();
+                } else if (component.equals(ownBuildingSpotPanel)) {
+                    ownBuildingSpotPanel.updateButtons();
+                    ownBuildingSpotPanel.updateInfoField();
+                }
+            }
+        });
+
+        /* Show the tab bar */
         setVisible(true);
     }
 
     void setSelectedPoint(Point point) throws Exception {
         selectedPoint = point;
+
+        stayOnSelected = false;
     }
 }

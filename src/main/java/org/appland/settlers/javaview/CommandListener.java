@@ -42,4 +42,8 @@ interface CommandListener {
     public void evacuate(Point selectedPoint) throws Exception;
 
     public void cancelEvacuation(Point selectedPoint);
+
+    public void stopCoins(Point selectedPoint);
+
+    public void startCoins(Point selectedPoint);
 }

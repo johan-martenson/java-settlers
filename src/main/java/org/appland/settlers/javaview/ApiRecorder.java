@@ -136,47 +136,56 @@ public class ApiRecorder {
 
     void recordPlaceBuilding(Building b, HouseType type, Point p) {
         recordTicks();
-        
+
+        Player player = b.getPlayer();
+
         String simpleClassName = b.getClass().getSimpleName();
-        
-        recordComment("Placing " + type.name().toLowerCase());
-        
+        String playerName = playerNames.get(player);
+
+        recordComment("Placing " + type.name().toLowerCase() + " for " + playerName);
+
         registerPoint(p);
         String name = registerBuilding(b);
-        
-        record(INDENT + "Building " + name + " = map.placeBuilding(new " + simpleClassName + "(), ");
-        
+
+        record(INDENT + "Building " + name + " = map.placeBuilding(" + playerName + ", new " + simpleClassName + "(), ");
+
         recordPoint(p);
-                
+
         record(");\n");
     }
 
     void recordPlaceFlag(Flag f, Point p) {
         recordTicks();
 
+        Player player = f.getPlayer();
+
         recordComment("Placing flag");
-        
+
         registerPoint(p);
         registerFlag(f);
-        
+
         String pointName = pointNames.get(p);
         String flagName  = flagNames.get(f);
-        
-        record(INDENT + "Flag " + flagName + " = map.placeFlag(" + pointName + ");\n");
+        String playerName = playerNames.get(player);
+
+        record(INDENT + "Flag " + flagName + " = map.placeFlag(" + playerName + ", " + pointName + ");\n");
     }
 
     void recordPlaceRoad(Road r) {
         recordTicks();
-        
+
+        Player player = r.getPlayer();
+
         recordComment("Placing road between " + r.getStart() + " and " + r.getEnd());
-        
+
         String roadName = registerRoad(r);
-        
+        String playerName = playerNames.get(player);
+
         for (Point p : r.getWayPoints()) {
             registerPoint(p);
         }
         
-        record(INDENT + "Road " + roadName + " = map.placeRoad(");
+        record(INDENT + "Road " + roadName + " = map.placeRoad(" + playerName + ", ");
 
         boolean firstRun = true;
 
@@ -219,7 +228,7 @@ public class ApiRecorder {
     }
 
     void recordComment(String string) {
-        record("\n\n" + INDENT + "/* " + string + " */\n");
+        record("\n" + INDENT + "/* " + string + " */\n");
     }
 
     void recordSetTileVegetation(Point p1, Point p2, Point p3, Tile.Vegetation vegetation) {
@@ -232,8 +241,6 @@ public class ApiRecorder {
         String pointName3 = registerPoint(p3);
         
         record(INDENT + "map.getTerrain().getTile(" + pointName1 + ", " + pointName2 + ", " + pointName3 +").setVegetationType(Vegetation." + vegetation.name() + ");\n");
-        
-        record(INDENT + "map.terrainIsUpdated();\n");
     }
 
     private void recordTicks() {
@@ -292,14 +299,10 @@ public class ApiRecorder {
         
         registerPlayers(players);
 
-        for (Player player : players) {
-            record(INDENT + "Player " + playerNames.get(player) + " = new Player(" + player.getName() + ");\n");
-        }
-
-        record(INDENT + "List<Player> players = new LinkedList<>();");
+        record(INDENT + "List<Player> players = new LinkedList<>();\n");
 
         for (Player player : players) {
-            record(INDENT + "players.add(" + playerNames.get(player) + ");");
+            record(INDENT + "players.add(\"" + playerNames.get(player) + "\");\n");
         }
 
         record(INDENT + "GameMap map = new GameMap(players, " + widthInPoints + ", " + heightInPoints + ");\n");

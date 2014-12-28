@@ -479,6 +479,26 @@ public class App extends JFrame {
             }
         }
 
+        @Override
+        public void stopCoins(Point selectedPoint) {
+
+            /* Find building to stop coin delivery to */
+            Building b = map.getBuildingAtPoint(selectedPoint);
+
+            /* Stop coin delivery */
+            b.disablePromotions();
+        }
+
+        @Override
+        public void startCoins(Point selectedPoint) {
+
+            /* Find building to resume coin delivery to */
+            Building b = map.getBuildingAtPoint(selectedPoint);
+
+            /* Resume coin delivery */
+            b.enablePromotions();
+        }
+
         class ClearInputTask extends TimerTask {
 
             @Override
@@ -667,7 +687,7 @@ public class App extends JFrame {
             roadPoints         = new ArrayList<>();
             showAvailableSpots = false;
             recorder           = new ApiRecorder();
-            gameDrawer         = new GameDrawer(map, w, h, 40, 40);
+            gameDrawer         = new GameDrawer(w, h, 40, 40);
             clearInputTimer    = new Timer("Clear input timer");
 
             /* Create the initial game board */
@@ -780,9 +800,11 @@ public class App extends JFrame {
                         
                         setState(POINT_SELECTED);
                     } else if (state == POINT_SELECTED) {
-                        selectPoint(p);
-                        
-                        setState(POINT_SELECTED);
+                        if (me.getSource().equals(this)) {
+                            selectPoint(p);
+
+                            setState(POINT_SELECTED);
+                        }
                     }
                 }
                 repaint();
