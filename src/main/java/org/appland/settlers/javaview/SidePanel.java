@@ -339,6 +339,14 @@ public class SidePanel extends JTabbedPane {
                     evacuateButton.setEnabled(true);
                     cancelEvacuationButton.setEnabled(false);
                 }
+
+                if (building.isPromotionEnabled()) {
+                    startCoins.setEnabled(false);
+                    stopCoins.setEnabled(true);
+                } else {
+                    startCoins.setEnabled(true);
+                    stopCoins.setEnabled(false);
+                }
             } else {
                 startCoins.setEnabled(false);
                 stopCoins.setEnabled(false);
@@ -391,6 +399,11 @@ public class SidePanel extends JTabbedPane {
                 /* Print if the building is evacuated */
                 if (building.isEvacuated()) {
                     info += "Evacuation activated<br>";
+                }
+
+                /* Print if promotions are disabled */
+                if (!building.isPromotionEnabled()) {
+                    info += "Promotions disabled<br>";
                 }
             }
 
