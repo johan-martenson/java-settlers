@@ -11,14 +11,16 @@ import static java.awt.Color.BLACK;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
-import java.awt.Toolkit;
+import java.awt.TexturePaint;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Donkey;
@@ -88,8 +91,13 @@ public class GameDrawer {
     private final int MAIN_ROAD_WIDTH = 7;
     private final int SMALL_ROAD_WIDTH = 4;
 
-    private final Image         houseImage;
+    /* Image paths */
+    private static final String GRASS_TEXTURE = "grass.jpg";
+    private static final String HOUSE_TEXTURE = "house-sketched.png";
+    private static final String WATER_TEXTURE = "water.jpg";
+    private static final String STONE_TEXTURE = "stone.png";
 
+    private Image         houseImage;
     private int           height;
     private int           width;
     private List<Point>   grid;
@@ -101,6 +109,9 @@ public class GameDrawer {
     private int           terrainPrerenderedWidthInPoints;
     private int           terrainPrerenderedHeightInPoints;
     private Player        player;
+    private TexturePaint  grassTexture;
+    private TexturePaint  waterTexture;
+    private Image         stoneTexture;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -111,10 +122,16 @@ public class GameDrawer {
 
         drawer = new ScaledDrawer(500, 500, w, h);
         
-        houseImage = loadImage("house-sketched.png");
-            
-
         grid = buildGrid(widthInPoints, heightInPoints);
+
+        /* Prepare brushes */
+        grassTexture = null;
+
+        try {
+            loadBrushes();
+        } catch (IOException ex) {
+            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     double getScaleX() {
@@ -275,9 +292,17 @@ public class GameDrawer {
     }
 
     private void drawStone(Graphics2D g, Stone s) {
-        g.setColor(Color.DARK_GRAY);
+        Paint oldPaint = g.getPaint();
 
-        drawer.fillScaledRect(g, s.getPosition(), 20, 20, -10, -10);
+        if (stoneTexture != null) {
+            drawer.drawScaledImage(g, stoneTexture, s.getPosition().upLeft(), 50, 60, -15, -25);
+        } else {
+            g.setColor(Color.DARK_GRAY);
+
+            drawer.fillScaledRect(g, s.getPosition(), 20, 20, -10, -10);
+        }
+
+        g.setPaint(oldPaint);
     }
 
     private void drawCrops(Graphics2D g) {
@@ -576,15 +601,25 @@ public class GameDrawer {
     }
 
     private void drawTile(Graphics2D g, Tile t, Point p1, Point p2, Point p3) {
+        Paint oldPaint = g.getPaint();
+
         switch (t.getVegetationType()) {
         case GRASS:
-            g.setColor(GRASS_COLOR);
+            if (grassTexture != null) {
+                g.setPaint(grassTexture);
+            } else {
+                g.setColor(GRASS_COLOR);
+            }
             break;
         case SWAMP:
             g.setColor(Color.GRAY);
             break;
         case WATER:
-            g.setColor(Color.BLUE);
+            if (waterTexture != null) {
+                g.setPaint(waterTexture);
+            } else {
+                g.setColor(Color.BLUE);
+            }
             break;
         case MOUNTAIN:
             g.setColor(MOUNTAIN_COLOR);
@@ -593,6 +628,8 @@ public class GameDrawer {
         }
 
         drawer.fillScaledTriangle(g, p1, p2, p3);
+
+        g.setPaint(oldPaint);
     }
 
     private void drawPersons(Graphics2D g) {
@@ -757,17 +794,6 @@ public class GameDrawer {
         }
     }
 
-    private Image loadImage(String file) {
-        try {
-            final URL imgURL = Thread.currentThread().getContextClassLoader().getResource(file); //getClass().getClassLoader().getResource(file);
-            return Toolkit.getDefaultToolkit().getImage(imgURL);
-        } catch (Exception e) {
-            System.out.print("Error while loading image " + file + ": " + e);
-        }
-
-        return null;
-    }
-
     void recalculateScale(int w, int h) {
         width  = w;
         height = h;
@@ -821,5 +847,58 @@ public class GameDrawer {
 
     void setPlayer(Player controlledPlayer) {
         player = controlledPlayer;
+    }
+
+    private TexturePaint createBrushFromImageResource(String res) {
+        try {
+
+            /* Load the image from the resource string */
+            URL url = Thread.currentThread().getContextClassLoader().getResource(res);
+
+            /* Leave early and return null if the url isn't valid */
+            if (url == null) {
+                return null;
+            }
+
+            BufferedImage bi = ImageIO.read(url);
+
+            /* bi will be null if the resource couldn't be located */
+            if (bi == null) {
+                return null;
+            }
+
+            /* Create the brush */
+            Rectangle r = new Rectangle(0, 0, 100, 100);
+
+            return new TexturePaint(bi, r);
+        } catch (IOException ex) {
+            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        /* Return null if the image didn't load correctly */
+        return null;
+    }
+
+    private void loadBrushes() throws IOException {
+
+        /* Load brushes */
+        grassTexture = createBrushFromImageResource(GRASS_TEXTURE);
+        waterTexture = createBrushFromImageResource(WATER_TEXTURE);
+
+        /* Load images */
+        stoneTexture = createImageFromImageResource(STONE_TEXTURE);
+        houseImage   = createImageFromImageResource(HOUSE_TEXTURE);
+    }
+
+    private BufferedImage createImageFromImageResource(String res) {
+        try {
+            BufferedImage bi = ImageIO.read(Thread.currentThread().getContextClassLoader().getResource(res));
+            
+            return bi;
+        } catch (IOException ex) {
+            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return null;
     }
 }
