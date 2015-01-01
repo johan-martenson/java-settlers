@@ -95,15 +95,15 @@ public class GameDrawer {
     private final int SMALL_ROAD_WIDTH = 4;
 
     /* Image paths */
-    private static final String GRASS_TEXTURE = "grass.jpg";
-    private static final String HOUSE_TEXTURE = "house-sketched.png";
-    private static final String WATER_TEXTURE = "water.jpg";
-    private static final String STONE_TEXTURE = "stone.png";
+    private static final String GRASS_TEXTURE    = "grass.jpg";
+    private static final String HOUSE_TEXTURE    = "house-sketched.png";
+    private static final String WATER_TEXTURE    = "water.jpg";
+    private static final String STONE_TEXTURE    = "stone.png";
+    private static final String MOUNTAIN_TEXTURE = "rock1-unsharp-small.jpg";
 
     private Image         houseImage;
     private int           height;
     private int           width;
-    private List<Point>   grid;
     private GameMap       map;
     private BufferedImage terrainImage;
     private ScaledDrawer  drawer;
@@ -114,6 +114,7 @@ public class GameDrawer {
     private Player        player;
     private TexturePaint  grassTexture;
     private TexturePaint  waterTexture;
+    private TexturePaint  mountainTexture;
     private Image         stoneTexture;
     private Point         hoveringSpot;
 
@@ -125,8 +126,6 @@ public class GameDrawer {
         heightInPoints = hP;
 
         drawer = new ScaledDrawer(500, 500, w, h);
-        
-        grid = buildGrid(widthInPoints, heightInPoints);
 
         /* No hovering spot exists on startup */
         hoveringSpot = null;
@@ -167,8 +166,6 @@ public class GameDrawer {
                         (marginYInPoints + heightInPoints) / terrainPrerenderedHeightInPoints * th,      //sy2
                         null);      //ImageObserver
         }
-
-        drawGrid(g);
 
         drawRoads(g);
 
@@ -212,15 +209,6 @@ public class GameDrawer {
 
         drawFogOfWar(g);
     }
-
-    private void drawGrid(Graphics graphics) {
-        graphics.setColor(Color.GRAY);
-
-        for (Point p : grid) {
-            drawer.drawScaledRect(graphics, p, 2, 2);
-        }
-    }
-
 
     private void drawRoads(Graphics2D g) {
         List<Road> roads = map.getRoads();
@@ -629,7 +617,12 @@ public class GameDrawer {
             }
             break;
         case MOUNTAIN:
-            g.setColor(MOUNTAIN_COLOR);
+            if (mountainTexture != null) {
+                g.setPaint(mountainTexture);
+            } else {
+                g.setColor(MOUNTAIN_COLOR);
+            }
+        break;
         default:
             g.setColor(Color.GRAY);
         }
@@ -750,30 +743,6 @@ public class GameDrawer {
         g.setColor(Color.DARK_GRAY);
         drawer.drawScaledOval(g, p, 10, 10, -5, -5);
     }
-        
-    private List<Point> buildGrid(int width, int height) {
-        java.util.List<Point> result = new ArrayList<>();
-        boolean rowFlip = true;
-        boolean columnFlip;
-
-        /* Place all possible flag points in the list */
-        int x, y;
-        for (y = 1; y < height; y++) {
-            columnFlip = rowFlip;
-
-            for (x = 1; x < width; x++) {
-                if (columnFlip) {
-                    result.add(new Point(x, y));
-                }
-
-                columnFlip = !columnFlip;
-            }
-
-            rowFlip = !rowFlip;
-        }
-
-        return result;
-    }
 
     private Color getColorForMaterial(Material material) {
         switch (material) {
@@ -837,7 +806,6 @@ public class GameDrawer {
 
         drawer.changeZoom(widthInPoints, heightInPoints);
         
-        grid = buildGrid(widthInPoints, heightInPoints);
         terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
     }
 
@@ -851,7 +819,6 @@ public class GameDrawer {
 
         drawer.changeZoom(widthInPoints, heightInPoints);
 
-        grid = buildGrid(widthInPoints, heightInPoints);
         terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
     }
 
@@ -867,6 +834,8 @@ public class GameDrawer {
 
             /* Leave early and return null if the url isn't valid */
             if (url == null) {
+                System.out.println("Failed to load " + res + ", invalid file");
+
                 return null;
             }
 
@@ -874,11 +843,15 @@ public class GameDrawer {
 
             /* bi will be null if the resource couldn't be located */
             if (bi == null) {
+                System.out.println("Failed to load " + res);
+
                 return null;
             }
 
             /* Create the brush */
             Rectangle r = new Rectangle(0, 0, 100, 100);
+
+            System.out.println("Loaded " + res + " correctly " + new TexturePaint(bi, r));
 
             return new TexturePaint(bi, r);
         } catch (IOException ex) {
@@ -892,8 +865,9 @@ public class GameDrawer {
     private void loadBrushes() throws IOException {
 
         /* Load brushes */
-        grassTexture = createBrushFromImageResource(GRASS_TEXTURE);
-        waterTexture = createBrushFromImageResource(WATER_TEXTURE);
+        grassTexture    = createBrushFromImageResource(GRASS_TEXTURE);
+        waterTexture    = createBrushFromImageResource(WATER_TEXTURE);
+        mountainTexture = createBrushFromImageResource(MOUNTAIN_TEXTURE);
 
         /* Load images */
         stoneTexture = createImageFromImageResource(STONE_TEXTURE);
