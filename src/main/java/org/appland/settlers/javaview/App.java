@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import static java.lang.Math.abs;
@@ -702,7 +703,8 @@ public class App extends JFrame {
             addMouseWheelListener(this);
 
             previousKeys = "";
-            
+
+            /* Add action listeners */
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent evt) {                    
@@ -711,7 +713,22 @@ public class App extends JFrame {
                     repaint();
                 }
             });
-            
+
+            addMouseMotionListener(new MouseMotionAdapter() {
+
+                @Override
+                public void mouseMoved(MouseEvent me) {
+
+                    /* Get point the mouse hovers over on the game map */
+                    Point point = screenToPoint(me.getX(), me.getY());
+
+                    /* Update the hovering spot in the game drawer */
+                    gameDrawer.setHoveringSpot(point);
+
+                    repaint();
+                }
+            });
+
             /* Initial state is IDLE */
             state = IDLE;
             

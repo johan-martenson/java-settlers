@@ -88,6 +88,9 @@ public class GameDrawer {
     private final Color SMALL_ROAD_COLOR = Color.ORANGE;
     private final Color MAIN_ROAD_COLOR = Color.LIGHT_GRAY;
 
+    private final Color HOVERING_COLOR = Color.LIGHT_GRAY;
+    private final Color SELECTED_POINT_COLOR = Color.ORANGE;
+
     private final int MAIN_ROAD_WIDTH = 7;
     private final int SMALL_ROAD_WIDTH = 4;
 
@@ -112,6 +115,7 @@ public class GameDrawer {
     private TexturePaint  grassTexture;
     private TexturePaint  waterTexture;
     private Image         stoneTexture;
+    private Point         hoveringSpot;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -124,9 +128,10 @@ public class GameDrawer {
         
         grid = buildGrid(widthInPoints, heightInPoints);
 
-        /* Prepare brushes */
-        grassTexture = null;
+        /* No hovering spot exists on startup */
+        hoveringSpot = null;
 
+        /* Prepare brushes */
         try {
             loadBrushes();
         } catch (IOException ex) {
@@ -145,8 +150,6 @@ public class GameDrawer {
     void drawScene(Graphics2D g, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) {
 
         if (terrainImage != null) {
-//            g.drawImage(terrainImage, 0, 0, width, height, 0, 0, terrainImage.getWidth(), terrainImage.getHeight(), null);
- 
                 int marginXInPoints = (terrainPrerenderedWidthInPoints-widthInPoints) / 2;
                 int marginYInPoints = (terrainPrerenderedHeightInPoints-heightInPoints) / 2;
                 
@@ -201,6 +204,10 @@ public class GameDrawer {
             }
         } else if (selected != null) {
             drawSelectedPoint(g, selected);
+        }
+
+        if (hoveringSpot != null) {
+            drawHoveringPoint(g, hoveringSpot);
         }
 
         drawFogOfWar(g);
@@ -735,10 +742,13 @@ public class GameDrawer {
         drawer.fillScaledRect(g, key, 10, houseHeight, -5, -(houseHeight/2));
     }
 
-    private void drawSelectedPoint(Graphics2D g, Point selected) {
-        g.setColor(Color.BLUE);
+    private void drawSelectedPoint(Graphics2D g, Point p) {
 
-        drawer.fillScaledOval(g, selected, 8, 8, -4, -4);
+        g.setColor(SELECTED_POINT_COLOR);
+        drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+
+        g.setColor(Color.DARK_GRAY);
+        drawer.drawScaledOval(g, p, 10, 10, -5, -5);
     }
         
     private List<Point> buildGrid(int width, int height) {
@@ -900,5 +910,18 @@ public class GameDrawer {
         }
 
         return null;
+    }
+
+    void setHoveringSpot(Point point) {
+        hoveringSpot = point;
+    }
+
+    private void drawHoveringPoint(Graphics2D g, Point p) {
+
+        g.setColor(HOVERING_COLOR);
+        drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+
+        g.setColor(Color.DARK_GRAY);
+        drawer.drawScaledOval(g, p, 10, 10, -5, -5);
     }
 }
