@@ -1,6 +1,8 @@
 package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
+import static java.awt.Color.BLUE;
+import static java.awt.Color.ORANGE;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
@@ -411,19 +413,25 @@ public class App extends JFrame {
         @Override
         public void attackHouse(Point selectedPoint) {
 
-            /* Find building to attack */
-            Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
-
-            /* Record?
-            
-            assertEquals(map.getBuildingAtPoint(<point-with-my-name>), <building-with-my-name>)
-            
-            */
-            
-            /* Order attack */
-            controlledPlayer.attack(buildingToAttack);
-
-            recorder.recordAttack(controlledPlayer, buildingToAttack);
+            try {
+                /* Find building to attack */
+                Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
+                
+                /* Record?
+                
+                assertEquals(map.getBuildingAtPoint(<point-with-my-name>), <building-with-my-name>)
+                
+                */
+                
+                /* Order attack */
+                int attackers = controlledPlayer.getAvailableAttackersForBuilding(buildingToAttack);
+                
+                controlledPlayer.attack(buildingToAttack, attackers);
+                
+                recorder.recordAttack(controlledPlayer, buildingToAttack);
+            } catch (Exception ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         @Override
@@ -622,8 +630,8 @@ public class App extends JFrame {
             recorder.recordComment("Starting new game");
 
             /* Create players */
-            Player player0 = new Player("Player 0");
-            Player player1 = new Player("Player 1");
+            Player player0 = new Player("Player 0", BLUE);
+            Player player1 = new Player("Player 1", ORANGE);
 
             List<Player> players = new LinkedList<>();
 

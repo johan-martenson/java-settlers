@@ -22,7 +22,6 @@ import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +55,6 @@ import org.appland.settlers.model.Worker;
  * @author johan
  */
 public class GameDrawer {
-
-    private final Color BORDER_COLOR = Color.BLACK;
 
     private final Color FOG_OF_WAR_COLOR = Color.BLACK;
 
@@ -99,7 +96,7 @@ public class GameDrawer {
     private static final String HOUSE_TEXTURE    = "house-sketched.png";
     private static final String WATER_TEXTURE    = "water.jpg";
     private static final String STONE_TEXTURE    = "stone.png";
-    private static final String MOUNTAIN_TEXTURE = "rock1-unsharp-small.jpg";
+    private static final String MOUNTAIN_TEXTURE = "rock.jpg";
 
     private Image         houseImage;
     private int           height;
@@ -330,15 +327,17 @@ public class GameDrawer {
     }
 
     private void drawBorders(Graphics2D g) {
-        g.setColor(BORDER_COLOR);
+        for (Player playerIterator : map.getPlayers()) {
+            for (Collection<Point> border : playerIterator.getBorders()) {
+                g.setColor(playerIterator.getColor());
+                    
+                for (Point p : border) {
+                    if (!isWithinScreen(p)) {
+                        continue;
+                    }
 
-        for (Collection<Point> border : player.getBorders()) {
-            for (Point p : border) {
-                if (!isWithinScreen(p)) {
-                    continue;
+                    drawer.fillScaledOval(g, p, 6, 6, -3, -3);
                 }
-
-                drawer.fillScaledOval(g, p, 4, 4, -2, -2);
             }
         }
     }
