@@ -8,6 +8,7 @@ package org.appland.settlers.javaview;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import static java.awt.Color.BLACK;
+import static java.awt.Color.DARK_GRAY;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -62,9 +63,7 @@ public class GameDrawer {
 
     private final Color SIGN_BACKGROUND_COLOR = new Color(0xCCAAAA);
 
-    private final Color FLAG_POLE_COLOR = BLACK;
-
-    private final Color FLAG_COLOR = Color.WHITE;
+    private final Color FLAG_POLE_COLOR = DARK_GRAY;
 
     private final Color WOOD_COLOR = new Color(0xBF8026);
     private final Color WHEAT_COLOR = Color.ORANGE;
@@ -436,17 +435,11 @@ public class GameDrawer {
         for (Flag f : map.getFlags()) {
             Point p = f.getPosition();
 
-            g.setColor(FLAG_COLOR);
+            g.setColor(f.getPlayer().getColor());
             drawer.fillScaledRect(g, f.getPosition(), 7, 7, 0, -15);
 
-            g.setColor(BLACK);
-            drawer.drawScaledRect(g, f.getPosition(), 7, 7, 0, -15);
-
             g.setColor(FLAG_POLE_COLOR);
-            drawer.fillScaledRect(g, f.getPosition(), 2, 15, -1, -15);
-
-            g.setColor(Color.BLACK);
-            drawer.fillScaledRect(g, f.getPosition(), 6, 3, -3, 0);
+            drawer.fillScaledRect(g, f.getPosition(), 2, 16, -1, -16);
 
             if (!f.getStackedCargo().isEmpty()) {
                 Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
