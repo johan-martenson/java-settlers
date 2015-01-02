@@ -168,28 +168,35 @@ public class App extends JFrame {
         }
 
         private Point screenToPoint(int x, int y) {
+
+            /* Get the exact match from the screen coordinate to the game canvas */
             double px = (double) x / (double) gameDrawer.getScaleX();
             double py = (double) (getHeight() - y) / (double) gameDrawer.getScaleY();
 
+            /* Round to integers */
             int roundedX = (int) round(px);
             int roundedY = (int) round(py);
 
-            if (abs(px - roundedX) < abs(py - Math.round(py))) {
-                if ((roundedX + roundedY) % 2 != 0) {
+            /* Calculate the error */
+            double errorX = abs(px - roundedX);
+            double errorY = abs(py - roundedY);
 
+            /* Adjust the values if needed to avoid invalid points */
+            if ((roundedX + roundedY) % 2 != 0) {
+                if (errorX < errorY) {
                     if (roundedY > py) {
                         roundedY = (int) floor(py);
                     } else {
                         roundedY = (int) ceil(py);
                     }
-                }
-            } else {
-                if ((roundedX + roundedY) % 2 != 0) {
+                } else if (errorX > errorY) {
                     if (roundedX > px) {
                         roundedX = (int) floor(px);
                     } else {
                         roundedX = (int) ceil(px);
                     }
+                } else {
+                    roundedX++;
                 }
             }
 
@@ -753,7 +760,6 @@ public class App extends JFrame {
 
                         try {
                             map.stepTime();
-                            sidePanel.update();
                         } catch (Exception ex) {
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                         }

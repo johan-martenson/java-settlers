@@ -45,35 +45,6 @@ public class SidePanel extends JTabbedPane {
     private Player  player;
     private boolean stayOnSelected;
 
-    void update() throws Exception {
-
-        if (selectedPoint == null) {
-            return;
-        }
-
-        if (stayOnSelected) {
-            return;
-        }
-
-        if (player.isWithinBorder(selectedPoint)) {
-            if (map.isFlagAtPoint(selectedPoint)) {
-                setSelectedComponent(flagSpotPanel);
-            } else if (map.isBuildingAtPoint(selectedPoint)) {
-                setSelectedComponent(ownBuildingSpotPanel);
-            } else if (map.isRoadAtPoint(selectedPoint)) {
-                setSelectedComponent(roadSpotPanel);
-            } else {
-                setSelectedComponent(toBuild);
-            }
-        } else {
-            if (map.isBuildingAtPoint(selectedPoint)) {
-                setSelectedComponent(enemyBuildingPanel);
-            } else {
-                setSelectedComponent(nonePanel);
-            }
-        }
-    }
-
     void setMap(GameMap m) {
         map = m;
     }
@@ -704,5 +675,40 @@ public class SidePanel extends JTabbedPane {
         selectedPoint = point;
 
         stayOnSelected = false;
+
+        if (selectedPoint == null) {
+            return;
+        }
+
+        if (!stayOnSelected) {
+            if (player.isWithinBorder(selectedPoint)) {
+                if (map.isFlagAtPoint(selectedPoint)) {
+                    setSelectedComponent(flagSpotPanel);
+                } else if (map.isBuildingAtPoint(selectedPoint)) {
+                    setSelectedComponent(ownBuildingSpotPanel);
+                    ownBuildingSpotPanel.updateButtons();
+                    ownBuildingSpotPanel.updateInfoField();
+                } else if (map.isRoadAtPoint(selectedPoint)) {
+                    setSelectedComponent(roadSpotPanel);
+                } else {
+                    setSelectedComponent(toBuild);
+                }
+            } else {
+                if (map.isBuildingAtPoint(selectedPoint)) {
+                    setSelectedComponent(enemyBuildingPanel);
+                    enemyBuildingPanel.updateButtons();
+                    enemyBuildingPanel.updateInfoField();
+                } else {
+                    setSelectedComponent(nonePanel);
+                }
+            }
+        }
+    
+        Component component = getSelectedComponent();
+
+        /* Keep the control tab selected until a new spot is selected */
+        if (component.equals(controlPanel)) {
+            stayOnSelected = true;
+        }
     }
 }
