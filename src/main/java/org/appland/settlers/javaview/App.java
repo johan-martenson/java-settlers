@@ -95,6 +95,7 @@ import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
 import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
+import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.WatchTower;
 import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
@@ -513,6 +514,17 @@ public class App extends JFrame {
 
             /* Resume coin delivery */
             b.enablePromotions();
+        }
+
+        @Override
+        public void setControlledPlayer(Player player) {
+            System.out.println("NEW CTRL PLAYER: " + player);
+            
+            controlledPlayer = player;
+
+            gameDrawer.setPlayer(controlledPlayer);
+
+            repaint();
         }
 
         class ClearInputTask extends TimerTask {
@@ -1032,6 +1044,25 @@ public class App extends JFrame {
 
             recorder.recordPlaceStone(stone0, stonePoint);
             recorder.recordPlaceStone(stone1, stonePoint.downRight());
+
+            /* Place forest */
+            Point point0 = new Point(20, 4);
+            Point point1 = new Point(22, 6);
+            Point point2 = new Point(24, 4);
+            Point point3 = new Point(21, 5);
+
+            List<Tree> smallForest = new LinkedList<>();
+
+            smallForest.add(map.placeTree(point0));
+            smallForest.add(map.placeTree(point0.right()));
+            smallForest.add(map.placeTree(point1));
+            smallForest.add(map.placeTree(point1.right()));
+            smallForest.add(map.placeTree(point2));
+            smallForest.add(map.placeTree(point2.right()));
+            smallForest.add(map.placeTree(point3));
+            smallForest.add(map.placeTree(point3.right()));
+
+            recorder.recordPlaceTrees(smallForest);
         }
 
         @Override

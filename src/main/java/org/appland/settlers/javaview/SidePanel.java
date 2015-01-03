@@ -47,6 +47,8 @@ public class SidePanel extends JTabbedPane {
 
     void setMap(GameMap m) {
         map = m;
+
+        controlPanel.updatedMap();
     }
 
     void setPlayer(Player p) {
@@ -553,8 +555,9 @@ public class SidePanel extends JTabbedPane {
 
     private class ControlPanel extends JPanel {
 
-        private boolean turboToggle;
-        private final JPanel controlPanel;
+        private boolean              turboToggle;
+        private final JPanel         controlPanel;
+        private Map<JButton, Player> buttonToPlayerMap;
 
         public ControlPanel() {
             super();
@@ -569,7 +572,9 @@ public class SidePanel extends JTabbedPane {
             controlPanel = createControlPanel();
 
             add(controlPanel, BorderLayout.NORTH);
-            
+
+            buttonToPlayerMap = new HashMap<>();
+
             /* Show the control panel */
             setVisible(true);
         }
@@ -577,7 +582,7 @@ public class SidePanel extends JTabbedPane {
         private JPanel createControlPanel() {
             JPanel panel = new JPanel();
 
-            panel.setLayout(new GridLayout(3, 1));
+            panel.setLayout(new GridLayout(0, 1));
 
             JButton turboButton = new JButton("Toggle turbo");
             JButton dumpRecordingButton = new JButton("Dump recording");
@@ -613,6 +618,38 @@ public class SidePanel extends JTabbedPane {
             });
 
             return panel;
+        }
+
+        private void updatedMap() {
+
+            /* Clear player buttons */
+            for (JButton playerButton : buttonToPlayerMap.keySet()) {
+                controlPanel.remove(playerButton);
+            }
+
+            buttonToPlayerMap.clear();
+
+            /* Create buttons to switch player to control */
+            for (Player player : map.getPlayers()) {
+                JButton playerButton = new JButton(player.getName());
+
+                controlPanel.add(playerButton);
+
+                buttonToPlayerMap.put(playerButton, player);
+
+                playerButton.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+
+                        /* Get player */
+                        Player player = buttonToPlayerMap.get(ae.getSource());
+
+                        /* Switch the controlled player */
+                        commandListener.setControlledPlayer(player);
+                    }
+                });
+            }
         }
     }
 

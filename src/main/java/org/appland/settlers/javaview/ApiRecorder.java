@@ -12,12 +12,12 @@ import java.util.Map;
 import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
-import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
+import org.appland.settlers.model.Tree;
 
 /**
  *
@@ -33,6 +33,7 @@ public class ApiRecorder {
     private final Map<Road,     String> roadNames;
     private final Map<Stone,    String> stoneNames;
     private final Map<Player,   String> playerNames;
+    private final Map<Tree, String>     treeNames;
 
     private String recording;
     private int    tickCount;
@@ -45,6 +46,7 @@ public class ApiRecorder {
         roadNames     = new HashMap<>();
         stoneNames    = new HashMap<>();
         playerNames   = new HashMap<>();
+        treeNames     = new HashMap<>();
 
         recording = "";
         tickCount = 0;
@@ -348,5 +350,30 @@ public class ApiRecorder {
         record(INDENT + "Player " + name + " = new Player(" + player.getName() + ");\n");
 
         return name;
+    }
+
+    private String registerTree(Tree tree) {
+        if (treeNames.containsKey(tree)) {
+            return treeNames.get(tree);
+        }
+
+        String name = "tree" + treeNames.size();
+
+        treeNames.put(tree, name);
+
+        return name;
+    }
+    
+    void recordPlaceTrees(List<Tree> trees) {
+        recordComment("Place tree");
+
+        for (Tree tree : trees) {
+            String treeName = registerTree(tree);
+            String pointName = registerPoint(tree.getPosition());
+
+            record(INDENT + "Tree " + treeName + " = map.placeTree(" + pointName + ");\n");
+        }
+
+        record("\n");
     }
 }

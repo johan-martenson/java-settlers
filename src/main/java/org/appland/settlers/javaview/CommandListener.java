@@ -6,6 +6,7 @@
 
 package org.appland.settlers.javaview;
 
+import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 
 /**
@@ -46,4 +47,6 @@ interface CommandListener {
     public void stopCoins(Point selectedPoint);
 
     public void startCoins(Point selectedPoint);
+
+    public void setControlledPlayer(Player player);
 }
