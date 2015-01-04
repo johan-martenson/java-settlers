@@ -49,4 +49,6 @@ interface CommandListener {
     public void startCoins(Point selectedPoint);
 
     public void setControlledPlayer(Player player);
+
+    public void enableComputerPlayer();
 }

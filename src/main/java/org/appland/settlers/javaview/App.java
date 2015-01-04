@@ -99,6 +99,8 @@ import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.WatchTower;
 import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
+import org.appland.settlers.computer.PlanckProductionPlayer;
+import org.appland.settlers.computer.ComputerPlayer;
 
 public class App extends JFrame {
     private SidePanel sidePanel;
@@ -141,17 +143,18 @@ public class App extends JFrame {
         
         private final int INPUT_CLEAR_DELAY = 5000;
         
-        private UiState     state;
-        private List<Point> roadPoints;
-        private boolean     showAvailableSpots;
-        private Point       selectedPoint;
-        private ApiRecorder recorder;
-        private int         tick;
-        private String      previousKeys;
-        private GameDrawer  gameDrawer;
-        private boolean     turboModeEnabled;
-        private Timer       clearInputTimer;
-        private Player      controlledPlayer;
+        private UiState        state;
+        private List<Point>    roadPoints;
+        private boolean        showAvailableSpots;
+        private Point          selectedPoint;
+        private ApiRecorder    recorder;
+        private int            tick;
+        private String         previousKeys;
+        private GameDrawer     gameDrawer;
+        private boolean        turboModeEnabled;
+        private Timer          clearInputTimer;
+        private Player         controlledPlayer;
+        private ComputerPlayer computerPlayer;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -527,6 +530,13 @@ public class App extends JFrame {
             repaint();
         }
 
+        @Override
+        public void enableComputerPlayer() {
+            if (computerPlayer == null) {
+                computerPlayer = new PlanckProductionPlayer(controlledPlayer, map);
+            }
+        }
+
         class ClearInputTask extends TimerTask {
 
             @Override
@@ -642,6 +652,8 @@ public class App extends JFrame {
         }
 
         private void resetGame() throws Exception {
+            computerPlayer = null;
+
             recorder.clear();
 
             setState(IDLE);
@@ -767,17 +779,30 @@ public class App extends JFrame {
                 public void run() {
             
                     while (true) {
+
+                        /* Keep count of how long the game has run */
                         recorder.recordTick();
 
+                        /* Call any computer players if available */
+                        if (computerPlayer != null) {
+                            try {
+                                computerPlayer.turn();
+                            } catch (Exception ex) {
+                                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
 
+                        /* Run the game logic one more step */
                         try {
                             map.stepTime();
                         } catch (Exception ex) {
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
                         }
 
+                        /* Re-draw the scene */
                         repaint();
-                        
+
+                        /* Wait until next step */
                         try {
                             Thread.sleep(tick);
                         } catch (InterruptedException ex) {

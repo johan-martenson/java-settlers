@@ -7,7 +7,6 @@ package org.appland.settlers.javaview;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import static java.awt.Color.BLACK;
 import static java.awt.Color.DARK_GRAY;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -89,6 +88,7 @@ public class GameDrawer {
 
     private final int MAIN_ROAD_WIDTH = 7;
     private final int SMALL_ROAD_WIDTH = 4;
+    private final Color AVAILABLE_CONSTRUCTION_COLOR = Color.ORANGE;
 
     /* Image paths */
     private static final String GRASS_TEXTURE    = "grass.jpg";
@@ -714,17 +714,41 @@ public class GameDrawer {
 
 
     private void drawAvailableHouse(Graphics2D g, Point key, Size value) {
-        int houseHeight = 4;
 
-        g.setColor(Color.YELLOW);
+        int width = 5;
+        int height = 5;
 
-        if (value == MEDIUM) {
-            houseHeight = 8;
-        } else if (value == LARGE) {
-            houseHeight = 12;
+        int verticalSpace = 2;
+
+        /* Draw box for small houses */
+        g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
+
+        drawer.fillScaledRect(g, key, width, height, -2, 0);
+
+        g.setColor(Color.GRAY);
+
+        drawer.drawScaledRect(g, key, width, height, -2, 0);
+
+        /* Draw box for medium houses */
+        if (value != SMALL) {
+            g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
+
+            drawer.fillScaledRect(g, key, width, height, -2, -height - verticalSpace);
+
+            g.setColor(Color.GRAY);
+
+            drawer.drawScaledRect(g, key, width, height, -2, -height - verticalSpace);
         }
 
-        drawer.fillScaledRect(g, key, 10, houseHeight, -5, -(houseHeight/2));
+        if (value == LARGE) {
+            g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
+
+            drawer.fillScaledRect(g, key, width, height, -2, -2*height - 2*verticalSpace);
+
+            g.setColor(Color.GRAY);
+
+            drawer.drawScaledRect(g, key, width, height, -2, -2*height - 2*verticalSpace);
+        }
     }
 
     private void drawSelectedPoint(Graphics2D g, Point p) {

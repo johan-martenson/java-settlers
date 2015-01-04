@@ -557,7 +557,7 @@ public class SidePanel extends JTabbedPane {
 
         private boolean              turboToggle;
         private final JPanel         controlPanel;
-        private Map<JButton, Player> buttonToPlayerMap;
+        private final Map<JButton, Player> buttonToPlayerMap;
 
         public ControlPanel() {
             super();
@@ -584,14 +584,19 @@ public class SidePanel extends JTabbedPane {
 
             panel.setLayout(new GridLayout(0, 1));
 
-            JButton turboButton = new JButton("Toggle turbo");
+            /* Create control buttons */
+            JButton turboButton         = new JButton("Toggle turbo");
             JButton dumpRecordingButton = new JButton("Dump recording");
-            JButton resetButton = new JButton("Reset the game");
+            JButton resetButton         = new JButton("Reset the game");
+            JButton startComputer       = new JButton("Start computer player");
 
+            /* Add control buttons to the panel */
             panel.add(turboButton);
             panel.add(dumpRecordingButton);
             panel.add(resetButton);
+            panel.add(startComputer);
 
+            /* Add action listeners to the control buttons */
             turboButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -614,6 +619,14 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     commandListener.reset();
+                }
+            });
+
+            startComputer.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.enableComputerPlayer();
                 }
             });
 
