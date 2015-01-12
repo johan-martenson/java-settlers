@@ -6,6 +6,7 @@
 
 package org.appland.settlers.javaview;
 
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,12 @@ import org.appland.settlers.model.Tree;
  */
 public class ApiRecorder {
 
+    private static final String INITIAL_RECORDING = 
+        "    @Test\n" +
+        "    public void testUntitled() throws Exception {\n";
     private static final String INDENT = "        ";
-    
+    private static final String END_OF_TESTCASE = "\n}";
+
     private final Map<Point,    String> pointNames;
     private final Map<Flag,     String> flagNames;
     private final Map<Building, String> buildingNames;
@@ -48,7 +53,7 @@ public class ApiRecorder {
         playerNames   = new HashMap<>();
         treeNames     = new HashMap<>();
 
-        recording = "";
+        recording = INITIAL_RECORDING;
         tickCount = 0;
         previousRecordedTicks = 0;
     }
@@ -131,9 +136,10 @@ public class ApiRecorder {
         buildingNames.clear();
         roadNames.clear();
         stoneNames.clear();
-        recording = "";
         tickCount = 0;
         previousRecordedTicks = 0;
+
+        recording = INITIAL_RECORDING;
     }
 
     void recordPlaceBuilding(Building b, HouseType type, Point p) {
@@ -149,7 +155,7 @@ public class ApiRecorder {
         registerPoint(p);
         String name = registerBuilding(b);
 
-        record(INDENT + "Building " + name + " = map.placeBuilding(" + playerName + ", new " + simpleClassName + "(), ");
+        record(INDENT + "Building " + name + " = map.placeBuilding(new " + simpleClassName + "(" + playerName + "), ");
 
         recordPoint(p);
 
@@ -222,6 +228,7 @@ public class ApiRecorder {
     void printRecordingOnConsole() {
         System.out.println("--------------------------------------");
         System.out.println(getRecording());
+        System.out.println(END_OF_TESTCASE);
         System.out.println("--------------------------------------");    
     }
 
@@ -303,9 +310,11 @@ public class ApiRecorder {
 
         record(INDENT + "List<Player> players = new LinkedList<>();\n");
 
-        for (Player player : players) {
-            record(INDENT + "players.add(\"" + playerNames.get(player) + "\");\n");
+        for (Player player : players) {            
+            record(INDENT + "players.add(" + playerNames.get(player) + ");\n");
         }
+
+        recordComment("Creating game map");
 
         record(INDENT + "GameMap map = new GameMap(players, " + widthInPoints + ", " + heightInPoints + ");\n");
     }
@@ -344,10 +353,11 @@ public class ApiRecorder {
         }
         
         String name = "player" + playerNames.size();
+        String color = colorToHex(player.getColor());
 
         playerNames.put(player, name);
 
-        record(INDENT + "Player " + name + " = new Player(" + player.getName() + ");\n");
+        record(INDENT + "Player " + name + " = new Player(\"" + player.getName() + "\", " + color + ");\n");
 
         return name;
     }
@@ -375,5 +385,10 @@ public class ApiRecorder {
         }
 
         record("\n");
+    }
+
+    private String colorToHex(Color color) {
+        int intColor = color.getRGB();
+        return String.format("#%06X", (0xFFFFFF & intColor));
     }
 }
