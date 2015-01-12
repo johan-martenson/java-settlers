@@ -18,6 +18,9 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import static org.appland.settlers.computer.PlayerType.ATTACKING;
+import static org.appland.settlers.computer.PlayerType.BUILDING;
+import static org.appland.settlers.computer.PlayerType.EXPANDING;
 import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
@@ -585,16 +588,20 @@ public class SidePanel extends JTabbedPane {
             panel.setLayout(new GridLayout(0, 1));
 
             /* Create control buttons */
-            JButton turboButton         = new JButton("Toggle turbo");
-            JButton dumpRecordingButton = new JButton("Dump recording");
-            JButton resetButton         = new JButton("Reset the game");
-            JButton startComputer       = new JButton("Start computer player");
+            JButton turboButton          = new JButton("Toggle turbo");
+            JButton dumpRecordingButton  = new JButton("Dump recording");
+            JButton resetButton          = new JButton("Reset the game");
+            JButton startBuildingPlayer  = new JButton("Start build player");
+            JButton startExpandingPlayer = new JButton("Start expanding player");
+            JButton startAttackingPlayer = new JButton("Start attacking player");
 
             /* Add control buttons to the panel */
             panel.add(turboButton);
             panel.add(dumpRecordingButton);
             panel.add(resetButton);
-            panel.add(startComputer);
+            panel.add(startBuildingPlayer);
+            panel.add(startExpandingPlayer);
+            panel.add(startAttackingPlayer);
 
             /* Add action listeners to the control buttons */
             turboButton.addActionListener(new ActionListener() {
@@ -622,11 +629,27 @@ public class SidePanel extends JTabbedPane {
                 }
             });
 
-            startComputer.addActionListener(new ActionListener() {
+            startBuildingPlayer.addActionListener(new ActionListener() {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.enableComputerPlayer();
+                    commandListener.enableComputerPlayer(BUILDING);
+                }
+            });
+
+            startExpandingPlayer.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.enableComputerPlayer(EXPANDING);
+                }
+            });
+
+            startAttackingPlayer.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.enableComputerPlayer(ATTACKING);
                 }
             });
 

@@ -8,6 +8,8 @@ package org.appland.settlers.javaview;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import static java.awt.Color.DARK_GRAY;
+import static java.awt.Color.ORANGE;
+import static java.awt.Color.RED;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -22,6 +24,7 @@ import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,7 @@ import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
+import org.appland.settlers.model.Military;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
@@ -217,7 +221,13 @@ public class GameDrawer {
     }
 
     private void drawHouses(Graphics2D graphics) {
-        List<Building> houses = map.getBuildings();
+
+        List<Building> housesInConcurrentUse = map.getBuildings();
+        List<Building> houses = null;
+
+        synchronized (housesInConcurrentUse) {
+            houses = new ArrayList<>(housesInConcurrentUse);
+        }
 
         for (Building b : houses) {
             drawHouse(graphics, b);
@@ -234,7 +244,7 @@ public class GameDrawer {
         } else {
             drawer.fillScaledRect(g, p, 15, 15);
         }
-
+        
         String title = b.getClass().getSimpleName();
 
         if (b.underConstruction()) {
@@ -625,20 +635,28 @@ public class GameDrawer {
     }
 
     private void drawPersons(Graphics2D g) {
+        List<Worker> workersToDraw = null;
 
         synchronized (map.getWorkers()) {
-            for (Worker w : map.getWorkers()) {
-                if (w.isInsideBuilding()) {
-                    continue;
-                }
+            workersToDraw = new ArrayList<>(map.getWorkers());
+        }
 
-                drawPerson(g, w);
+        for (Worker w : workersToDraw) {
+            if (w.isInsideBuilding()) {
+                continue;
             }
+
+            drawPerson(g, w);
         }
     }
 
     private void drawPerson(Graphics2D g, Worker w) {
-        g.setColor(Color.BLACK);
+
+        if (w instanceof Military) {
+            g.setColor(w.getPlayer().getColor());
+        } else {
+            g.setColor(Color.BLACK);
+        }
 
         if (w instanceof Donkey) {
             g.setColor(DONKEY_COLOR);
@@ -647,13 +665,16 @@ public class GameDrawer {
         double actualX = w.getPosition().x;
         double actualY = w.getPosition().y;            
 
-        if (w.isTraveling()) {
+        if (!w.isExactlyAtPoint()) {
             Point next = null;
 
             try {
                 next = w.getNextPoint();
             } catch (Exception ex) {
+                System.out.println("WORKER " + w + " at " + w.getLastPoint() + " target " + w.getTarget());
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
+                System.exit(1);
             }
 
             Point last = w.getLastPoint();

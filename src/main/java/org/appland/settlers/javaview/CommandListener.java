@@ -6,6 +6,7 @@
 
 package org.appland.settlers.javaview;
 
+import org.appland.settlers.computer.PlayerType;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 
@@ -50,5 +51,5 @@ interface CommandListener {
 
     public void setControlledPlayer(Player player);
 
-    public void enableComputerPlayer();
+    public void enableComputerPlayer(PlayerType type);
 }

@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.Timer;
 import java.util.TimerTask;
+import org.appland.settlers.computer.AttackPlayer;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.App.HouseType.COALMINE;
@@ -99,8 +100,10 @@ import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.WatchTower;
 import org.appland.settlers.model.Well;
 import org.appland.settlers.model.Woodcutter;
-import org.appland.settlers.computer.PlanckProductionPlayer;
 import org.appland.settlers.computer.ComputerPlayer;
+import org.appland.settlers.computer.ConstructionPreparationPlayer;
+import org.appland.settlers.computer.ExpandLandPlayer;
+import org.appland.settlers.computer.PlayerType;
 
 public class App extends JFrame {
     private SidePanel sidePanel;
@@ -143,18 +146,18 @@ public class App extends JFrame {
         
         private final int INPUT_CLEAR_DELAY = 5000;
         
-        private UiState        state;
-        private List<Point>    roadPoints;
-        private boolean        showAvailableSpots;
-        private Point          selectedPoint;
-        private ApiRecorder    recorder;
-        private int            tick;
-        private String         previousKeys;
-        private GameDrawer     gameDrawer;
-        private boolean        turboModeEnabled;
-        private Timer          clearInputTimer;
-        private Player         controlledPlayer;
-        private ComputerPlayer computerPlayer;
+        private UiState              state;
+        private List<Point>          roadPoints;
+        private boolean              showAvailableSpots;
+        private Point                selectedPoint;
+        private ApiRecorder          recorder;
+        private int                  tick;
+        private String               previousKeys;
+        private GameDrawer           gameDrawer;
+        private boolean              turboModeEnabled;
+        private Timer                clearInputTimer;
+        private Player               controlledPlayer;
+        private List<ComputerPlayer> computerPlayers;
         
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
@@ -412,13 +415,19 @@ public class App extends JFrame {
             Point point1 = new Point(45, 21);
             map.placeBuilding(headquarter1, point1);
 
+            recorder.recordPlaceBuilding(headquarter1, HEADQUARTER, point1);
+
             /* Place barracks for opponent */
             Point point3 = new Point(29, 21);
             Building barracks0 = new Barracks(opponent);
             map.placeBuilding(barracks0, point3);
 
+            recorder.recordPlaceBuilding(barracks0, BARRACKS, point3);
+
             /* Connect the barracks with the headquarter */
-            map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
+            Road road = map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
+
+            recorder.recordPlaceRoad(road);
         }
 
         @Override
@@ -521,7 +530,7 @@ public class App extends JFrame {
 
         @Override
         public void setControlledPlayer(Player player) {
-            System.out.println("NEW CTRL PLAYER: " + player);
+            System.out.println("Changed control to " + player);
             
             controlledPlayer = player;
 
@@ -531,9 +540,32 @@ public class App extends JFrame {
         }
 
         @Override
-        public void enableComputerPlayer() {
-            if (computerPlayer == null) {
-                computerPlayer = new PlanckProductionPlayer(controlledPlayer, map);
+        public void enableComputerPlayer(PlayerType type) {
+            ComputerPlayer existingPlayer = null;
+
+            for (ComputerPlayer player : computerPlayers) {
+                if (player.getControlledPlayer().equals(controlledPlayer)) {
+                    existingPlayer = player;
+                }
+            }
+
+            if (existingPlayer != null) {
+                System.out.println("Replacing active computer player");
+
+                computerPlayers.remove(existingPlayer);
+            }
+
+            System.out.println("Enabling " + type.name() + "computer player for " + controlledPlayer.getName());
+
+            switch (type) {
+            case BUILDING:
+                computerPlayers.add(new ConstructionPreparationPlayer(controlledPlayer, map));
+                break;
+            case EXPANDING:
+                computerPlayers.add(new ExpandLandPlayer(controlledPlayer, map));
+                break;
+            case ATTACKING:
+                computerPlayers.add(new AttackPlayer(controlledPlayer, map));
             }
         }
 
@@ -652,7 +684,7 @@ public class App extends JFrame {
         }
 
         private void resetGame() throws Exception {
-            computerPlayer = null;
+            computerPlayers.clear();
 
             recorder.clear();
 
@@ -710,8 +742,8 @@ public class App extends JFrame {
 
         private GameMap map;
 
-        int widthInPoints;
-        int heightInPoints;
+        private int widthInPoints;
+        private int heightInPoints;
 
         public GameCanvas() {
             super();
@@ -720,6 +752,7 @@ public class App extends JFrame {
         public void initGame(int w, int h) throws Exception {
             System.out.println("Create game map");
 
+            computerPlayers    = new ArrayList<>();
             widthInPoints      = w;
             heightInPoints     = h;
             tick               = 250;
@@ -784,11 +817,30 @@ public class App extends JFrame {
                         recorder.recordTick();
 
                         /* Call any computer players if available */
-                        if (computerPlayer != null) {
+                        for (ComputerPlayer computerPlayer : computerPlayers) {
                             try {
                                 computerPlayer.turn();
                             } catch (Exception ex) {
+
+                                /* Print exception and backtrace */
                                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
+                                /* Print API recording to make the fault reproducable */
+                                recorder.printRecordingOnConsole();
+
+                                for (Flag flag : map.getFlags()) {
+                                    System.out.println("FLAG: " + flag.getPosition());
+                                }
+
+                                for (Road road : map.getRoads()) {
+                                    System.out.println("" + road.getWayPoints());
+                                }
+
+                                for (Building building : computerPlayer.getControlledPlayer().getBuildings()) {
+                                    System.out.println("" + building.getClass() + " " + building.getPosition());
+                                }
+
+                                System.exit(1);
                             }
                         }
 
@@ -796,7 +848,14 @@ public class App extends JFrame {
                         try {
                             map.stepTime();
                         } catch (Exception ex) {
+
+                            /* Print exception and backtrace */
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
+                            /* Print API recording to make the fault reproducable */
+                            recorder.printRecordingOnConsole();
+
+                            System.exit(1);
                         }
 
                         /* Re-draw the scene */
