@@ -1,6 +1,7 @@
 package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -33,6 +34,12 @@ import org.appland.settlers.model.Point;
  * @author johan
  */
 public class SidePanel extends JTabbedPane {
+    private final static String TO_BUILD_PANEL       = "To build";
+    private final static String FLAG_PANEL           = "Flag";
+    private final static String BUILDING_PANEL       = "Building";
+    private final static String ROAD_PANEL           = "Road";
+    private final static String ENEMY_BUILDING_PANEL = "Enemy building";
+    private final static String NONE_PANEL           = "None";
 
     private final ControlPanel         controlPanel;
     private final CommandListener      commandListener;
@@ -42,11 +49,12 @@ public class SidePanel extends JTabbedPane {
     private final RoadSpotPanel        roadSpotPanel;
     private final EnemyBuildingPanel   enemyBuildingPanel;
     private final NonePanel            nonePanel;
+    private final JPanel               gamePlayPanel;
+    private final CardLayout           gamePanelSelector;
 
     private Point   selectedPoint;
     private GameMap map;
     private Player  player;
-    private boolean stayOnSelected;
 
     void setMap(GameMap m) {
         map = m;
@@ -697,6 +705,7 @@ public class SidePanel extends JTabbedPane {
         commandListener = cl;
 
         /* Create panels */
+        gamePlayPanel        = new JPanel();
         controlPanel         = new ControlPanel();
         toBuild              = new SpotToBuildOnPanel();
         flagSpotPanel        = new FlagSpotPanel();
@@ -709,79 +718,65 @@ public class SidePanel extends JTabbedPane {
         addTab("Control", controlPanel);
 
         /* Add the panels as tabs */
-        addTab("Empty Spot", toBuild);
-        addTab("Flag", flagSpotPanel);
-        addTab("Own Building", ownBuildingSpotPanel);
-        addTab("Road", roadSpotPanel);
-        addTab("Enemy building", enemyBuildingPanel);
-        addTab("None", nonePanel);
-        
+        addTab("Game Play",      gamePlayPanel);
+
+        /* Make the game play panel show one panel at the time */
+        gamePanelSelector = new CardLayout();
+        gamePlayPanel.setLayout(gamePanelSelector);
+
+        /* Populate the game play panel */
+        gamePlayPanel.add(toBuild, TO_BUILD_PANEL);
+        gamePlayPanel.add(flagSpotPanel, FLAG_PANEL);
+        gamePlayPanel.add(ownBuildingSpotPanel, BUILDING_PANEL);
+        gamePlayPanel.add(roadSpotPanel, ROAD_PANEL);
+        gamePlayPanel.add(enemyBuildingPanel, ENEMY_BUILDING_PANEL);
+        gamePlayPanel.add(nonePanel, NONE_PANEL);
+
         /* Set which tab to show on startup */
-        setSelectedComponent(controlPanel);
-
-        /* Add listener for the tab change */
-        addChangeListener(new ChangeListener() {
-
-            @Override
-            public void stateChanged(ChangeEvent ce) {
-                Component component = getSelectedComponent();
-
-                if (component.equals(controlPanel)) {
-
-                    /* Keep the control tab selected until a new spot is selected */
-                    stayOnSelected = true;
-                } else if (component.equals(enemyBuildingPanel)) {
-                    enemyBuildingPanel.updateButtons();
-                    enemyBuildingPanel.updateInfoField();
-                } else if (component.equals(ownBuildingSpotPanel)) {
-                    ownBuildingSpotPanel.updateButtons();
-                    ownBuildingSpotPanel.updateInfoField();
-                }
-            }
-        });
+        setSelectedComponent(gamePlayPanel);
 
         /* Show the tab bar */
         setVisible(true);
     }
 
     void setSelectedPoint(Point point) throws Exception {
-        selectedPoint = point;
 
-        stayOnSelected = false;
-
-        if (selectedPoint == null) {
+        /* Ignore null as selected point */
+        if (point == null) {
             return;
         }
 
-        if (!stayOnSelected) {
-            if (player.isWithinBorder(selectedPoint)) {
-                if (map.isFlagAtPoint(selectedPoint)) {
-                    setSelectedComponent(flagSpotPanel);
-                } else if (map.isBuildingAtPoint(selectedPoint)) {
-                    setSelectedComponent(ownBuildingSpotPanel);
-                    ownBuildingSpotPanel.updateButtons();
-                    ownBuildingSpotPanel.updateInfoField();
-                } else if (map.isRoadAtPoint(selectedPoint)) {
-                    setSelectedComponent(roadSpotPanel);
-                } else {
-                    setSelectedComponent(toBuild);
-                }
-            } else {
-                if (map.isBuildingAtPoint(selectedPoint)) {
-                    setSelectedComponent(enemyBuildingPanel);
-                    enemyBuildingPanel.updateButtons();
-                    enemyBuildingPanel.updateInfoField();
-                } else {
-                    setSelectedComponent(nonePanel);
-                }
-            }
+        /* There is nothing to do if the point is already selected */
+        if (point.equals(selectedPoint)) {
+            return;
         }
-    
-        Component component = getSelectedComponent();
 
-        /* Keep the control tab selected until a new spot is selected */
-        if (component.equals(controlPanel)) {
-            stayOnSelected = true;
+        /* Set the new selected point */
+        selectedPoint = point;
+
+        if (player.isWithinBorder(selectedPoint)) {
+            if (map.isFlagAtPoint(selectedPoint)) {
+                gamePanelSelector.show(gamePlayPanel, FLAG_PANEL);
+            } else if (map.isBuildingAtPoint(selectedPoint)) {
+
+                gamePanelSelector.show(gamePlayPanel, BUILDING_PANEL);
+
+                ownBuildingSpotPanel.updateButtons();
+                ownBuildingSpotPanel.updateInfoField();
+            } else if (map.isRoadAtPoint(selectedPoint)) {
+                gamePanelSelector.show(gamePlayPanel, ROAD_PANEL);
+            } else {
+                gamePanelSelector.show(gamePlayPanel, TO_BUILD_PANEL);
+            }
+        } else {
+            if (map.isBuildingAtPoint(selectedPoint)) {
+                gamePanelSelector.show(gamePlayPanel, ENEMY_BUILDING_PANEL);
+
+                enemyBuildingPanel.updateButtons();
+                enemyBuildingPanel.updateInfoField();
+            } else {
+                gamePanelSelector.show(gamePlayPanel, NONE_PANEL);
+            }
         }
     }
 }
