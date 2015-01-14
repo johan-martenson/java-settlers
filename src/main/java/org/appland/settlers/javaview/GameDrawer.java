@@ -8,10 +8,11 @@ package org.appland.settlers.javaview;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import static java.awt.Color.DARK_GRAY;
-import static java.awt.Color.ORANGE;
-import static java.awt.Color.RED;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Rectangle;
@@ -19,6 +20,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
+import java.awt.Transparency;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
@@ -535,12 +537,8 @@ public class GameDrawer {
         g.setStroke(oldStroke);
     }
 
-    private BufferedImage createOffScreenImage(int width, int height) {
-        return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-    }
-
     private BufferedImage createTerrainTexture(int w, int h, int wip, int hip) throws Exception {
-        BufferedImage image = createOffScreenImage(w, h);
+        BufferedImage image = createOptimizedBufferedImage(w, h, false);
         Terrain terrain     = map.getTerrain();
         Graphics2D g        = image.createGraphics();
 
@@ -911,11 +909,37 @@ public class GameDrawer {
         houseImage   = createImageFromImageResource(HOUSE_TEXTURE);
     }
 
+    private BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
+
+            /* Create an image optimized for this environment */
+            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice device = environment.getDefaultScreenDevice();
+            GraphicsConfiguration configuration = device.getDefaultConfiguration();
+
+            int transparentMode = Transparency.OPAQUE;
+
+            if (transparent) {
+                transparentMode = Transparency.BITMASK;
+            }
+
+            return configuration.createCompatibleImage(width, height, transparentMode);
+    }
+
     private BufferedImage createImageFromImageResource(String res) {
         try {
+
+            /* Load the image from the file */
             BufferedImage bi = ImageIO.read(Thread.currentThread().getContextClassLoader().getResource(res));
-            
-            return bi;
+
+            BufferedImage compatibleImage = createOptimizedBufferedImage(bi.getWidth(), bi.getHeight(), true);
+
+            /* Write the loaded image to the optimized image */
+            Graphics2D graphics = compatibleImage.createGraphics();
+
+            graphics.drawImage(bi, null, null);
+
+            /* Return the optimized image */
+            return compatibleImage;
         } catch (IOException ex) {
             Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
         }

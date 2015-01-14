@@ -130,6 +130,8 @@ public class App extends JFrame {
         getContentPane().add(sidePanel, BorderLayout.EAST);
 
         setVisible(true);
+        
+        setTitle("Settlers 2");
     }
 
     enum UiState {
