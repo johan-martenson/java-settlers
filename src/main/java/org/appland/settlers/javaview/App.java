@@ -14,11 +14,15 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -27,6 +31,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.imageio.ImageIO;
 import org.appland.settlers.computer.AttackPlayer;
 import static org.appland.settlers.javaview.App.HouseType.BAKERY;
 import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
@@ -173,6 +178,38 @@ public class App extends JFrame {
                 tick = 50;
             } else {
                 tick = 250;
+            }
+        }
+
+        private void writeSnapshots() {
+            String name = "Snapshot-" + Calendar.getInstance().getTime().toString();
+
+            /* Write an image to file for each player */
+            for (Player player : map.getPlayers()) {
+
+                /* Create an image to draw on */
+                BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+                Graphics2D graphics = bi.createGraphics();
+
+                /* Draw the scene for the player */
+                gameDrawer.setPlayer(player);
+                gameDrawer.drawScene(graphics, null, null, false);
+
+                /* Write the image to a file */
+                File outputfile = new File(name + "-" + player.getName() + ".png");
+
+                try {
+                    ImageIO.write(bi, "png", outputfile);
+
+                    System.out.println("Wrote scene to " + outputfile.getAbsolutePath());
+                } catch (IOException e) {
+                    System.out.println("Could not write to " + outputfile.getAbsolutePath());
+                } finally {
+
+                    /* Restore the right player */
+                    gameDrawer.setPlayer(controlledPlayer);
+                }
             }
         }
 
@@ -351,6 +388,8 @@ public class App extends JFrame {
                     placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
                     setState(IDLE);
                     repaint();
+                } else if (previousKeys.equals("S")) {
+                    writeSnapshots();
                 } else if (previousKeys.equals("sa")) {
                     placeBuilding(controlledPlayer, SAWMILL, selectedPoint);
                     setState(IDLE);
@@ -842,6 +881,9 @@ public class App extends JFrame {
                                     System.out.println("" + building.getClass() + " " + building.getPosition());
                                 }
 
+                                /* Save snapshots for each player */
+                                writeSnapshots();
+                                
                                 System.exit(1);
                             }
                         }
