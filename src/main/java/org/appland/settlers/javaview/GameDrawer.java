@@ -103,6 +103,7 @@ public class GameDrawer {
     private static final String STONE_TEXTURE    = "stone.png";
     private static final String MOUNTAIN_TEXTURE = "rock.jpg";
     private static final String FIRE_TEXTURE     = "fire.png";
+    private static final String RUBBLE_TEXTURE   = "rubble.png";
 
     private Image         houseImage;
     private int           height;
@@ -121,6 +122,7 @@ public class GameDrawer {
     private Image         stoneTexture;
     private Point         hoveringSpot;
     private Image         fireImage;
+    private Image         rubbleImage;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -246,6 +248,13 @@ public class GameDrawer {
                 drawer.drawScaledImage(g, fireImage, p.upLeft(), 50, 60, -15, -25);
             } else {
                 g.setColor(Color.ORANGE);
+                drawer.fillScaledRect(g, p, 15, 15);
+            }
+        } else if (b.destroyed()) {
+            if (rubbleImage != null) {
+                drawer.drawScaledImage(g, rubbleImage, p.upLeft(), 50, 60, -15, -25);
+            } else {
+                g.setColor(Color.GRAY);
                 drawer.fillScaledRect(g, p, 15, 15);
             }
         } else {
@@ -680,7 +689,6 @@ public class GameDrawer {
             try {
                 next = w.getNextPoint();
             } catch (Exception ex) {
-                System.out.println("WORKER " + w + " at " + w.getLastPoint() + " target " + w.getTarget());
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
 
                 System.exit(1);
@@ -919,6 +927,7 @@ public class GameDrawer {
         stoneTexture = createImageFromImageResource(STONE_TEXTURE);
         houseImage   = createImageFromImageResource(HOUSE_TEXTURE);
         fireImage    = createImageFromImageResource(FIRE_TEXTURE);
+        rubbleImage  = createImageFromImageResource(RUBBLE_TEXTURE);
     }
 
     private BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
