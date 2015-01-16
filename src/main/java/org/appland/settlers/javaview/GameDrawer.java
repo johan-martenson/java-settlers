@@ -102,6 +102,7 @@ public class GameDrawer {
     private static final String WATER_TEXTURE    = "water.jpg";
     private static final String STONE_TEXTURE    = "stone.png";
     private static final String MOUNTAIN_TEXTURE = "rock.jpg";
+    private static final String FIRE_TEXTURE     = "fire.png";
 
     private Image         houseImage;
     private int           height;
@@ -119,6 +120,7 @@ public class GameDrawer {
     private TexturePaint  mountainTexture;
     private Image         stoneTexture;
     private Point         hoveringSpot;
+    private Image         fireImage;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -239,12 +241,20 @@ public class GameDrawer {
     private void drawHouse(Graphics2D g, Building b) {
         Point p = b.getPosition();
 
-        g.setColor(Color.BLACK);
-
-        if (houseImage != null) {
-            drawer.drawScaledImage(g, houseImage, p.upLeft(), 50, 60, -15, -25);
+        if (b.burningDown()) {
+            if (fireImage != null) {
+                drawer.drawScaledImage(g, fireImage, p.upLeft(), 50, 60, -15, -25);
+            } else {
+                g.setColor(Color.ORANGE);
+                drawer.fillScaledRect(g, p, 15, 15);
+            }
         } else {
-            drawer.fillScaledRect(g, p, 15, 15);
+            if (houseImage != null) {
+                drawer.drawScaledImage(g, houseImage, p.upLeft(), 50, 60, -15, -25);
+            } else {
+                g.setColor(Color.BLACK);
+                drawer.fillScaledRect(g, p, 15, 15);
+            }
         }
         
         String title = b.getClass().getSimpleName();
@@ -253,6 +263,7 @@ public class GameDrawer {
             title = "(" + title + ")";
         }
 
+        g.setColor(Color.BLACK);
         g.drawString(title, p.x*drawer.getScaleX() - 50, height - (p.y*drawer.getScaleY()) - 40);
 
         if (b.ready() && b.getWorker() == null && b.getHostedMilitary() == 0) {
@@ -907,6 +918,7 @@ public class GameDrawer {
         /* Load images */
         stoneTexture = createImageFromImageResource(STONE_TEXTURE);
         houseImage   = createImageFromImageResource(HOUSE_TEXTURE);
+        fireImage    = createImageFromImageResource(FIRE_TEXTURE);
     }
 
     private BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
