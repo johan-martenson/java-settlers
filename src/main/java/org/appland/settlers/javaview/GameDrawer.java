@@ -104,6 +104,7 @@ public class GameDrawer {
     private static final String MOUNTAIN_TEXTURE = "rock.jpg";
     private static final String FIRE_TEXTURE     = "fire.png";
     private static final String RUBBLE_TEXTURE   = "rubble.png";
+    private static final String TREE_TEXTURE     = "tree.png";
 
     private Image         houseImage;
     private int           height;
@@ -123,6 +124,7 @@ public class GameDrawer {
     private Point         hoveringSpot;
     private Image         fireImage;
     private Image         rubbleImage;
+    private Image         treeImage;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -289,23 +291,28 @@ public class GameDrawer {
     private void drawTree(Graphics2D g, Tree t) {
         Point p = t.getPosition();
 
-        int base = 5;
-        int treeHeight = 35;
+        if (treeImage != null) {
+            drawer.drawScaledImage(g, treeImage, p, 20, 50, -10, -40);
+        } else {
 
-        if (t.getSize() == SMALL) {
-            base = 2;
-            treeHeight = 15;
-        } else if (t.getSize() == MEDIUM) {
-            base = 3;
-            treeHeight = 25;
+            int base = 5;
+            int treeHeight = 35;
+
+            if (t.getSize() == SMALL) {
+                base = 2;
+                treeHeight = 15;
+            } else if (t.getSize() == MEDIUM) {
+                base = 3;
+                treeHeight = 25;
+            }
+
+            Path2D.Double triangle = new Path2D.Double();
+            triangle.moveTo(drawer.toScreenX(p) - drawer.simpleScaleX(base), drawer.toScreenY(p));
+            triangle.lineTo(drawer.toScreenX(p) + drawer.simpleScaleX(base), drawer.toScreenY(p));
+            triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - drawer.simpleScaleY(treeHeight));
+            triangle.closePath();
+            g.fill(triangle);
         }
-
-        Path2D.Double triangle = new Path2D.Double();
-        triangle.moveTo(drawer.toScreenX(p) - drawer.simpleScaleX(base), drawer.toScreenY(p));
-        triangle.lineTo(drawer.toScreenX(p) + drawer.simpleScaleX(base), drawer.toScreenY(p));
-        triangle.lineTo(drawer.toScreenX(p), drawer.toScreenY(p) - drawer.simpleScaleY(treeHeight));
-        triangle.closePath();
-        g.fill(triangle);
     }
 
     private void drawStones(Graphics2D g) {
@@ -318,7 +325,7 @@ public class GameDrawer {
         Paint oldPaint = g.getPaint();
 
         if (stoneTexture != null) {
-            drawer.drawScaledImage(g, stoneTexture, s.getPosition().upLeft(), 50, 60, -15, -25);
+            drawer.drawScaledImage(g, stoneTexture, s.getPosition().upLeft(), 50, 60, -10, -20);
         } else {
             g.setColor(Color.DARK_GRAY);
 
@@ -726,7 +733,8 @@ public class GameDrawer {
     private void drawAvailableSpots(Graphics2D g) {
         try {
             Map<Point, Size> houses = map.getAvailableHousePoints(player);
-            List<Point> flags = map.getAvailableFlagPoints(player);
+            List<Point>       flags = map.getAvailableFlagPoints(player);
+            List<Point>       mines = map.getAvailableMinePoints(player);
 
             for (Map.Entry<Point, Size> pair : houses.entrySet()) {
                 drawAvailableHouse(g, pair.getKey(), pair.getValue());
@@ -739,6 +747,10 @@ public class GameDrawer {
 
                 drawAvailableFlag(g, p);
             }
+
+            for (Point p : mines) {
+                drawAvailableMine(g, p);
+            }
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -747,7 +759,11 @@ public class GameDrawer {
     private void drawAvailableFlag(Graphics2D g, Point p) {
         g.setColor(Color.ORANGE);
 
-        drawer.fillScaledRect(g, p, 2, 10, -1, -5);
+        drawer.fillScaledRect(g, p, 2, 10, 5, -5);
+
+        g.setColor(Color.BLACK);
+
+        drawer.drawScaledRect(g, p, 2, 10, 5, -5);
     }
 
 
@@ -763,7 +779,7 @@ public class GameDrawer {
 
         drawer.fillScaledRect(g, key, width, height, -2, 0);
 
-        g.setColor(Color.GRAY);
+        g.setColor(Color.BLACK);
 
         drawer.drawScaledRect(g, key, width, height, -2, 0);
 
@@ -773,7 +789,7 @@ public class GameDrawer {
 
             drawer.fillScaledRect(g, key, width, height, -2, -height - verticalSpace);
 
-            g.setColor(Color.GRAY);
+            g.setColor(Color.BLACK);
 
             drawer.drawScaledRect(g, key, width, height, -2, -height - verticalSpace);
         }
@@ -783,7 +799,7 @@ public class GameDrawer {
 
             drawer.fillScaledRect(g, key, width, height, -2, -2*height - 2*verticalSpace);
 
-            g.setColor(Color.GRAY);
+            g.setColor(Color.BLACK);
 
             drawer.drawScaledRect(g, key, width, height, -2, -2*height - 2*verticalSpace);
         }
@@ -928,6 +944,7 @@ public class GameDrawer {
         houseImage   = createImageFromImageResource(HOUSE_TEXTURE);
         fireImage    = createImageFromImageResource(FIRE_TEXTURE);
         rubbleImage  = createImageFromImageResource(RUBBLE_TEXTURE);
+        treeImage    = createImageFromImageResource(TREE_TEXTURE);
     }
 
     private BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
@@ -979,5 +996,13 @@ public class GameDrawer {
 
         g.setColor(Color.DARK_GRAY);
         drawer.drawScaledOval(g, p, 10, 10, -5, -5);
+    }
+
+    private void drawAvailableMine(Graphics2D g, Point p) {
+        g.setColor(Color.ORANGE);
+        drawer.fillScaledOval(g, p, 6, 6, -3, -3);
+
+        g.setColor(Color.BLACK);
+        drawer.drawScaledOval(g, p, 6, 6, -3, -3);
     }
 }
