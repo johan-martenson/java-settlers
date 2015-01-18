@@ -5,7 +5,12 @@
  */
 package org.appland.settlers.javaview;
 
-import org.appland.settlers.javaview.App.HouseType;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
+import java.awt.image.BufferedImage;
+import org.appland.settlers.javaview.HouseType;
 import org.appland.settlers.model.Building;
 
 /**
@@ -43,5 +48,21 @@ public class Utils {
         name = name.toUpperCase().charAt(0) + name.substring(1);
 
         return name;
+    }
+
+    public static BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
+
+            /* Create an image optimized for this environment */
+            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice device = environment.getDefaultScreenDevice();
+            GraphicsConfiguration configuration = device.getDefaultConfiguration();
+
+            int transparentMode = Transparency.OPAQUE;
+
+            if (transparent) {
+                transparentMode = Transparency.BITMASK;
+            }
+
+            return configuration.createCompatibleImage(width, height, transparentMode);
     }
 }

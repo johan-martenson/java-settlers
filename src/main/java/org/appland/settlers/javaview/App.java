@@ -5,6 +5,7 @@ import static java.awt.Color.BLUE;
 import static java.awt.Color.ORANGE;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -33,48 +34,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.imageio.ImageIO;
 import org.appland.settlers.computer.AttackPlayer;
-import static org.appland.settlers.javaview.App.HouseType.BAKERY;
-import static org.appland.settlers.javaview.App.HouseType.BARRACKS;
-import static org.appland.settlers.javaview.App.HouseType.COALMINE;
-import static org.appland.settlers.javaview.App.HouseType.DONKEY_FARM;
-import static org.appland.settlers.javaview.App.HouseType.FARM;
-import static org.appland.settlers.javaview.App.HouseType.FISHERY;
-import static org.appland.settlers.javaview.App.HouseType.FORESTER;
-import static org.appland.settlers.javaview.App.HouseType.FORTRESS;
-import static org.appland.settlers.javaview.App.HouseType.GOLDMINE;
-import static org.appland.settlers.javaview.App.HouseType.GRANITEMINE;
-import static org.appland.settlers.javaview.App.HouseType.GUARD_HOUSE;
-import static org.appland.settlers.javaview.App.HouseType.HEADQUARTER;
-import static org.appland.settlers.javaview.App.HouseType.IRONMINE;
-import static org.appland.settlers.javaview.App.HouseType.MILL;
-import static org.appland.settlers.javaview.App.HouseType.MINT;
-import static org.appland.settlers.javaview.App.HouseType.PIG_FARM;
-import static org.appland.settlers.javaview.App.HouseType.QUARRY;
-import static org.appland.settlers.javaview.App.HouseType.SAWMILL;
-import static org.appland.settlers.javaview.App.HouseType.SLAUGHTER_HOUSE;
-import static org.appland.settlers.javaview.App.HouseType.WATCH_TOWER;
-import static org.appland.settlers.javaview.App.HouseType.WELL;
-import static org.appland.settlers.javaview.App.HouseType.WOODCUTTER;
 import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
 import static org.appland.settlers.javaview.App.UiState.IDLE;
 import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
-import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
-import org.appland.settlers.model.CoalMine;
-import org.appland.settlers.model.DonkeyFarm;
-import org.appland.settlers.model.Farm;
-import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.Flag;
-import org.appland.settlers.model.ForesterHut;
-import org.appland.settlers.model.Fortress;
 import org.appland.settlers.model.GameMap;
-import org.appland.settlers.model.GoldMine;
-import org.appland.settlers.model.GraniteMine;
-import org.appland.settlers.model.GuardHouse;
 import org.appland.settlers.model.Headquarter;
-import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.COIN;
@@ -87,72 +55,83 @@ import static org.appland.settlers.model.Material.PLANCK;
 import static org.appland.settlers.model.Material.STONE;
 import static org.appland.settlers.model.Material.WHEAT;
 import static org.appland.settlers.model.Material.WOOD;
-import org.appland.settlers.model.Mill;
-import org.appland.settlers.model.Mint;
-import org.appland.settlers.model.PigFarm;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
-import org.appland.settlers.model.Quarry;
 import org.appland.settlers.model.Road;
-import org.appland.settlers.model.Sawmill;
 import static org.appland.settlers.model.Size.LARGE;
-import org.appland.settlers.model.SlaughterHouse;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
 import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
 import org.appland.settlers.model.Tree;
-import org.appland.settlers.model.WatchTower;
-import org.appland.settlers.model.Well;
-import org.appland.settlers.model.Woodcutter;
 import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.PlayerType;
+import static org.appland.settlers.javaview.HouseType.BAKERY;
+import static org.appland.settlers.javaview.HouseType.BARRACKS;
+import static org.appland.settlers.javaview.HouseType.COALMINE;
+import static org.appland.settlers.javaview.HouseType.DONKEY_FARM;
+import static org.appland.settlers.javaview.HouseType.FARM;
+import static org.appland.settlers.javaview.HouseType.FISHERY;
+import static org.appland.settlers.javaview.HouseType.FORTRESS;
+import static org.appland.settlers.javaview.HouseType.GOLDMINE;
+import static org.appland.settlers.javaview.HouseType.GRANITEMINE;
+import static org.appland.settlers.javaview.HouseType.GUARD_HOUSE;
+import static org.appland.settlers.javaview.HouseType.HEADQUARTER;
+import static org.appland.settlers.javaview.HouseType.IRONMINE;
+import static org.appland.settlers.javaview.HouseType.MILL;
+import static org.appland.settlers.javaview.HouseType.MINT;
+import static org.appland.settlers.javaview.HouseType.PIG_FARM;
+import static org.appland.settlers.javaview.HouseType.QUARRY;
+import static org.appland.settlers.javaview.HouseType.SAWMILL;
+import static org.appland.settlers.javaview.HouseType.SLAUGHTER_HOUSE;
+import static org.appland.settlers.javaview.HouseType.WATCH_TOWER;
+import static org.appland.settlers.javaview.HouseType.WELL;
+import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
 
 public class App extends JFrame {
-    private SidePanel sidePanel;
+    private final SidePanel sidePanel;
 
-    public App() {
+    public App() throws Exception {
         super();
-        
-        GameCanvas canvas = new GameCanvas();
-        sidePanel = new SidePanel(canvas);
-        
-        try {
-            canvas.initGame(100, 100);
-        } catch (Exception e) {
-            System.out.println(e);
-            e.printStackTrace(System.out);
-            System.exit(1);
-        }
 
+        /* Set the default size of the window */
         setSize(600, 500);
 
+        /* Show the window early so we can calculate the width and height ratio */
+        setVisible(true);
+
+        /* Create the side panel */
+        sidePanel = new SidePanel();
+
+        /* Create the canvas to draw on */
+        GameCanvas canvas = new GameCanvas(100, 100);
+
+        /* Connect the side panel with the canvas */
+        sidePanel.setCommandListener(canvas);
+
+        /* Exit if the window is closed */
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        /* Add the canvas and the sidepanel */
         getContentPane().add(canvas);
         getContentPane().add(sidePanel, BorderLayout.EAST);
 
-        setVisible(true);
-        
+        /* Set title to "Settlers 2" */
         setTitle("Settlers 2");
+
+        repaint();
     }
 
     enum UiState {
         IDLE, BUILDING_ROAD, POINT_SELECTED
     }
 
-    public enum HouseType {
-        WOODCUTTER, HEADQUARTER, FORESTER, SAWMILL, QUARRY, FARM, BARRACKS, WELL,
-        MILL, BAKERY, FISHERY, GOLDMINE, IRONMINE, COALMINE, GRANITEMINE, PIG_FARM,
-        MINT, SLAUGHTER_HOUSE, DONKEY_FARM, GUARD_HOUSE, WATCH_TOWER, FORTRESS
-    }
-
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener {
         
         private final int INPUT_CLEAR_DELAY = 5000;
-        
+
         private UiState              state;
         private List<Point>          roadPoints;
         private boolean              showAvailableSpots;
@@ -165,7 +144,15 @@ public class App extends JFrame {
         private Timer                clearInputTimer;
         private Player               controlledPlayer;
         private List<ComputerPlayer> computerPlayers;
-        
+        private BufferedImage        surface;
+        private double               ratio;
+        private int                  viewedHeight;
+        private int                  viewedWidth;
+        private java.awt.Point       fixed;
+        private java.awt.Point       dragStarted;
+        private final int fullScreenWidth;
+        private final int fullScreenHeight;
+
         private boolean isDoubleClick(MouseEvent me) {
             return me.getClickCount() > 1;
         }
@@ -193,8 +180,7 @@ public class App extends JFrame {
                 Graphics2D graphics = bi.createGraphics();
 
                 /* Draw the scene for the player */
-                gameDrawer.setPlayer(player);
-                gameDrawer.drawScene(graphics, null, null, false);
+                gameDrawer.drawScene(graphics, controlledPlayer, null, null, false);
 
                 /* Write the image to a file */
                 File outputfile = new File(name + "-" + player.getName() + ".png");
@@ -205,48 +191,28 @@ public class App extends JFrame {
                     System.out.println("Wrote scene to " + outputfile.getAbsolutePath());
                 } catch (IOException e) {
                     System.out.println("Could not write to " + outputfile.getAbsolutePath());
-                } finally {
-
-                    /* Restore the right player */
-                    gameDrawer.setPlayer(controlledPlayer);
                 }
             }
         }
 
-        private Point screenToPoint(int x, int y) {
+        private java.awt.Point screenPointToSurfacePoint(java.awt.Point point) {
+            double xScale = (double)viewedWidth / (double)getWidth();
+            double yScale = (double)viewedHeight / (double)getHeight();
 
-            /* Get the exact match from the screen coordinate to the game canvas */
-            double px = (double) x / (double) gameDrawer.getScaleX();
-            double py = (double) (getHeight() - y) / (double) gameDrawer.getScaleY();
+            int surfaceX = (int)(fixed.x + point.x * xScale);
+            int surfaceY = (int)(fixed.y + point.y * yScale);
 
-            /* Round to integers */
-            int roundedX = (int) round(px);
-            int roundedY = (int) round(py);
+            return new java.awt.Point(surfaceX, surfaceY);
+        }
 
-            /* Calculate the error */
-            double errorX = abs(px - roundedX);
-            double errorY = abs(py - roundedY);
+        private java.awt.Point surfacePointToScreenPoint(java.awt.Point point) {
+            double xScale = viewedWidth / getWidth();
+            double yScale = viewedHeight / getHeight();
 
-            /* Adjust the values if needed to avoid invalid points */
-            if ((roundedX + roundedY) % 2 != 0) {
-                if (errorX < errorY) {
-                    if (roundedY > py) {
-                        roundedY = (int) floor(py);
-                    } else {
-                        roundedY = (int) ceil(py);
-                    }
-                } else if (errorX > errorY) {
-                    if (roundedX > px) {
-                        roundedX = (int) floor(px);
-                    } else {
-                        roundedX = (int) ceil(px);
-                    }
-                } else {
-                    roundedX++;
-                }
-            }
+            int screenX = (int)((point.x - fixed.x) / xScale);
+            int screenY = (int)((point.y - fixed.y) / yScale);
 
-            return new Point(roundedX, roundedY);
+            return new java.awt.Point(screenX, screenY);
         }
 
         private void startRoad(Point p) throws Exception {
@@ -347,7 +313,7 @@ public class App extends JFrame {
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("fore")) {
-                    placeBuilding(controlledPlayer, FORESTER, selectedPoint);
+                    placeBuilding(controlledPlayer, HouseType.FORESTER, selectedPoint);
                     setState(IDLE);
                     repaint();
                 } else if (previousKeys.equals("fort")) {
@@ -575,8 +541,6 @@ public class App extends JFrame {
             
             controlledPlayer = player;
 
-            gameDrawer.setPlayer(controlledPlayer);
-
             repaint();
         }
 
@@ -608,6 +572,93 @@ public class App extends JFrame {
             case ATTACKING:
                 computerPlayers.add(new AttackPlayer(controlledPlayer, map));
             }
+        }
+
+        private void zoomOut(int notches) {
+            double deltaX = notches * ratio;
+            double deltaY = notches;
+            double halfDeltaX = (int)(deltaX / 2);
+            double halfDeltaY = (int)(deltaY / 2);
+
+            if (viewedWidth + deltaX >= surface.getWidth() || 
+                viewedHeight + deltaY >= surface.getHeight()) {
+                return;
+            }
+
+            if (fixed.x + viewedWidth + halfDeltaX >= surface.getWidth() &&
+                fixed.x > deltaX) {
+                fixed.x -= deltaX;
+            } else if (fixed.x > halfDeltaX) {
+                fixed.x -= halfDeltaX;
+            }
+
+            viewedWidth += deltaX;
+
+            if (fixed.y + viewedHeight + halfDeltaY >= surface.getHeight() &&
+                fixed.y > deltaY) {
+                fixed.y -= deltaY;
+            } else if (fixed.y > halfDeltaY) {
+                fixed.y -= halfDeltaY;
+            }
+
+            viewedHeight += deltaY;
+
+            repaint();
+        }
+
+        private void zoomIn(int notches) {
+            double deltaX = Math.abs(notches * ratio);
+            double deltaY = Math.abs(notches);
+            double halfDeltaX = (int)(deltaX / 2);
+            double halfDeltaY = (int)(deltaY / 2);
+
+            if (viewedWidth - deltaX < 100 || viewedHeight - deltaY < 100) {
+                return;
+            }
+
+            viewedWidth -= deltaX;
+            viewedHeight -= deltaY;
+
+            fixed.x += halfDeltaX;
+            fixed.y += halfDeltaY;
+
+            repaint();
+        }
+
+        private Point surfacePointToGamePoint(java.awt.Point surfacePoint) {
+
+            /* Go from surface coordinates to game points */
+            double px = (double) surfacePoint.x / gameDrawer.getScaleX();
+            double py = (double) (surface.getHeight() - surfacePoint.y) / gameDrawer.getScaleY();
+
+            /* Round to integers */
+            int roundedX = (int) round(px);
+            int roundedY = (int) round(py);
+
+            /* Calculate the error */
+            double errorX = abs(px - roundedX);
+            double errorY = abs(py - roundedY);
+
+            /* Adjust the values if needed to avoid invalid points */
+            if ((roundedX + roundedY) % 2 != 0) {
+                if (errorX < errorY) {
+                    if (roundedY > py) {
+                        roundedY = (int) floor(py);
+                    } else {
+                        roundedY = (int) ceil(py);
+                    }
+                } else if (errorX > errorY) {
+                    if (roundedX > px) {
+                        roundedX = (int) floor(px);
+                    } else {
+                        roundedX = (int) ceil(px);
+                    }
+                } else {
+                    roundedX++;
+                }
+            }
+
+            return new Point(roundedX, roundedY);
         }
 
         class ClearInputTask extends TimerTask {
@@ -643,77 +694,10 @@ public class App extends JFrame {
         }
 
         private void placeBuilding(Player player, HouseType houseType, Point p) throws Exception {
-            Building b = null;
-            
+
             System.out.println("Placing " + houseType + " at " + selectedPoint);
-            
-            switch (houseType) {
-            case WOODCUTTER:
-                b = new Woodcutter(player);
-                break;
-            case HEADQUARTER:
-                b = new Headquarter(player);
-                break;
-            case FORESTER:
-                b = new ForesterHut(player);
-                break;
-            case SAWMILL:
-                b = new Sawmill(player);
-                break;
-            case QUARRY:
-                b = new Quarry(player);
-                break;
-            case FARM:
-                b = new Farm(player);
-                break;
-            case BARRACKS:
-                b = new Barracks(player);
-                break;
-            case WELL:
-                b = new Well(player);
-                break;
-            case MILL:
-                b = new Mill(player);
-                break;
-            case BAKERY:
-                b = new Bakery(player);
-                break;
-            case FISHERY:
-                b = new Fishery(player);
-                break;
-            case GOLDMINE:
-                b = new GoldMine(player);
-                break;
-            case IRONMINE:
-                b = new IronMine(player);
-                break;
-            case COALMINE:
-                b = new CoalMine(player);
-                break;
-            case GRANITEMINE:
-                b = new GraniteMine(player);
-                break;
-            case PIG_FARM:
-                b = new PigFarm(player);
-                break;
-            case MINT:
-                b = new Mint(player);
-                break;
-            case SLAUGHTER_HOUSE:
-                b = new SlaughterHouse(player);
-                break;
-            case DONKEY_FARM:
-                b = new DonkeyFarm(player);
-                break;
-            case GUARD_HOUSE:
-                b = new GuardHouse(player);
-                break;
-            case WATCH_TOWER:
-                b = new WatchTower(player);
-                break;
-            case FORTRESS:
-                b = new Fortress(player);
-            }
+
+            Building b = BuildingFactory.createBuilding(player, houseType);
 
             if (b == null) {
                 throw new Exception("Can't build " + houseType);
@@ -745,13 +729,11 @@ public class App extends JFrame {
             /* Choose the player to control */
             controlledPlayer = player0;
 
-            gameDrawer.setPlayer(controlledPlayer);
             sidePanel.setPlayer(controlledPlayer);
 
             /* Create game map */
             map = new GameMap(players, widthInPoints, heightInPoints);
 
-            gameDrawer.setMap(map);
             sidePanel.setMap(map);
 
             recorder.recordNewGame(players, widthInPoints, heightInPoints);
@@ -786,11 +768,9 @@ public class App extends JFrame {
         private int widthInPoints;
         private int heightInPoints;
 
-        public GameCanvas() {
+        public GameCanvas(int w, int h) throws Exception {
             super();
-        }
 
-        public void initGame(int w, int h) throws Exception {
             System.out.println("Create game map");
 
             computerPlayers    = new ArrayList<>();
@@ -801,11 +781,31 @@ public class App extends JFrame {
             roadPoints         = new ArrayList<>();
             showAvailableSpots = false;
             recorder           = new ApiRecorder();
-            gameDrawer         = new GameDrawer(w, h, 40, 40);
             clearInputTimer    = new Timer("Clear input timer");
+            fixed              = new java.awt.Point(0, 0);
+            dragStarted        = new java.awt.Point(0, 0);
 
             /* Create the initial game board */
             resetGame();
+
+            /* Calculate the full screen size */
+            fullScreenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+            fullScreenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+
+            /* Create the surface to draw on */
+            int surfaceWidth = map.getWidth() * 30;
+            int surfaceHeight = map.getHeight() * 30;
+            surface = Utils.createOptimizedBufferedImage(surfaceWidth, surfaceHeight, turboModeEnabled);
+
+            /* Create the game drawer with the right size of the playing field */
+            gameDrawer = new GameDrawer(map, surfaceWidth, surfaceHeight);
+
+            /* Zoom out fully */
+            fixed.x = 0;
+            fixed.y = 0;
+
+            viewedWidth = surface.getWidth();
+            viewedHeight = surface.getHeight();
 
             /* Create listener */
             setFocusable(true);
@@ -816,13 +816,13 @@ public class App extends JFrame {
             addMouseWheelListener(this);
 
             previousKeys = "";
-
+            
             /* Add action listeners */
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent evt) {                    
-                    gameDrawer.recalculateScale(getWidth(), getHeight());
-                    
+                    //gameDrawer.recalculateScale(getWidth(), getHeight());
+
                     repaint();
                 }
             });
@@ -833,10 +833,34 @@ public class App extends JFrame {
                 public void mouseMoved(MouseEvent me) {
 
                     /* Get point the mouse hovers over on the game map */
-                    Point point = screenToPoint(me.getX(), me.getY());
+                    Point point = screenPointToGamePoint(me.getPoint());
 
                     /* Update the hovering spot in the game drawer */
                     gameDrawer.setHoveringSpot(point);
+
+                    repaint();
+                }
+
+                @Override
+                public void mouseDragged(MouseEvent me) {
+
+                    /* Get the new point in surface coordinates */
+                    java.awt.Point dropPoint = screenPointToSurfacePoint(me.getPoint());
+
+                    /* Determine the change from the original point */
+                    int changeX = dropPoint.x - dragStarted.x;
+                    int changeY = dropPoint.y - dragStarted.y;
+
+                    int newFixedX = fixed.x - changeX;
+                    int newFixedY = fixed.y - changeY;
+
+                    if (newFixedX >= 0 && newFixedX + viewedWidth <= surface.getWidth()) {
+                        fixed.x = newFixedX;
+                    }
+
+                    if (newFixedY >= 0 && newFixedY + viewedHeight <= surface.getHeight()) {
+                        fixed.y = newFixedY;
+                    }
 
                     repaint();
                 }
@@ -916,18 +940,61 @@ public class App extends JFrame {
             });
 
             t.start();
-            
+
+            setVisible(true);
+
             requestFocus();
+
+            /* Calculate the ratio */
+            ratio = fullScreenWidth / fullScreenHeight;
+
+            /* Set the default zoom */
+            viewedWidth  = (int)(600 * ratio);
+            viewedHeight = 600;
+
+            /* Set the anchor of which part of the full scene to draw */
+            fixed.x = 0;
+            fixed.y = surfaceHeight - viewedHeight;
+
         }
 
         @Override
         public void paintComponent(Graphics graphics) {
-            gameDrawer.drawScene((Graphics2D)graphics, selectedPoint, roadPoints, showAvailableSpots);
+
+            /* Get graphics for the surface */
+            Graphics2D sg = surface.createGraphics();
+
+            /* Limit the drawing the the region that is actually visible */
+            sg.setClip(fixed.x, fixed.y, viewedWidth, viewedHeight);
+
+            /* Draw the scene on the surface */
+            gameDrawer.drawScene(sg, controlledPlayer, selectedPoint, roadPoints, showAvailableSpots);
+
+            /* Draw a part of the surface on the screen */
+/*            BufferedImage subSurface = surface.getSubimage(fixed.x, fixed.y, viewedWidth, viewedHeight);
+            graphics.drawImage(subSurface, 0, 0, getWidth(), getHeight(), null);*/
+            graphics.drawImage(surface, fixed.x, fixed.y, 
+                                        fixed.x + viewedWidth, fixed.y + viewedHeight, 
+                                        0, 0, 
+                                        getWidth(), getHeight(), null);
         }
 
+        private Point screenPointToGamePoint(java.awt.Point screenPoint) {
+
+            /* Translate screen point to a point on the surface */
+            java.awt.Point surfacePoint = screenPointToSurfacePoint(screenPoint);
+
+            /* Translate from the surface point to a point in the game */
+            Point gamePoint = surfacePointToGamePoint(surfacePoint);
+            
+            return gamePoint;
+        }
+        
         @Override
         public void mouseClicked(MouseEvent me) {
-            Point p = screenToPoint(me.getX(), me.getY());
+
+            /* Translate the screen coordinates to a point in the game */
+            Point p = screenPointToGamePoint(me.getPoint());
 
             try {
                 if (isDoubleClick(me)) {
@@ -991,6 +1058,10 @@ public class App extends JFrame {
 
         @Override
         public void mousePressed(MouseEvent me) {
+
+            /* Remember the point in case this is the start of dragging operation
+               NOTE: The point is adjusted to the surface */
+            dragStarted = screenPointToSurfacePoint(me.getPoint());
         }
 
         @Override
@@ -1199,9 +1270,11 @@ public class App extends JFrame {
             try {
                 int notches = mwe.getWheelRotation();
                 if (notches < 0) {
-                    gameDrawer.zoomIn(notches);
+                    //gameDrawer.zoomIn(notches);
+                    zoomIn(notches);
                 } else {
-                    gameDrawer.zoomOut(notches);
+                    //gameDrawer.zoomOut(notches);
+                    zoomOut(notches);
                 }
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
@@ -1221,6 +1294,13 @@ public class App extends JFrame {
     }
 
     public static void main(String[] args) {
-        new App();
+
+        try {
+            /* Create the game window */
+            App app = new App();
+        } catch (Exception ex) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            System.exit(1);
+        }
     }
 }

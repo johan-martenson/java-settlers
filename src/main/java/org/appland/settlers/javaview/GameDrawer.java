@@ -8,11 +8,9 @@ package org.appland.settlers.javaview;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import static java.awt.Color.DARK_GRAY;
+import static java.awt.Color.RED;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Rectangle;
@@ -20,7 +18,6 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
-import java.awt.Transparency;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
@@ -62,39 +59,33 @@ import org.appland.settlers.model.Worker;
  */
 public class GameDrawer {
 
-    private final Color FOG_OF_WAR_COLOR = Color.BLACK;
-
+    private final Color FOG_OF_WAR_COLOR        = Color.BLACK;
     private final Color POSSIBLE_WAYPOINT_COLOR = Color.ORANGE;
+    private final Color SIGN_BACKGROUND_COLOR   = new Color(0xCCAAAA);
+    private final Color FLAG_POLE_COLOR         = DARK_GRAY;
+    private final Color WOOD_COLOR              = new Color(0xBF8026);
+    private final Color WHEAT_COLOR             = Color.ORANGE;
+    private final Color PLANCK_COLOR            = Color.YELLOW;
+    private final Color WATER_COLOR             = Color.BLUE;
+    private final Color FLOUR_COLOR             = Color.WHITE;
+    private final Color STONE_COLOR             = Color.GRAY;
+    private final Color FISH_COLOR              = Color.DARK_GRAY;
+    private final Color GOLD_COLOR              = Color.YELLOW;
+    private final Color IRON_COLOR              = Color.RED;
+    private final Color COAL_COLOR              = Color.BLACK;
+    private final Color PIG_COLOR               = Color.PINK;
+    private final Color DONKEY_COLOR            = Color.DARK_GRAY;
+    private final Color MOUNTAIN_COLOR          = Color.LIGHT_GRAY;
+    private final Color GRASS_COLOR             = Color.GREEN;
+    private final Color SMALL_ROAD_COLOR        = Color.ORANGE;
+    private final Color MAIN_ROAD_COLOR         = Color.LIGHT_GRAY;
+    private final Color HOVERING_COLOR          = Color.LIGHT_GRAY;
+    private final Color SELECTED_POINT_COLOR    = Color.ORANGE;
 
-    private final Color SIGN_BACKGROUND_COLOR = new Color(0xCCAAAA);
-
-    private final Color FLAG_POLE_COLOR = DARK_GRAY;
-
-    private final Color WOOD_COLOR = new Color(0xBF8026);
-    private final Color WHEAT_COLOR = Color.ORANGE;
-    private final Color PLANCK_COLOR = Color.YELLOW;
-    private final Color WATER_COLOR = Color.BLUE;
-    private final Color FLOUR_COLOR = Color.WHITE;
-    private final Color STONE_COLOR = Color.GRAY;
-    private final Color FISH_COLOR = Color.DARK_GRAY;
-    private final Color GOLD_COLOR = Color.YELLOW;
-    private final Color IRON_COLOR = Color.RED;
-    private final Color COAL_COLOR = Color.BLACK;
-    private final Color PIG_COLOR = Color.PINK;
-    private final Color DONKEY_COLOR = Color.DARK_GRAY;
-
-    private final Color MOUNTAIN_COLOR = Color.LIGHT_GRAY;
-    private final Color GRASS_COLOR = Color.GREEN;
-
-    private final Color SMALL_ROAD_COLOR = Color.ORANGE;
-    private final Color MAIN_ROAD_COLOR = Color.LIGHT_GRAY;
-
-    private final Color HOVERING_COLOR = Color.LIGHT_GRAY;
-    private final Color SELECTED_POINT_COLOR = Color.ORANGE;
-
-    private final int MAIN_ROAD_WIDTH = 7;
-    private final int SMALL_ROAD_WIDTH = 4;
     private final Color AVAILABLE_CONSTRUCTION_COLOR = Color.ORANGE;
+
+    private final int MAIN_ROAD_WIDTH  = 7;
+    private final int SMALL_ROAD_WIDTH = 4;
 
     /* Image paths */
     private static final String GRASS_TEXTURE    = "grass.jpg";
@@ -106,34 +97,36 @@ public class GameDrawer {
     private static final String RUBBLE_TEXTURE   = "rubble.png";
     private static final String TREE_TEXTURE     = "tree.png";
 
-    private Image         houseImage;
     private int           height;
     private int           width;
-    private GameMap       map;
-    private BufferedImage terrainImage;
-    private ScaledDrawer  drawer;
     private int           heightInPoints;
     private int           widthInPoints;
     private int           terrainPrerenderedWidthInPoints;
     private int           terrainPrerenderedHeightInPoints;
-    private Player        player;
+    private GameMap       map;
+    private ScaledDrawer  drawer;
+    private Point         hoveringSpot;
     private TexturePaint  grassTexture;
     private TexturePaint  waterTexture;
     private TexturePaint  mountainTexture;
+    private BufferedImage terrainImage;
+    private Image         houseImage;
     private Image         stoneTexture;
-    private Point         hoveringSpot;
     private Image         fireImage;
     private Image         rubbleImage;
     private Image         treeImage;
 
-    GameDrawer(int w, int h, int wP, int hP) {
+    GameDrawer(GameMap m, int w, int h) throws Exception {
+
+        map = m;
+
         width  = w;
         height = h;
 
-        widthInPoints  = wP;
-        heightInPoints = hP;
+        widthInPoints  = map.getWidth();
+        heightInPoints = map.getHeight();
 
-        drawer = new ScaledDrawer(500, 500, w, h);
+        drawer = new ScaledDrawer(width, height, map.getWidth(), map.getHeight());
 
         /* No hovering spot exists on startup */
         hoveringSpot = null;
@@ -144,6 +137,12 @@ public class GameDrawer {
         } catch (IOException ex) {
             Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        /* Render terrain */
+        terrainImage = createTerrainTexture(width, height, map.getWidth(), map.getHeight());
+
+        terrainPrerenderedWidthInPoints = widthInPoints;
+        terrainPrerenderedHeightInPoints = heightInPoints;
     }
 
     double getScaleX() {
@@ -154,8 +153,12 @@ public class GameDrawer {
         return drawer.getScaleY();
     }
     
-    void drawScene(Graphics2D g, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) {
+    void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) {
 
+
+        g.setColor(Color.RED);
+        drawer.fillScaledOval(g, new Point(map.getWidth() - 1, map.getHeight() - 1), 10, 10);
+        
         if (terrainImage != null) {
                 int marginXInPoints = (terrainPrerenderedWidthInPoints-widthInPoints) / 2;
                 int marginYInPoints = (terrainPrerenderedHeightInPoints-heightInPoints) / 2;
@@ -194,7 +197,7 @@ public class GameDrawer {
         drawSigns(g);
 
         if (showAvailableSpots) {
-            drawAvailableSpots(g);
+            drawAvailableSpots(g, player);
         }
 
         if (ongoingRoadPoints != null && !ongoingRoadPoints.isEmpty()) {
@@ -203,7 +206,7 @@ public class GameDrawer {
             drawLastSelectedPoint(g, ongoingRoadPoints);
 
             try {
-                drawPossibleRoadConnections(g, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
+                drawPossibleRoadConnections(g, player, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -215,7 +218,7 @@ public class GameDrawer {
             drawHoveringPoint(g, hoveringSpot);
         }
 
-        drawFogOfWar(g);
+        drawFogOfWar(g, player);
     }
 
     private void drawRoads(Graphics2D g) {
@@ -380,7 +383,7 @@ public class GameDrawer {
         }
     }
 
-    private void drawFogOfWar(Graphics2D g) {
+    private void drawFogOfWar(Graphics2D g, Player player) {
 
         /* Create the area with the whole screen */
         Area area = new Area(new Rectangle(0, 0, width, height));
@@ -493,7 +496,7 @@ public class GameDrawer {
         }
     }
 
-    private void drawPossibleRoadConnections(Graphics2D g, Point point, List<Point> roadPoints) throws Exception {
+    private void drawPossibleRoadConnections(Graphics2D g, Player player, Point point, List<Point> roadPoints) throws Exception {
 
         for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(player, point)) {
             if (map.isFlagAtPoint(p)) {
@@ -565,7 +568,7 @@ public class GameDrawer {
     }
 
     private BufferedImage createTerrainTexture(int w, int h, int wip, int hip) throws Exception {
-        BufferedImage image = createOptimizedBufferedImage(w, h, false);
+        BufferedImage image = Utils.createOptimizedBufferedImage(w, h, false);
         Terrain terrain     = map.getTerrain();
         Graphics2D g        = image.createGraphics();
 
@@ -730,7 +733,7 @@ public class GameDrawer {
         }
     }
 
-    private void drawAvailableSpots(Graphics2D g) {
+    private void drawAvailableSpots(Graphics2D g, Player player) {
         try {
             Map<Point, Size> houses = map.getAvailableHousePoints(player);
             List<Point>       flags = map.getAvailableFlagPoints(player);
@@ -892,10 +895,6 @@ public class GameDrawer {
         terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
     }
 
-    void setPlayer(Player controlledPlayer) {
-        player = controlledPlayer;
-    }
-
     private TexturePaint createBrushFromImageResource(String res) {
         try {
 
@@ -947,29 +946,13 @@ public class GameDrawer {
         treeImage    = createImageFromImageResource(TREE_TEXTURE);
     }
 
-    private BufferedImage createOptimizedBufferedImage(int width, int height, boolean transparent) {
-
-            /* Create an image optimized for this environment */
-            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice device = environment.getDefaultScreenDevice();
-            GraphicsConfiguration configuration = device.getDefaultConfiguration();
-
-            int transparentMode = Transparency.OPAQUE;
-
-            if (transparent) {
-                transparentMode = Transparency.BITMASK;
-            }
-
-            return configuration.createCompatibleImage(width, height, transparentMode);
-    }
-
     private BufferedImage createImageFromImageResource(String res) {
         try {
 
             /* Load the image from the file */
             BufferedImage bi = ImageIO.read(Thread.currentThread().getContextClassLoader().getResource(res));
 
-            BufferedImage compatibleImage = createOptimizedBufferedImage(bi.getWidth(), bi.getHeight(), true);
+            BufferedImage compatibleImage = Utils.createOptimizedBufferedImage(bi.getWidth(), bi.getHeight(), true);
 
             /* Write the loaded image to the optimized image */
             Graphics2D graphics = compatibleImage.createGraphics();

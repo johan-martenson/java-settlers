@@ -2,7 +2,6 @@ package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -17,12 +16,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import static org.appland.settlers.computer.PlayerType.ATTACKING;
 import static org.appland.settlers.computer.PlayerType.BUILDING;
 import static org.appland.settlers.computer.PlayerType.EXPANDING;
-import org.appland.settlers.javaview.App.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
@@ -42,7 +38,6 @@ public class SidePanel extends JTabbedPane {
     private final static String NONE_PANEL           = "None";
 
     private final ControlPanel         controlPanel;
-    private final CommandListener      commandListener;
     private final SpotToBuildOnPanel   toBuild;
     private final FlagSpotPanel        flagSpotPanel;
     private final OwnBuildingSpotPanel ownBuildingSpotPanel;
@@ -52,9 +47,14 @@ public class SidePanel extends JTabbedPane {
     private final JPanel               gamePlayPanel;
     private final CardLayout           gamePanelSelector;
 
-    private Point   selectedPoint;
-    private GameMap map;
-    private Player  player;
+    private CommandListener commandListener;
+    private Point           selectedPoint;
+    private GameMap         map;
+    private Player          player;
+
+    SidePanel() {
+        this(null);
+    }
 
     void setMap(GameMap m) {
         map = m;
@@ -64,6 +64,10 @@ public class SidePanel extends JTabbedPane {
 
     void setPlayer(Player p) {
         player = p;
+    }
+
+    void setCommandListener(CommandListener canvas) {
+        commandListener = canvas;
     }
 
     private class NonePanel extends JPanel {

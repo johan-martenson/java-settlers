@@ -21,7 +21,7 @@ interface CommandListener {
 
     public void dumpRecording();
 
-    public void placeBuilding(App.HouseType houseType, Point selectedPoint) throws Exception;
+    public void placeBuilding(HouseType houseType, Point selectedPoint) throws Exception;
 
     public void placeFlag(Point selectedPoint) throws Exception;
 

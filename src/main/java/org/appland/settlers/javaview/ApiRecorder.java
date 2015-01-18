@@ -10,7 +10,7 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.appland.settlers.javaview.App.HouseType;
+import org.appland.settlers.javaview.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Player;

@@ -30,10 +30,10 @@ public class ScaledDrawer {
     double offsetScaleY;
 
     public ScaledDrawer(int w, int h, int nrPtsW, int nrPtsH) {
-        width = w;
+        width  = w;
         height = h;
 
-        widthPoints = nrPtsW;
+        widthPoints  = nrPtsW;
         heightPoints = nrPtsH;
 
         scaleX = width / widthPoints;
