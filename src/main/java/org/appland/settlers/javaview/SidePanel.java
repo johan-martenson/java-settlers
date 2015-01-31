@@ -637,7 +637,11 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.reset();
+                    try {
+                        commandListener.resetGame();
+                    } catch (Exception ex) {
+                        Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             });
 

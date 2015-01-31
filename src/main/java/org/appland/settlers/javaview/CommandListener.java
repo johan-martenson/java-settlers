@@ -17,7 +17,7 @@ import org.appland.settlers.model.Point;
 interface CommandListener {
     void setTurboMode(boolean toggle);
 
-    public void reset();
+    public void resetGame() throws Exception;
 
     public void dumpRecording();
 
