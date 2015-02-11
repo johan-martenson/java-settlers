@@ -24,13 +24,38 @@
 	<artifactId>maven-jar-plugin</artifactId>
 	<version>2.5</version>
 	<configuration>
+	  <finalName>java-settlers</finalName>
 	  <archive>
 	    <manifest>
+	      <addClasspath>true</addClasspath>
 	      <mainClass>org.appland.settlers.javaview.App</mainClass>
-	      <packageName>org.appland.settlers.javaview</packageName>
+	      <classpathPrefix>dependency-jars</classpathPrefix>
 	    </manifest>
 	  </archive>
 	</configuration>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-assembly-plugin</artifactId>
+	<configuration>
+	  <finalName>java-settlers</finalName>
+	  <descriptorRefs>
+	    <descriptorRef>jar-with-dependencies</descriptorRef>
+	  </descriptorRefs>
+	  <archive>
+	    <manifest>
+	      <mainClass>org.appland.settlers.javaview.App</mainClass>
+	    </manifest>
+	  </archive>
+	</configuration>
+	<executions>
+	  <execution>
+	    <goals>
+	      <goal>attached</goal>
+	    </goals>
+	    <phase>package</phase>
+	  </execution>
+	</executions>
       </plugin>
     </plugins>
   </build>
