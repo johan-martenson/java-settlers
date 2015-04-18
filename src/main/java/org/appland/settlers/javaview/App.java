@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import static java.awt.Color.BLACK;
 import static java.awt.Color.BLUE;
 import static java.awt.Color.ORANGE;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
@@ -34,9 +35,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.imageio.ImageIO;
 import org.appland.settlers.computer.AttackPlayer;
-import static org.appland.settlers.javaview.App.UiState.BUILDING_ROAD;
-import static org.appland.settlers.javaview.App.UiState.IDLE;
-import static org.appland.settlers.javaview.App.UiState.POINT_SELECTED;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
 import org.appland.settlers.model.Flag;
@@ -83,6 +81,7 @@ import static org.appland.settlers.javaview.HouseType.WELL;
 import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
 
 public class App extends JFrame {
+    private static final long serialVersionUID = 1L;
     private final SidePanel sidePanel;
 
     public App() throws Exception {
@@ -90,6 +89,9 @@ public class App extends JFrame {
 
         /* Set the default size of the window */
         setSize(600, 500);
+
+        /* Maximize by default */
+        setExtendedState(Frame.MAXIMIZED_BOTH);
 
         /* Create the side panel */
         sidePanel = new SidePanel();
@@ -120,11 +122,12 @@ public class App extends JFrame {
         canvas.startGame();
     }
 
-    enum UiState {
+    private enum UiState {
         IDLE, BUILDING_ROAD, POINT_SELECTED
     }
 
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener, ComponentListener {
+        private static final long serialVersionUID = 1L;
 
         private final int INPUT_CLEAR_DELAY = 5000;
 
@@ -231,8 +234,8 @@ public class App extends JFrame {
                 }
             });
 
-            /* Initial state is IDLE */
-            state = IDLE;
+            /* Initial state is UiState.IDLE */
+            state = UiState.IDLE;
 
             setVisible(true);
 
@@ -356,41 +359,41 @@ public class App extends JFrame {
                     }
                 } else if (previousKeys.equals("bak")) {
                     placeBuilding(controlledPlayer, BAKERY, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("bar")) {
                     placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("c")) {
                     placeBuilding(controlledPlayer, COALMINE, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("d")) {
                     placeBuilding(controlledPlayer, DONKEY_FARM, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("D")) {
                     recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fi")) {
                     placeBuilding(controlledPlayer, FISHERY, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("fore")) {
                     placeBuilding(controlledPlayer, HouseType.FORESTER, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("fort")) {
                     placeBuilding(controlledPlayer, FORTRESS, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (key == 'd') {
                     recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fa")) {
                     placeBuilding(controlledPlayer, FARM, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("go")) {
                     placeBuilding(controlledPlayer, GOLDMINE, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("gr")) {
                     placeBuilding(controlledPlayer, GRANITEMINE, selectedPoint);
                     repaint();
                 } else if (previousKeys.equals("gu")) {
                     placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("i")) {
                     placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
                     repaint();
@@ -402,29 +405,29 @@ public class App extends JFrame {
                     repaint();
                 } else if (previousKeys.equals("p")) {
                     placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("S")) {
                     writeSnapshots();
                 } else if (previousKeys.equals("sa")) {
                     placeBuilding(controlledPlayer, SAWMILL, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("sl")) {
                     placeBuilding(controlledPlayer, SLAUGHTER_HOUSE, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("T")) {
                     setTurboMode(!turboModeEnabled);
                 } else if (previousKeys.equals("wa")) {
                     placeBuilding(controlledPlayer, WATCH_TOWER, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("we")) {
                     placeBuilding(controlledPlayer, WELL, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (previousKeys.equals("wo")) {
                     placeBuilding(controlledPlayer, WOODCUTTER, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (key == 'q') {
                     placeBuilding(controlledPlayer, QUARRY, selectedPoint);
-                    setState(IDLE);
+                    setState(UiState.IDLE);
                 } else if (key == 'R') {
                     resetGame();
                 } else if (key == 'X') {
@@ -433,7 +436,7 @@ public class App extends JFrame {
                 } else if (key == KeyEvent.VK_ESCAPE) {
                     System.out.println("Resetting state to idle");
 
-                    setState(IDLE);
+                    setState(UiState.IDLE);
 
                     previousKeys = "";
 
@@ -766,7 +769,7 @@ public class App extends JFrame {
 
             recorder.clear();
 
-            setState(IDLE);
+            setState(UiState.IDLE);
             
             recorder.recordComment("Starting new game");
 
@@ -844,17 +847,17 @@ public class App extends JFrame {
 
             try {
                 if (isDoubleClick(me)) {
-                    if (state == IDLE || state == POINT_SELECTED) {
+                    if (state == UiState.IDLE || state == UiState.POINT_SELECTED) {
                         if (map.isFlagAtPoint(p)) {
                             startRoad(p);
 
-                            setState(BUILDING_ROAD);
+                            setState(UiState.BUILDING_ROAD);
                         } else {
                             placeFlag(p);
                             
-                            setState(IDLE);
+                            setState(UiState.IDLE);
                         }
-                    } else if (state == BUILDING_ROAD) {                        
+                    } else if (state == UiState.BUILDING_ROAD) {                        
                         placeFlag(p);
 
                         if (!p.equals(roadPoints.get(roadPoints.size() - 1))) {
@@ -863,41 +866,38 @@ public class App extends JFrame {
 
                         buildRoad(roadPoints);
         
-                        setState(IDLE);
+                        setState(UiState.IDLE);
                     }
                 }
 
                 if (!isDoubleClick(me)) {
-                    if (state == BUILDING_ROAD) {
+                    if (state == UiState.BUILDING_ROAD) {
 
                         if (map.isFlagAtPoint(p)) {
 
                             addRoadPoint(p);
                             buildRoad(roadPoints);
                             
-                            setState(IDLE);
+                            setState(UiState.IDLE);
                         } else if (!map.isRoadAtPoint(p)) {
                             addRoadPoint(p);
                         }
-                    } else if (state == IDLE) {
+                    } else if (state == UiState.IDLE) {
                         selectPoint(p);
                         
-                        setState(POINT_SELECTED);
-                    } else if (state == POINT_SELECTED) {
+                        setState(UiState.POINT_SELECTED);
+                    } else if (state == UiState.POINT_SELECTED) {
                         if (me.getSource().equals(this)) {
                             selectPoint(p);
 
-                            setState(POINT_SELECTED);
+                            setState(UiState.POINT_SELECTED);
                         }
                     }
                 }
                 repaint();
             } catch (Exception ex) {
-                System.out.println("Exception at single click: " + ex);
-                ex.printStackTrace();
-                
                 roadPoints.clear();
-                setState(IDLE);
+                setState(UiState.IDLE);
                 repaint();
             }
         }
@@ -926,14 +926,14 @@ public class App extends JFrame {
 
         @Override
         public void startRoadCommand(Point selectedPoint) {
-            if (state != POINT_SELECTED) {
+            if (state != UiState.POINT_SELECTED) {
                 return;
             }
             
             try {
                 startRoad(selectedPoint);
                 
-                state = BUILDING_ROAD;
+                state = UiState.BUILDING_ROAD;
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
