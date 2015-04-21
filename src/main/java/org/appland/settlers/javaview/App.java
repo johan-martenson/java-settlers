@@ -131,7 +131,6 @@ public class App extends JFrame {
 
         private final int INPUT_CLEAR_DELAY = 5000;
 
-        private final ApiRecorder          recorder;
         private final List<ComputerPlayer> computerPlayers;
         private final ScenarioCreator      creator;
         private final Timer                gameLoopTimer;
@@ -163,8 +162,7 @@ public class App extends JFrame {
             turboModeEnabled   = false;
             roadPoints         = new ArrayList<>();
             showAvailableSpots = false;
-            recorder           = new ApiRecorder();
-            creator            = new ScenarioCreator(recorder);
+            creator            = new ScenarioCreator();
             clearInputTimer    = new Timer("Clear input timer");
             gameLoopTimer      = new Timer("Game loop timer");
             dragStarted        = new java.awt.Point(0, 0);
@@ -175,7 +173,7 @@ public class App extends JFrame {
             /* Create the initial game board */
             resetGame();
 
-            /* Zoom out fully */
+            /* Keep the game scene un-dragged */
             paddingPixelsLeft = 0;
             paddingPixelsDown = 0;
 
@@ -297,8 +295,6 @@ public class App extends JFrame {
         private void buildRoad(List<Point> wayPoints) throws Exception {
             
             Road r = map.placeRoad(controlledPlayer, wayPoints);
-            
-            recorder.recordPlaceRoad(r);
 
             roadPoints = new ArrayList<>();
 
@@ -370,7 +366,7 @@ public class App extends JFrame {
                     placeBuilding(controlledPlayer, DONKEY_FARM, selectedPoint);
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("D")) {
-                    recorder.printRecordingOnConsole();
+                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
                 } else if (previousKeys.equals("fi")) {
                     placeBuilding(controlledPlayer, FISHERY, selectedPoint);
                     setState(UiState.IDLE);
@@ -380,8 +376,6 @@ public class App extends JFrame {
                 } else if (previousKeys.equals("fort")) {
                     placeBuilding(controlledPlayer, FORTRESS, selectedPoint);
                     setState(UiState.IDLE);
-                } else if (key == 'd') {
-                    recorder.printRecordingOnConsole();
                 } else if (previousKeys.equals("fa")) {
                     placeBuilding(controlledPlayer, FARM, selectedPoint);
                     setState(UiState.IDLE);
@@ -431,7 +425,7 @@ public class App extends JFrame {
                 } else if (key == 'R') {
                     resetGame();
                 } else if (key == 'X') {
-                    recorder.record("\n\n\n\n/*   MARKER   */\n");
+                    ((GameMapRecordingAdapter)map).recordMarker();
                     System.out.println("Added marker to api recording");
                 } else if (key == KeyEvent.VK_ESCAPE) {
                     System.out.println("Resetting state to idle");
@@ -474,7 +468,7 @@ public class App extends JFrame {
                 
                 controlledPlayer.attack(buildingToAttack, attackers);
                 
-                recorder.recordAttack(controlledPlayer, buildingToAttack);
+                ((GameMapRecordingAdapter)map).recordAttack(controlledPlayer, buildingToAttack);
             } catch (Exception ex) {
                 Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -663,9 +657,6 @@ public class App extends JFrame {
             @Override
             public void run() {
 
-                /* Keep count of how long the game has run */
-                recorder.recordTick();
-
                 /* Call any computer players if available */
                 for (ComputerPlayer computerPlayer : computerPlayers) {
                     try {
@@ -676,7 +667,7 @@ public class App extends JFrame {
                         Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
 
                         /* Print API recording to make the fault reproducable */
-                        recorder.printRecordingOnConsole();
+                        ((GameMapRecordingAdapter)map).printRecordingOnConsole();
 
                         for (Flag flag : map.getFlags()) {
                             System.out.println("FLAG: " + flag.getPosition());
@@ -710,7 +701,7 @@ public class App extends JFrame {
                     Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
 
                     /* Print API recording to make the fault reproducable */
-                    recorder.printRecordingOnConsole();
+                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
 
                     System.exit(1);
                 }
@@ -738,8 +729,6 @@ public class App extends JFrame {
 
             Flag flag = map.placeFlag(controlledPlayer, p);
 
-            recorder.recordPlaceFlag(flag, p);
-
             System.out.println("Placed flag at " + p);
         }
 
@@ -758,8 +747,6 @@ public class App extends JFrame {
 
             map.placeBuilding(b, p);
 
-            recorder.recordPlaceBuilding(b, houseType, p);
-
             System.out.println("Placing " + houseType + " at " + selectedPoint);
         }
 
@@ -767,11 +754,11 @@ public class App extends JFrame {
         public void resetGame() throws Exception {
             computerPlayers.clear();
 
-            recorder.clear();
+            if (map != null) {
+                ((GameMapRecordingAdapter)map).clear();
+            }
 
             setState(UiState.IDLE);
-            
-            recorder.recordComment("Starting new game");
 
             /* Create players */
             Player player0 = new Player("Player 0", BLUE);
@@ -788,11 +775,9 @@ public class App extends JFrame {
             sidePanel.setPlayer(controlledPlayer);
 
             /* Create game map */
-            map = new GameMap(players, widthInPoints, heightInPoints);
+            map = new GameMapRecordingAdapter(players, widthInPoints, heightInPoints);
 
             sidePanel.setMap(map);
-
-            recorder.recordNewGame(players, widthInPoints, heightInPoints);
 
             gameDrawer.setMap(map);
 
@@ -921,7 +906,7 @@ public class App extends JFrame {
 
         @Override
         public void dumpRecording() {
-            recorder.printRecordingOnConsole();
+            ((GameMapRecordingAdapter)map).printRecordingOnConsole();
         }
 
         @Override
@@ -943,16 +928,14 @@ public class App extends JFrame {
         public void removeFlagCommand(Point selectedPoint) throws Exception {
             Flag flag = map.getFlagAtPoint(selectedPoint);
 
-            recorder.recordRemoveFlag(flag);
-
             map.removeFlag(flag);
         }
 
         @Override
         public void removeHouseCommand(Point selectedPoint) throws Exception {
             Building b = map.getBuildingAtPoint(selectedPoint);
-            
-            recorder.recordTearDown(b);
+
+            ((GameMapRecordingAdapter)map).recordTearDown(b);
 
             b.tearDown();
 
@@ -963,8 +946,6 @@ public class App extends JFrame {
         public void removeRoadAtPoint(Point selectedPoint) throws Exception {
             Road r = map.getRoadAtPoint(selectedPoint);
 
-            recorder.recordRemoveRoad(r);
-
             map.removeRoad(r);
         }
 
@@ -972,7 +953,7 @@ public class App extends JFrame {
         public void callGeologist(Point selectedPoint) throws Exception {
             Flag flag = map.getFlagAtPoint(selectedPoint);
 
-            recorder.recordCallGeologistFromFlag(flag);
+            ((GameMapRecordingAdapter)map).recordCallGeologistFromFlag(flag);
 
             flag.callGeologist();
         }
@@ -1008,10 +989,10 @@ public class App extends JFrame {
         @Override
         public void callScout(Point selectedPoint) throws Exception {
             Flag flag = map.getFlagAtPoint(selectedPoint);
-            
+
             flag.callScout();
-            
-            recorder.recordCallScoutFromFlag(flag);
+
+            ((GameMapRecordingAdapter)map).recordCallScoutFromFlag(flag);
         }
     }
 

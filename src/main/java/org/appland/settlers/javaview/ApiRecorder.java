@@ -10,7 +10,6 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.appland.settlers.javaview.HouseType;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.Player;
@@ -62,7 +61,7 @@ public class ApiRecorder {
         recording += string;
     }
 
-    public void recordPoint(Point p) {
+    private void recordPoint(Point p) {
         if (pointNames.containsKey(p)) {
             record(pointNames.get(p));
         } else {
@@ -70,7 +69,7 @@ public class ApiRecorder {
         }
     }
 
-    public String registerPoint(Point p) {
+    private String registerPoint(Point p) {
         if (pointNames.containsKey(p)) {
             return pointNames.get(p);
         }
@@ -84,11 +83,11 @@ public class ApiRecorder {
         return name;
     }
 
-    String getRecording() {
+    private String getRecording() {
         return recording;
     }
 
-    public String registerFlag(Flag f) {
+    private String registerFlag(Flag f) {
         String name = "flag" + flagNames.size();
 
         flagNames.put(f, name);
@@ -104,7 +103,7 @@ public class ApiRecorder {
         return name;
     }
 
-    public String registerBuilding(Building b) {
+    private String registerBuilding(Building b) {
         String name = b.getClass().getSimpleName();
 
         name = name.toLowerCase().charAt(0) + name.substring(1);
@@ -122,7 +121,7 @@ public class ApiRecorder {
         return name;
     }
     
-    public String registerStone(Stone s) {
+    private String registerStone(Stone s) {
         String name = "stone" + stoneNames.size();
         
         stoneNames.put(s, name);
@@ -142,7 +141,7 @@ public class ApiRecorder {
         recording = INITIAL_RECORDING;
     }
 
-    void recordPlaceBuilding(Building b, HouseType type, Point p) {
+    void recordPlaceBuilding(Building b, Point p) {
         recordTicks();
 
         Player player = b.getPlayer();
@@ -150,12 +149,12 @@ public class ApiRecorder {
         String simpleClassName = b.getClass().getSimpleName();
         String playerName = playerNames.get(player);
 
-        recordComment("Placing " + type.name().toLowerCase() + " for " + playerName);
+        recordComment("Placing " + simpleClassName.toLowerCase() + " for " + playerName);
 
         registerPoint(p);
         String name = registerBuilding(b);
 
-        record(INDENT + "Building " + name + " = map.placeBuilding(new " + simpleClassName + "(" + playerName + "), ");
+        record(INDENT + simpleClassName + " " + name + " = map.placeBuilding(new " + simpleClassName + "(" + playerName + "), ");
 
         recordPoint(p);
 
@@ -357,7 +356,7 @@ public class ApiRecorder {
 
         playerNames.put(player, name);
 
-        record(INDENT + "Player " + name + " = new Player(\"" + player.getName() + "\", " + color + ");\n");
+        record(INDENT + "Player " + name + " = new Player(\"" + player.getName() + "\", \"" + color + "\");\n");
 
         return name;
     }
@@ -378,10 +377,7 @@ public class ApiRecorder {
         recordComment("Place tree");
 
         for (Tree tree : trees) {
-            String treeName = registerTree(tree);
-            String pointName = registerPoint(tree.getPosition());
-
-            record(INDENT + "Tree " + treeName + " = map.placeTree(" + pointName + ");\n");
+            recordPlaceTree(tree);
         }
 
         record("\n");
@@ -390,5 +386,14 @@ public class ApiRecorder {
     private String colorToHex(Color color) {
         int intColor = color.getRGB();
         return String.format("#%06X", (0xFFFFFF & intColor));
+    }
+
+    void recordPlaceTree(Tree tree) {
+        recordComment("Place tree");
+
+        String treeName = registerTree(tree);
+        String pointName = registerPoint(tree.getPosition());
+
+        record(INDENT + "Tree " + treeName + " = map.placeTree(" + pointName + ");\n");
     }
 }

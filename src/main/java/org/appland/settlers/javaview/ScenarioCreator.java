@@ -5,10 +5,6 @@
  */
 package org.appland.settlers.javaview;
 
-import java.util.LinkedList;
-import java.util.List;
-import static org.appland.settlers.javaview.HouseType.BARRACKS;
-import static org.appland.settlers.javaview.HouseType.HEADQUARTER;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
@@ -24,7 +20,6 @@ import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
 import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
-import org.appland.settlers.model.Tree;
 
 /**
  *
@@ -32,31 +27,19 @@ import org.appland.settlers.model.Tree;
  */
 public class ScenarioCreator {
 
-    private final ApiRecorder recorder;
-
-    public ScenarioCreator(ApiRecorder r) {
-        recorder = r;
-    }
-
     void placeOpponent(Player opponent, GameMap map) throws Exception {
 
         /* Place opponent's headquarter */
         Point point1 = new Point(45, 21);
         Headquarter headquarter1 = map.placeBuilding(new Headquarter(opponent), point1);
 
-        recorder.recordPlaceBuilding(headquarter1, HEADQUARTER, point1);
-
         /* Place barracks for opponent */
         Point point3 = new Point(29, 21);
         Building barracks0 = new Barracks(opponent);
         map.placeBuilding(barracks0, point3);
 
-        recorder.recordPlaceBuilding(barracks0, BARRACKS, point3);
-
         /* Connect the barracks with the headquarter */
         Road road = map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
-
-        recorder.recordPlaceRoad(road);
     }
 
     private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) throws Exception {
@@ -64,7 +47,7 @@ public class ScenarioCreator {
 
         tile.setVegetationType(WATER);
 
-        recorder.recordSetTileVegetation(p1, p2, p3, WATER);
+        ((GameMapRecordingAdapter)map).recordSetTileVegetation(p1, p2, p3, WATER);
     }
 
     private void placeMountainHexagonOnMap(Point p, GameMap map) throws Exception {
@@ -80,8 +63,6 @@ public class ScenarioCreator {
         Tile tile = map.getTerrain().getTile(p1, p2, p3);
 
         tile.setVegetationType(MOUNTAIN);
-
-        recorder.recordSetTileVegetation(p1, p2, p3, MOUNTAIN);
     }
 
     void createInitialTerrain(GameMap map) throws Exception {
@@ -129,27 +110,20 @@ public class ScenarioCreator {
         Stone stone0 = map.placeStone(stonePoint);
         Stone stone1 = map.placeStone(stonePoint.downRight());
 
-        recorder.recordPlaceStone(stone0, stonePoint);
-        recorder.recordPlaceStone(stone1, stonePoint.downRight());
-
         /* Place forest */
         Point point0 = new Point(20, 4);
         Point point1 = new Point(22, 6);
         Point point2 = new Point(24, 4);
         Point point3 = new Point(21, 5);
 
-        List<Tree> smallForest = new LinkedList<>();
-
-        smallForest.add(map.placeTree(point0));
-        smallForest.add(map.placeTree(point0.right()));
-        smallForest.add(map.placeTree(point1));
-        smallForest.add(map.placeTree(point1.right()));
-        smallForest.add(map.placeTree(point2));
-        smallForest.add(map.placeTree(point2.right()));
-        smallForest.add(map.placeTree(point3));
-        smallForest.add(map.placeTree(point3.right()));
-
-        recorder.recordPlaceTrees(smallForest);
+        map.placeTree(point0);
+        map.placeTree(point0.right());
+        map.placeTree(point1);
+        map.placeTree(point1.right());
+        map.placeTree(point2);
+        map.placeTree(point2.right());
+        map.placeTree(point3);
+        map.placeTree(point3.right());
     }
 
     private void surroundPointWithMineral(Point p, Material material, GameMap map) throws Exception {
@@ -163,7 +137,5 @@ public class ScenarioCreator {
         /* Place opponent's headquarter */
         Point point1 = new Point(8, 10);
         Headquarter headquarter1 = map.placeBuilding(new Headquarter(player), point1);
-
-        recorder.recordPlaceBuilding(headquarter1, HEADQUARTER, point1);
     }
 }
