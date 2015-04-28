@@ -396,4 +396,56 @@ public class ApiRecorder {
 
         record(INDENT + "Tree " + treeName + " = map.placeTree(" + pointName + ");\n");
     }
+
+    void recordDisablePromotions(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Disabling promotions in " + name);
+
+        record(INDENT + name + ".disablePromotions();\n");
+    }
+
+    void recordEvacuate(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Evacuating from " + name);
+
+        record(INDENT + name + ".evacuate();\n");
+    }
+
+    void recordEnablePromotions(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Enabling promotions" + name);
+
+        record(INDENT + name + ".enablePromotions();\n");
+    }
+
+    void recordStopProduction(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Stopping production in " + name);
+
+        record(INDENT + name + ".stopProduction();\n");
+    }
+
+    void recordResumeProduction(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Resuming production in " + name);
+
+        record(INDENT + name + ".resumeProduction();\n");
+    }
+
+    void recordCancelEvacuation(Building b) {
+        String name = getBuildingName(b);
+
+        recordComment("Canceling evacuation in " + name);
+
+        record(INDENT + name + ".cancelEvacuation();\n");
+    }
+
+    private String getBuildingName(Building delegate) {
+        return buildingNames.get(delegate);
+    }
 }
