@@ -61,6 +61,7 @@ import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.PlayerType;
 import static org.appland.settlers.javaview.HouseType.BAKERY;
 import static org.appland.settlers.javaview.HouseType.BARRACKS;
+import static org.appland.settlers.javaview.HouseType.CATAPULT;
 import static org.appland.settlers.javaview.HouseType.COALMINE;
 import static org.appland.settlers.javaview.HouseType.DONKEY_FARM;
 import static org.appland.settlers.javaview.HouseType.FARM;
@@ -359,7 +360,10 @@ public class App extends JFrame {
                 } else if (previousKeys.equals("bar")) {
                     placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
                     setState(UiState.IDLE);
-                } else if (previousKeys.equals("c")) {
+                } else if (previousKeys.equals("ca")) {
+                    placeBuilding(controlledPlayer, CATAPULT, selectedPoint);
+                    setState(UiState.IDLE);
+                } else if (previousKeys.equals("co")) {
                     placeBuilding(controlledPlayer, COALMINE, selectedPoint);
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("d")) {
@@ -551,8 +555,10 @@ public class App extends JFrame {
         @Override
         public void setControlledPlayer(Player player) {
             System.out.println("Changed control to " + player);
-            
+
             controlledPlayer = player;
+
+            sidePanel.setPlayer(player);
 
             repaint();
         }

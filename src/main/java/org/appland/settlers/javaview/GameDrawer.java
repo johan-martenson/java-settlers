@@ -41,6 +41,7 @@ import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Military;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
+import org.appland.settlers.model.Projectile;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Sign;
 import org.appland.settlers.model.Size;
@@ -217,6 +218,8 @@ public class GameDrawer {
 
         drawSigns(g);
 
+        drawProjectiles(g);
+
         /* Draw the available spots for the next point for a road if a road is being built */
         if (showAvailableSpots) {
             drawAvailableSpots(g, player);
@@ -314,6 +317,26 @@ public class GameDrawer {
         }
 
         return copy;
+    }
+
+    private void drawProjectiles(Graphics2D g) {
+
+        for (Projectile projectile : map.getProjectiles()) {
+
+            int xOrigOnScreen = drawer.toScreenX(projectile.getSource());
+            int yOrigOnScreen = drawer.toScreenY(projectile.getSource());
+
+            int xTargetOnScreen = drawer.toScreenX(projectile.getTarget());
+            int yTargetOnScreen = drawer.toScreenY(projectile.getTarget());
+
+            int directionX = xTargetOnScreen - xOrigOnScreen;
+            int directionY = yTargetOnScreen - yOrigOnScreen;
+
+            int xActualOnScreen = xOrigOnScreen + (int) (directionX * ((double) projectile.getProgress() / 100.0));
+            int yActualOnScreen = yOrigOnScreen + (int) (directionY * ((double) projectile.getProgress() / 100.0));
+
+            g.fillOval(xActualOnScreen, yActualOnScreen, 10, 10);
+        }
     }
 
     private class SpriteSorter implements Comparator<SpriteInfo> {

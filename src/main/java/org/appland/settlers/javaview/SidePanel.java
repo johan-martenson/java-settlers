@@ -695,10 +695,10 @@ public class SidePanel extends JTabbedPane {
                     public void actionPerformed(ActionEvent ae) {
 
                         /* Get player */
-                        Player player = buttonToPlayerMap.get(ae.getSource());
+                        Player playerToControl = buttonToPlayerMap.get(ae.getSource());
 
                         /* Switch the controlled player */
-                        commandListener.setControlledPlayer(player);
+                        commandListener.setControlledPlayer(playerToControl);
                     }
                 });
             }

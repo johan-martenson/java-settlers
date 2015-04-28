@@ -29,6 +29,7 @@ import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
 import org.appland.settlers.model.Bakery;
 import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.Catapult;
 import org.appland.settlers.model.CoalMine;
 import org.appland.settlers.model.DonkeyFarm;
 import org.appland.settlers.model.Farm;
@@ -127,6 +128,9 @@ public class BuildingFactory {
             break;
         case FORTRESS:
             building = new Fortress(player);
+            break;
+        case CATAPULT:
+            building = new Catapult(player);
         }
 
         return building;
