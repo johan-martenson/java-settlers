@@ -27,7 +27,7 @@ public class GameMapRecordingAdapter extends GameMap {
     public GameMapRecordingAdapter(List<Player> players, int width, int height) throws Exception {
         super(players, width, height);
 
-        recorder = new ApiRecorder();
+        recorder = ApiRecorder.getInstance();
 
         recorder.recordNewGame(players, width, height);
     }

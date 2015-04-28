@@ -31,6 +31,8 @@ public class ApiRecorder {
     private static final String INDENT = "        ";
     private static final String END_OF_TESTCASE = "\n}";
 
+    private static ApiRecorder instance;
+
     private final Map<Point,    String> pointNames;
     private final Map<Flag,     String> flagNames;
     private final Map<Building, String> buildingNames;
@@ -42,8 +44,8 @@ public class ApiRecorder {
     private String recording;
     private int    tickCount;
     private int    previousRecordedTicks;
-    
-    public ApiRecorder() {
+
+    private ApiRecorder() {
         pointNames    = new HashMap<>();
         flagNames     = new HashMap<>();
         buildingNames = new HashMap<>();
@@ -56,7 +58,16 @@ public class ApiRecorder {
         tickCount = 0;
         previousRecordedTicks = 0;
     }
-    
+
+    public static ApiRecorder getInstance() {
+
+        if (instance == null) {
+            instance = new ApiRecorder();
+        }
+
+        return instance;
+    }
+
     void record(String string) {
         recording += string;
     }
