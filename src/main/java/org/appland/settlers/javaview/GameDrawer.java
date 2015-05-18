@@ -52,6 +52,7 @@ import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Terrain;
 import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Tree;
+import org.appland.settlers.model.WildAnimal;
 import org.appland.settlers.model.Worker;
 
 /**
@@ -173,11 +174,12 @@ public class GameDrawer {
 
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
-        /* Get house list atomically */
-        List<Building> houses  = copyListAtomically(map.getBuildings());
-        List<Tree>     trees   = copyListAtomically(map.getTrees());
-        List<Stone>    stones  = copyListAtomically(map.getStones());
-        List<Worker>   workers = copyListAtomically(map.getWorkers());
+        /* Get pieces atomically */
+        List<Building>   houses  = copyListAtomically(map.getBuildings());
+        List<Tree>       trees   = copyListAtomically(map.getTrees());
+        List<Stone>      stones  = copyListAtomically(map.getStones());
+        List<Worker>     workers = copyListAtomically(map.getWorkers());
+        List<WildAnimal> animals = copyListAtomically(map.getWildAnimals());
 
         /* Remove sprites drawn in the previous frame */
         spritesToDraw.clear();
@@ -221,6 +223,8 @@ public class GameDrawer {
         drawSigns(g);
 
         drawProjectiles(g);
+
+        drawWildAnimals(g, animals);
 
         /* Draw the available spots for the next point for a road if a road is being built */
         if (showAvailableSpots) {
@@ -350,6 +354,17 @@ public class GameDrawer {
             int yActualOnScreen = yOrigOnScreen + (int) (directionY * ((double) projectile.getProgress() / 100.0));
 
             g.fillOval(xActualOnScreen, yActualOnScreen, 10, 10);
+        }
+    }
+
+    private void drawWildAnimals(Graphics2D g, List<WildAnimal> animals) {
+
+        for (WildAnimal animal : animals) {
+            g.setColor(Color.RED);
+            drawer.drawScaledFilledOval(g, animal.getPosition(), 6, 6);
+
+            g.setColor(Color.BLACK);
+            drawer.drawScaledOval(g, animal.getPosition(), 6, 6);
         }
     }
 
