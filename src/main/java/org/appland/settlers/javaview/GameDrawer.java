@@ -97,6 +97,7 @@ public class GameDrawer {
     private static final String FIRE_TEXTURE     = "fire.png";
     private static final String RUBBLE_TEXTURE   = "rubble.png";
     private static final String TREE_TEXTURE     = "tree.png";
+    private static final String HEADQUARTER_IMAGE = "headquarter.png";
 
     private int           height;
     private int           width;
@@ -116,6 +117,7 @@ public class GameDrawer {
     private Image         fireImage;
     private Image         rubbleImage;
     private Image         treeImage;
+    private Image         headquarterImage;
 
     private final Map<Class, Image>      spriteMap;
     private final Map<Class, Dimension>  dimensionMap;
@@ -280,11 +282,23 @@ public class GameDrawer {
 
             if (b.burningDown()) {
                 spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), 50, 60, -15, -25));
-            } else if (b.destroyed()) {
-                spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), 50, 60, -15, -25));
-            } else {
-                spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), 50, 60, -15, -25));
+                
+                continue;
             }
+
+            if (b.destroyed()) {
+                spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), 50, 60, -15, -25));
+
+                continue;
+            }
+
+            if (b instanceof Headquarter) {
+                spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 50, 60, -15, -25));
+
+                continue;
+            }
+
+            spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), 50, 60, -15, -25));
         }
     }
 
@@ -573,8 +587,8 @@ public class GameDrawer {
 
                 g.setColor(cargoColor);
 
-                g.fillRect((int)(p.x*drawer.getScaleX()) - drawer.offsetScaleX(2),
-                         height - (int)(p.y*drawer.getScaleY()) - drawer.offsetScaleY(6),
+                g.fillRect((p.x*drawer.getScaleX()) - drawer.offsetScaleX(2),
+                         height - (p.y*drawer.getScaleY()) - drawer.offsetScaleY(6),
                        drawer.simpleScaleX(5),
                        drawer.simpleScaleY(5));
             }
@@ -1010,11 +1024,12 @@ public class GameDrawer {
         mountainTexture = createBrushFromImageResource(MOUNTAIN_TEXTURE);
 
         /* Load images */
-        stoneImage  = createImageFromImageResource(STONE_TEXTURE);
-        houseImage  = createImageFromImageResource(HOUSE_TEXTURE);
-        fireImage   = createImageFromImageResource(FIRE_TEXTURE);
-        rubbleImage = createImageFromImageResource(RUBBLE_TEXTURE);
-        treeImage   = createImageFromImageResource(TREE_TEXTURE);
+        stoneImage       = createImageFromImageResource(STONE_TEXTURE);
+        houseImage       = createImageFromImageResource(HOUSE_TEXTURE);
+        fireImage        = createImageFromImageResource(FIRE_TEXTURE);
+        rubbleImage      = createImageFromImageResource(RUBBLE_TEXTURE);
+        treeImage        = createImageFromImageResource(TREE_TEXTURE);
+        headquarterImage = createImageFromImageResource(HEADQUARTER_IMAGE);
     }
 
     private BufferedImage createImageFromImageResource(String res) {

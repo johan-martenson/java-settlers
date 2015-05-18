@@ -36,6 +36,7 @@ public class SidePanel extends JTabbedPane {
     private final static String ROAD_PANEL           = "Road";
     private final static String ENEMY_BUILDING_PANEL = "Enemy building";
     private final static String NONE_PANEL           = "None";
+    private static final long serialVersionUID = 1L;
 
     private final ControlPanel         controlPanel;
     private final SpotToBuildOnPanel   toBuild;
@@ -71,6 +72,7 @@ public class SidePanel extends JTabbedPane {
     }
 
     private class NonePanel extends JPanel {
+        private static final long serialVersionUID = 1L;
 
         public NonePanel() {
             JPanel panel = new JPanel();
@@ -91,6 +93,7 @@ public class SidePanel extends JTabbedPane {
     }
     
     private class EnemyBuildingPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
 
         private final JLabel  titleField;
         private final JButton attackButton;
@@ -162,6 +165,7 @@ public class SidePanel extends JTabbedPane {
     }
     
     private class RoadSpotPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
         private final JButton removeRoadButton;
 
         public RoadSpotPanel() {
@@ -196,6 +200,7 @@ public class SidePanel extends JTabbedPane {
     }
     
     private class OwnBuildingSpotPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
 
         private final JLabel  titleField;
         private final JLabel  infoField;
@@ -427,6 +432,7 @@ public class SidePanel extends JTabbedPane {
     }
     
     private class FlagSpotPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
 
         JButton startRoadButton;
         JButton removeFlagButton;
@@ -503,6 +509,7 @@ public class SidePanel extends JTabbedPane {
     }
     
     private class SpotToBuildOnPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
         private final JButton raiseFlagButton;
         private final Map<JButton, HouseType> buttonToHouseType;
 
@@ -569,6 +576,7 @@ public class SidePanel extends JTabbedPane {
     }
 
     private class ControlPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
 
         private boolean              turboToggle;
         private final JPanel         controlPanel;
