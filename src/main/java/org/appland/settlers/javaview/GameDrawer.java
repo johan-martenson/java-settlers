@@ -125,6 +125,12 @@ public class GameDrawer {
     private final List<SpriteInfo>       spritesToDraw;
     private final Comparator<SpriteInfo> spriteSorter;
 
+    private final List<Building>   houses;
+    private final List<Tree>       trees;
+    private final List<Stone>      stones;
+    private final List<Worker>     workers;
+    private final List<WildAnimal> animals;
+
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
         height = h;
@@ -162,6 +168,13 @@ public class GameDrawer {
         dimensionMap.put(Building.class, new Dimension(20, 20));
         dimensionMap.put(Headquarter.class, new Dimension(30, 30));
         dimensionMap.put(Stone.class, new Dimension(10, 10));
+
+        /* Create lists to store temporary copies to avoid synchronization issues */
+        houses  = new ArrayList<>();
+        trees   = new ArrayList<>();
+        stones  = new ArrayList<>();
+        workers = new ArrayList<>();
+        animals = new ArrayList<>();
     }
 
     double getScaleX() {
@@ -174,12 +187,19 @@ public class GameDrawer {
 
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
+        /* Clear lists for temporary storage */
+        houses.clear();
+        trees.clear();
+        stones.clear();
+        workers.clear();
+        animals.clear();
+
         /* Get pieces atomically */
-        List<Building>   houses  = copyListAtomically(map.getBuildings());
-        List<Tree>       trees   = copyListAtomically(map.getTrees());
-        List<Stone>      stones  = copyListAtomically(map.getStones());
-        List<Worker>     workers = copyListAtomically(map.getWorkers());
-        List<WildAnimal> animals = copyListAtomically(map.getWildAnimals());
+        copyListAtomically(map.getBuildings(), houses);
+        copyListAtomically(map.getTrees(), trees);
+        copyListAtomically(map.getStones(), stones);
+        copyListAtomically(map.getWorkers(), workers);
+        copyListAtomically(map.getWildAnimals(), animals);
 
         /* Remove sprites drawn in the previous frame */
         spritesToDraw.clear();
@@ -326,15 +346,11 @@ public class GameDrawer {
         }
     }
 
-    private <T> List<T> copyListAtomically(Collection<T> list) {
+    private <T> void copyListAtomically(Collection<T> from, Collection<T> to) {
 
-        List<T> copy = null;
-
-        synchronized (list) {
-            copy = new ArrayList<>(list);
+        synchronized (from) {
+            to.addAll(from);
         }
-
-        return copy;
     }
 
     private void drawProjectiles(Graphics2D g) {
@@ -389,13 +405,13 @@ public class GameDrawer {
             }
 
             g.setColor(Color.RED);
-            g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
+            g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4), 
                        height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
                        drawer.simpleScaleX(6), 
                        drawer.simpleScaleY(5));
 
             g.setColor(Color.BLACK);
-            g.drawOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
+            g.drawOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4), 
                        height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
                        drawer.simpleScaleX(6), 
                        drawer.simpleScaleY(5));
