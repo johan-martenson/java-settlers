@@ -360,11 +360,45 @@ public class GameDrawer {
     private void drawWildAnimals(Graphics2D g, List<WildAnimal> animals) {
 
         for (WildAnimal animal : animals) {
+
+            double actualX = animal.getPosition().x;
+            double actualY = animal.getPosition().y;            
+
+            if (!animal.isExactlyAtPoint()) {
+                Point next = null;
+
+                try {
+                    next = animal.getNextPoint();
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
+                    System.exit(1);
+                }
+
+                Point last = animal.getLastPoint();
+
+                if (next == null) {
+                    actualX = last.x;
+                    actualY = last.y;
+                } else {
+                    int percent = animal.getPercentageOfDistanceTraveled();
+
+                    actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
+                    actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
+                }
+            }
+
             g.setColor(Color.RED);
-            drawer.drawScaledFilledOval(g, animal.getPosition(), 6, 6);
+            g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
+                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
+                       drawer.simpleScaleX(6), 
+                       drawer.simpleScaleY(5));
 
             g.setColor(Color.BLACK);
-            drawer.drawScaledOval(g, animal.getPosition(), 6, 6);
+            g.drawOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
+                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
+                       drawer.simpleScaleX(6), 
+                       drawer.simpleScaleY(5));
         }
     }
 
