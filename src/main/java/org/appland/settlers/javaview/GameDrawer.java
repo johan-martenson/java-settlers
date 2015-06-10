@@ -497,7 +497,7 @@ public class GameDrawer {
 
     private void collectStoneSprites(List<Stone> stones) {
         for (Stone s : stones) {
-            SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), 50, 60, -10, -20);
+            SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), 50, 60, -25, -35);
             spritesToDraw.add(si);
         }
     }
