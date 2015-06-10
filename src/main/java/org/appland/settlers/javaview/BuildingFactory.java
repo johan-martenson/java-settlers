@@ -40,6 +40,7 @@ import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.GraniteMine;
 import org.appland.settlers.model.GuardHouse;
 import org.appland.settlers.model.Headquarter;
+import org.appland.settlers.model.HunterHut;
 import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Mill;
 import org.appland.settlers.model.Mint;
@@ -131,6 +132,9 @@ public class BuildingFactory {
             break;
         case CATAPULT:
             building = new Catapult(player);
+            break;
+        case HUNTER_HUT:
+            building = new HunterHut(player);
         }
 
         return building;

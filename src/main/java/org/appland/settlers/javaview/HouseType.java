@@ -32,5 +32,6 @@ public enum HouseType {
         GUARD_HOUSE, 
         WATCH_TOWER, 
         FORTRESS,
-        CATAPULT
+        CATAPULT,
+        HUNTER_HUT
 }
