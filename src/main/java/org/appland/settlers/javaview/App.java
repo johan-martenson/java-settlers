@@ -131,6 +131,7 @@ public class App extends JFrame {
         private static final long serialVersionUID = 1L;
 
         private final int INPUT_CLEAR_DELAY = 5000;
+        private final int DEFAULT_TICK = 200;
 
         private final List<ComputerPlayer> computerPlayers;
         private final ScenarioCreator      creator;
@@ -252,7 +253,7 @@ public class App extends JFrame {
             if (toggle) {
                 tick = 30;
             } else {
-                tick = 250;
+                tick = DEFAULT_TICK;
             }
 
             /* Update the timer */
