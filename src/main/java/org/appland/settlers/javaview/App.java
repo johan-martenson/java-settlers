@@ -70,6 +70,7 @@ import static org.appland.settlers.javaview.HouseType.FORTRESS;
 import static org.appland.settlers.javaview.HouseType.GOLDMINE;
 import static org.appland.settlers.javaview.HouseType.GRANITEMINE;
 import static org.appland.settlers.javaview.HouseType.GUARD_HOUSE;
+import static org.appland.settlers.javaview.HouseType.HUNTER_HUT;
 import static org.appland.settlers.javaview.HouseType.IRONMINE;
 import static org.appland.settlers.javaview.HouseType.MILL;
 import static org.appland.settlers.javaview.HouseType.MINT;
@@ -392,6 +393,9 @@ public class App extends JFrame {
                     repaint();
                 } else if (previousKeys.equals("gu")) {
                     placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
+                    setState(UiState.IDLE);
+                } else if (previousKeys.equals("h")) {
+                    placeBuilding(controlledPlayer, HUNTER_HUT, selectedPoint);
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("i")) {
                     placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
