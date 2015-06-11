@@ -629,7 +629,7 @@ public class SidePanel extends JTabbedPane {
                 public void actionPerformed(ActionEvent ae) {
                     turboToggle = !turboToggle;
 
-                    commandListener.setTurboMode(turboToggle);
+                    commandListener.toggleTurbo();
                 }
             });
 

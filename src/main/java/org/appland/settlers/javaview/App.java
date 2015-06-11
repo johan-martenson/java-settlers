@@ -248,10 +248,10 @@ public class App extends JFrame {
         }
 
         @Override
-        public void setTurboMode(boolean toggle) {
-            turboModeEnabled = toggle;
+        public void toggleTurbo() {
+            turboModeEnabled = !turboModeEnabled;
 
-            if (toggle) {
+            if (turboModeEnabled) {
                 tick = 30;
             } else {
                 tick = DEFAULT_TICK;
@@ -418,7 +418,7 @@ public class App extends JFrame {
                     placeBuilding(controlledPlayer, SLAUGHTER_HOUSE, selectedPoint);
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("T")) {
-                    setTurboMode(!turboModeEnabled);
+                    toggleTurbo();
                 } else if (previousKeys.equals("wa")) {
                     placeBuilding(controlledPlayer, WATCH_TOWER, selectedPoint);
                     setState(UiState.IDLE);
