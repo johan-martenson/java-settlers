@@ -59,6 +59,7 @@ import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.PlayerType;
+import org.appland.settlers.computer.SearchForMineralsPlayer;
 import static org.appland.settlers.javaview.HouseType.BAKERY;
 import static org.appland.settlers.javaview.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.HouseType.CATAPULT;
@@ -595,6 +596,9 @@ public class App extends JFrame {
                 break;
             case ATTACKING:
                 computerPlayers.add(new AttackPlayer(controlledPlayer, map));
+                break;
+            case MINERALS:
+                computerPlayers.add(new SearchForMineralsPlayer(controlledPlayer, map));
             }
         }
 

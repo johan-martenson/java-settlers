@@ -19,6 +19,7 @@ import javax.swing.JTabbedPane;
 import static org.appland.settlers.computer.PlayerType.ATTACKING;
 import static org.appland.settlers.computer.PlayerType.BUILDING;
 import static org.appland.settlers.computer.PlayerType.EXPANDING;
+import static org.appland.settlers.computer.PlayerType.MINERALS;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
@@ -614,6 +615,7 @@ public class SidePanel extends JTabbedPane {
             JButton startBuildingPlayer  = new JButton("Start build player");
             JButton startExpandingPlayer = new JButton("Start expanding player");
             JButton startAttackingPlayer = new JButton("Start attacking player");
+            JButton startMineralPlayer   = new JButton("Start mineral player");
 
             /* Add control buttons to the panel */
             panel.add(turboButton);
@@ -622,6 +624,7 @@ public class SidePanel extends JTabbedPane {
             panel.add(startBuildingPlayer);
             panel.add(startExpandingPlayer);
             panel.add(startAttackingPlayer);
+            panel.add(startMineralPlayer);
 
             /* Add action listeners to the control buttons */
             turboButton.addActionListener(new ActionListener() {
@@ -674,6 +677,14 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     commandListener.enableComputerPlayer(ATTACKING);
+                }
+            });
+
+            startMineralPlayer.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    commandListener.enableComputerPlayer(MINERALS);
                 }
             });
 
