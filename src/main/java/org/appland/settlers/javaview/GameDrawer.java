@@ -125,9 +125,6 @@ public class GameDrawer {
     private final List<SpriteInfo>       spritesToDraw;
     private final Comparator<SpriteInfo> spriteSorter;
 
-    private final List<Building>   houses;
-    private final List<Tree>       trees;
-    private final List<Stone>      stones;
     private final List<Worker>     workers;
     private final List<WildAnimal> animals;
 
@@ -170,9 +167,6 @@ public class GameDrawer {
         dimensionMap.put(Stone.class, new Dimension(10, 10));
 
         /* Create lists to store temporary copies to avoid synchronization issues */
-        houses  = new ArrayList<>();
-        trees   = new ArrayList<>();
-        stones  = new ArrayList<>();
         workers = new ArrayList<>();
         animals = new ArrayList<>();
     }
@@ -187,17 +181,11 @@ public class GameDrawer {
 
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
-        /* Clear lists for temporary storage */
-        houses.clear();
-        trees.clear();
-        stones.clear();
+        /* Remove previously copied pieces */
         workers.clear();
         animals.clear();
 
-        /* Get pieces atomically */
-        copyListAtomically(map.getBuildings(), houses);
-        copyListAtomically(map.getTrees(), trees);
-        copyListAtomically(map.getStones(), stones);
+        /* Get copy of pieces to work on */
         copyListAtomically(map.getWorkers(), workers);
         copyListAtomically(map.getWildAnimals(), animals);
 
@@ -228,9 +216,9 @@ public class GameDrawer {
         drawRoads(g);
 
         /* Collect sprites to draw */
-        collectHouseSprites(houses);
-        collectTreeSprites(trees);
-        collectStoneSprites(stones);
+        collectHouseSprites(map);
+        collectTreeSprites(map);
+        collectStoneSprites(map);
 
         drawCrops(g);
 
@@ -275,7 +263,7 @@ public class GameDrawer {
         }
 
         /* Draw headings for the houses */
-        drawHouseTitles(g, houses);
+        drawHouseTitles(g, map.getBuildings());
 
         /* Draw the hovering spot on top */
         if (hoveringSpot != null) {
@@ -299,30 +287,34 @@ public class GameDrawer {
         }
     }
 
-    private void collectHouseSprites(List<Building> houses) {
+    private void collectHouseSprites(GameMap map) {
 
-        for (Building b : houses) {
-            Point p = b.getPosition();
+        List<Building> houses = map.getBuildings();
 
-            if (b.burningDown()) {
-                spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), 50, 60, -15, -25));
-                
-                continue;
+        synchronized (houses) {
+            for (Building b : houses) {
+                Point p = b.getPosition();
+
+                if (b.burningDown()) {
+                    spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), 50, 60, -15, -25));
+
+                    continue;
+                }
+
+                if (b.destroyed()) {
+                    spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), 50, 60, -15, -25));
+
+                    continue;
+                }
+
+                if (b instanceof Headquarter) {
+                    spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 50, 60, -15, -25));
+
+                    continue;
+                }
+
+                spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), 50, 60, -15, -25));
             }
-
-            if (b.destroyed()) {
-                spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), 50, 60, -15, -25));
-
-                continue;
-            }
-
-            if (b instanceof Headquarter) {
-                spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 50, 60, -15, -25));
-
-                continue;
-            }
-
-            spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), 50, 60, -15, -25));
         }
     }
 
@@ -476,29 +468,40 @@ public class GameDrawer {
 
     }
 
-    private void collectTreeSprites(List<Tree> trees) {
-        for (Tree t : trees) {
+    private void collectTreeSprites(GameMap map) {
 
-            int base = 10;
-            int treeHeight = 60;
+        Collection<Tree> trees = map.getTrees();
 
-            if (t.getSize() == SMALL) {
-                base = 4;
-                treeHeight = 20;
-            } else if (t.getSize() == MEDIUM) {
-                base = 7;
-                treeHeight = 40;
+        synchronized (trees) {
+
+            for (Tree t : trees) {
+
+                int base = 10;
+                int treeHeight = 60;
+
+                if (t.getSize() == SMALL) {
+                    base = 4;
+                    treeHeight = 20;
+                } else if (t.getSize() == MEDIUM) {
+                    base = 7;
+                    treeHeight = 40;
+                }
+
+                SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 2, treeHeight, -base, -treeHeight);
+                spritesToDraw.add(si);
             }
-
-            SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 2, treeHeight, -base, -treeHeight);
-            spritesToDraw.add(si);
         }
     }
 
-    private void collectStoneSprites(List<Stone> stones) {
-        for (Stone s : stones) {
-            SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), 50, 60, -25, -35);
-            spritesToDraw.add(si);
+    private void collectStoneSprites(GameMap map) {
+
+        Collection<Stone> stones = map.getStones();
+
+        synchronized (stones) {
+            for (Stone s : stones) {
+                SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), 50, 60, -25, -35);
+                spritesToDraw.add(si);
+            }
         }
     }
 
