@@ -58,6 +58,7 @@ import org.appland.settlers.model.Road;
 import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
+import org.appland.settlers.computer.FoodProducer;
 import org.appland.settlers.computer.PlayerType;
 import org.appland.settlers.computer.SearchForMineralsPlayer;
 import static org.appland.settlers.javaview.HouseType.BAKERY;
@@ -599,6 +600,9 @@ public class App extends JFrame {
                 break;
             case MINERALS:
                 computerPlayers.add(new SearchForMineralsPlayer(controlledPlayer, map));
+                break;
+            case FOOD_PRODUCER:
+                computerPlayers.add(new FoodProducer(controlledPlayer, map));
             }
         }
 
