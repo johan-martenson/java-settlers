@@ -22,6 +22,7 @@ import static org.appland.settlers.computer.PlayerType.EXPANDING;
 import static org.appland.settlers.computer.PlayerType.FOOD_PRODUCER;
 import static org.appland.settlers.computer.PlayerType.MINERALS;
 import static org.appland.settlers.computer.PlayerType.COIN_PRODUCER;
+import static org.appland.settlers.computer.PlayerType.MILITARY_PRODUCER;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Material;
@@ -620,6 +621,7 @@ public class SidePanel extends JTabbedPane {
             JButton startMineralPlayer   = new JButton("Start mineral player");
             JButton startFoodPlayer      = new JButton("Start food player");
             JButton startCoinPlayer      = new JButton("Start coin player");
+            JButton startWeaponPlayer    = new JButton("Start weapon producer");
 
             /* Add control buttons to the panel */
             panel.add(turboButton);
@@ -631,6 +633,7 @@ public class SidePanel extends JTabbedPane {
             panel.add(startMineralPlayer);
             panel.add(startFoodPlayer);
             panel.add(startCoinPlayer);
+            panel.add(startWeaponPlayer);
 
             /* Add action listeners to the control buttons */
             turboButton.addActionListener(new ActionListener() {
@@ -709,6 +712,15 @@ public class SidePanel extends JTabbedPane {
                 	commandListener.enableComputerPlayer(COIN_PRODUCER);
                 }
             });
+
+            startWeaponPlayer.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+				    commandListener.enableComputerPlayer(MILITARY_PRODUCER);
+				}
+			});
+
             return panel;
         }
 

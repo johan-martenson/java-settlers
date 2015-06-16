@@ -70,6 +70,7 @@ import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.FoodProducer;
+import org.appland.settlers.computer.MiltaryProducer;
 import org.appland.settlers.computer.PlayerType;
 import org.appland.settlers.computer.SearchForMineralsPlayer;
 
@@ -618,6 +619,9 @@ public class App extends JFrame {
                 break;
             case COIN_PRODUCER:
             	computerPlayers.add(new CoinProducer(controlledPlayer, map));
+            	break;
+            case MILITARY_PRODUCER:
+            	computerPlayers.add(new MiltaryProducer(controlledPlayer, map));
             }
         }
 
