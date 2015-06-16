@@ -9,16 +9,14 @@ import org.appland.settlers.model.Barracks;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
-import org.appland.settlers.model.Material;
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.GOLD;
+import static org.appland.settlers.model.Material.IRON;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
-import static org.appland.settlers.model.Size.LARGE;
 import org.appland.settlers.model.Stone;
 import org.appland.settlers.model.Tile;
-import static org.appland.settlers.model.Tile.Vegetation.MOUNTAIN;
 import static org.appland.settlers.model.Tile.Vegetation.WATER;
 
 /**
@@ -50,21 +48,6 @@ public class ScenarioCreator {
         ((GameMapRecordingAdapter)map).recordSetTileVegetation(p1, p2, p3, WATER);
     }
 
-    private void placeMountainHexagonOnMap(Point p, GameMap map) throws Exception {
-        placeMountainOnTile(p, p.left(), p.upLeft(), map);
-        placeMountainOnTile(p, p.upLeft(), p.upRight(), map);
-        placeMountainOnTile(p, p.upRight(), p.right(), map);
-        placeMountainOnTile(p, p.right(), p.downRight(), map);
-        placeMountainOnTile(p, p.downRight(), p.downLeft(), map);
-        placeMountainOnTile(p, p.downLeft(), p.left(), map);
-    }
-
-    private void placeMountainOnTile(Point p1, Point p2, Point p3, GameMap map) throws Exception {
-        Tile tile = map.getTerrain().getTile(p1, p2, p3);
-
-        tile.setVegetationType(MOUNTAIN);
-    }
-
     void createInitialTerrain(GameMap map) throws Exception {
         /* The default vegetation is grass */
 
@@ -82,27 +65,39 @@ public class ScenarioCreator {
         Point p = new Point(5, 13);
         Point p2 = new Point(8, 14);
         Point p3 = new Point(5, 15);
-        placeMountainHexagonOnMap(p, map);
-        placeMountainHexagonOnMap(p2, map);
-        placeMountainHexagonOnMap(p3, map);
+        map.placeMountainHexagonOnMap(p);
+        map.placeMountainHexagonOnMap(p2);
+        map.placeMountainHexagonOnMap(p3);
 
         /* Put gold at mountain */
-        surroundPointWithMineral(p, GOLD, map);
-        surroundPointWithMineral(p2, GOLD, map);
-        surroundPointWithMineral(p3, GOLD, map);
+        map.surroundPointWithMineral(p, GOLD);
+        map.surroundPointWithMineral(p2, GOLD);
+        map.surroundPointWithMineral(p3, GOLD);
 
         /* Create a small mountain */
         Point p4 = new Point(8, 16);
         Point p5 = new Point(11, 17);
         Point p6 = new Point(8, 18);
-        placeMountainHexagonOnMap(p4, map);
-        placeMountainHexagonOnMap(p5, map);
-        placeMountainHexagonOnMap(p6, map);
+        map.placeMountainHexagonOnMap(p4);
+        map.placeMountainHexagonOnMap(p5);
+        map.placeMountainHexagonOnMap(p6);
 
         /* Put coal at mountain */
-        surroundPointWithMineral(p4, COAL, map);
-        surroundPointWithMineral(p5, COAL, map);
-        surroundPointWithMineral(p6, COAL, map);
+        map.surroundPointWithMineral(p4, COAL);
+        map.surroundPointWithMineral(p5, COAL);
+        map.surroundPointWithMineral(p6, COAL);
+
+        /* Create another mountain with iron */
+        Point point7 = new Point(15, 23);
+        Point point8 = new Point(18, 24);
+        Point point9 = new Point(15, 25);
+        map.placeMountainHexagonOnMap(point7);
+        map.placeMountainHexagonOnMap(point8);
+        map.placeMountainHexagonOnMap(point9);
+
+        map.surroundPointWithMineral(point7, IRON);
+        map.surroundPointWithMineral(point8, IRON);
+        map.surroundPointWithMineral(point9, IRON);
 
         /* Place stones */
         Point stonePoint = new Point(12, 12);
@@ -124,12 +119,6 @@ public class ScenarioCreator {
         map.placeTree(point2.right());
         map.placeTree(point3);
         map.placeTree(point3.right());
-    }
-
-    private void surroundPointWithMineral(Point p, Material material, GameMap map) throws Exception {
-        for (Tile t : map.getTerrain().getSurroundingTiles(p)) {
-            t.setAmountMineral(material, LARGE);
-        }
     }
 
     void placeInitialPlayer(Player player, GameMap map) throws Exception {
