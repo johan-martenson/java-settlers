@@ -1,9 +1,11 @@
 package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
+
 import static java.awt.Color.BLACK;
 import static java.awt.Color.BLUE;
 import static java.awt.Color.ORANGE;
+
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -19,21 +21,27 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
 import java.util.Timer;
 import java.util.TimerTask;
+
 import javax.imageio.ImageIO;
+
 import org.appland.settlers.computer.AttackPlayer;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
@@ -41,6 +49,7 @@ import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
+
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.COIN;
 import static org.appland.settlers.model.Material.FISH;
@@ -52,15 +61,18 @@ import static org.appland.settlers.model.Material.PLANCK;
 import static org.appland.settlers.model.Material.STONE;
 import static org.appland.settlers.model.Material.WHEAT;
 import static org.appland.settlers.model.Material.WOOD;
+
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
+import org.appland.settlers.computer.CoinProducer;
 import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.FoodProducer;
 import org.appland.settlers.computer.PlayerType;
 import org.appland.settlers.computer.SearchForMineralsPlayer;
+
 import static org.appland.settlers.javaview.HouseType.BAKERY;
 import static org.appland.settlers.javaview.HouseType.BARRACKS;
 import static org.appland.settlers.javaview.HouseType.CATAPULT;
@@ -603,6 +615,9 @@ public class App extends JFrame {
                 break;
             case FOOD_PRODUCER:
                 computerPlayers.add(new FoodProducer(controlledPlayer, map));
+                break;
+            case COIN_PRODUCER:
+            	computerPlayers.add(new CoinProducer(controlledPlayer, map));
             }
         }
 
