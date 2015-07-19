@@ -49,28 +49,28 @@ public class ScenarioCreator {
     }
 
     void createInitialTerrain(GameMap map) throws Exception {
-        /* The default vegetation is grass */
+        /* Set up terrain for the first player  */
 
         /* Create a small lake */
-        Point lakeCenter = new Point(10, 4);
+        Point lakeCenter0 = new Point(10, 4);
 
-        placeWaterOnMap(lakeCenter, lakeCenter.left(), lakeCenter.upLeft(), map);
-        placeWaterOnMap(lakeCenter, lakeCenter.upLeft(), lakeCenter.upRight(), map);
-        placeWaterOnMap(lakeCenter, lakeCenter.upRight(), lakeCenter.right(), map);
-        placeWaterOnMap(lakeCenter, lakeCenter.right(), lakeCenter.downRight(), map);
-        placeWaterOnMap(lakeCenter, lakeCenter.downRight(), lakeCenter.downLeft(), map);
-        placeWaterOnMap(lakeCenter, lakeCenter.downLeft(), lakeCenter.left(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.left(),      lakeCenter0.upLeft(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.upLeft(),    lakeCenter0.upRight(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.upRight(),   lakeCenter0.right(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.right(),     lakeCenter0.downRight(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.downRight(), lakeCenter0.downLeft(), map);
+        placeWaterOnMap(lakeCenter0, lakeCenter0.downLeft(),  lakeCenter0.left(), map);
 
         /* Create a small mountain */
-        Point p = new Point(5, 13);
+        Point p0 = new Point(5, 13);
         Point p2 = new Point(8, 14);
         Point p3 = new Point(5, 15);
-        map.placeMountainHexagonOnMap(p);
+        map.placeMountainHexagonOnMap(p0);
         map.placeMountainHexagonOnMap(p2);
         map.placeMountainHexagonOnMap(p3);
 
         /* Put gold at mountain */
-        map.surroundPointWithMineral(p, GOLD);
+        map.surroundPointWithMineral(p0, GOLD);
         map.surroundPointWithMineral(p2, GOLD);
         map.surroundPointWithMineral(p3, GOLD);
 
@@ -100,10 +100,11 @@ public class ScenarioCreator {
         map.surroundPointWithMineral(point9, IRON);
 
         /* Place stones */
-        Point stonePoint = new Point(12, 12);
+        Point stonePoint0 = new Point(12, 12);
 
-        Stone stone0 = map.placeStone(stonePoint);
-        Stone stone1 = map.placeStone(stonePoint.downRight());
+        Stone stone0 = map.placeStone(stonePoint0);
+        Stone stone1 = map.placeStone(stonePoint0.downRight());
+        Stone stone2 = map.placeStone(stonePoint0.upRight());
 
         /* Place forest */
         Point point0 = new Point(20, 4);
@@ -119,6 +120,79 @@ public class ScenarioCreator {
         map.placeTree(point2.right());
         map.placeTree(point3);
         map.placeTree(point3.right());
+
+        /* Set up terrain for the second player */
+        
+        /* Create a small lake */
+        Point lakeCenter1 = new Point(40, 20);
+
+        placeWaterOnMap(lakeCenter1, lakeCenter1.left(),      lakeCenter1.upLeft(), map);
+        placeWaterOnMap(lakeCenter1, lakeCenter1.upLeft(),    lakeCenter1.upRight(), map);
+        placeWaterOnMap(lakeCenter1, lakeCenter1.upRight(),   lakeCenter1.right(), map);
+        placeWaterOnMap(lakeCenter1, lakeCenter1.right(),     lakeCenter1.downRight(), map);
+        placeWaterOnMap(lakeCenter1, lakeCenter1.downRight(), lakeCenter1.downLeft(), map);
+        placeWaterOnMap(lakeCenter1, lakeCenter1.downLeft(),  lakeCenter1.left(), map);
+
+        /* Create a small mountain */
+        Point p10 = new Point(45, 27);
+        Point p11 = new Point(48, 28);
+        Point p12 = new Point(45, 29);
+        map.placeMountainHexagonOnMap(p10);
+        map.placeMountainHexagonOnMap(p11);
+        map.placeMountainHexagonOnMap(p12);
+
+        /* Put gold at mountain */
+        map.surroundPointWithMineral(p10, GOLD);
+        map.surroundPointWithMineral(p11, GOLD);
+        map.surroundPointWithMineral(p12, GOLD);
+
+        /* Create a small mountain */
+        Point p13 = new Point(48, 26);
+        Point p14 = new Point(51, 27);
+        Point p15 = new Point(48, 28);
+        map.placeMountainHexagonOnMap(p13);
+        map.placeMountainHexagonOnMap(p14);
+        map.placeMountainHexagonOnMap(p15);
+
+        /* Put coal at mountain */
+        map.surroundPointWithMineral(p13, COAL);
+        map.surroundPointWithMineral(p14, COAL);
+        map.surroundPointWithMineral(p15, COAL);
+
+        /* Create another mountain with iron */
+        Point point16 = new Point(65, 23);
+        Point point17 = new Point(68, 24);
+        Point point18 = new Point(65, 25);
+        map.placeMountainHexagonOnMap(point16);
+        map.placeMountainHexagonOnMap(point17);
+        map.placeMountainHexagonOnMap(point18);
+
+        map.surroundPointWithMineral(point16, IRON);
+        map.surroundPointWithMineral(point17, IRON);
+        map.surroundPointWithMineral(point18, IRON);
+
+        /* Place stones */
+        Point stonePoint1 = new Point(42, 8);
+
+        Stone stone3 = map.placeStone(stonePoint1);
+        Stone stone4 = map.placeStone(stonePoint1.downRight());
+        Stone stone5 = map.placeStone(stonePoint1.upRight());
+
+        /* Place forest */
+        Point point19 = new Point(50, 4);
+        Point point20 = new Point(52, 6);
+        Point point21 = new Point(54, 4);
+        Point point22 = new Point(51, 5);
+
+        map.placeTree(point19);
+        map.placeTree(point19.right());
+        map.placeTree(point20);
+        map.placeTree(point20.right());
+        map.placeTree(point21);
+        map.placeTree(point21.right());
+        map.placeTree(point22);
+        map.placeTree(point22.right());
+    
     }
 
     void placeInitialPlayer(Player player, GameMap map) throws Exception {

@@ -29,8 +29,10 @@ import static java.lang.Math.round;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +43,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JMenu;
 
 import org.appland.settlers.computer.AttackPlayer;
 import org.appland.settlers.model.Building;
@@ -66,6 +71,7 @@ import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.computer.CoinProducer;
+import org.appland.settlers.computer.CompositePlayer;
 import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
@@ -100,6 +106,7 @@ import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
 public class App extends JFrame {
     private static final long serialVersionUID = 1L;
     private final SidePanel sidePanel;
+    private final Map<Material, JMenuItem> materialMenuItemMap;
 
     public App() throws Exception {
         super();
@@ -126,6 +133,10 @@ public class App extends JFrame {
         getContentPane().add(canvas);
         getContentPane().add(sidePanel, BorderLayout.EAST);
 
+        /* Create window menu */
+        materialMenuItemMap = new HashMap<>();
+        setJMenuBar(createMenuBar());
+
         /* Show the window early so we can calculate the width and height ratio */
         setVisible(true);
 
@@ -139,6 +150,26 @@ public class App extends JFrame {
         canvas.startGame();
     }
 
+    private JMenuBar createMenuBar() {
+
+        JMenuBar menubar = new JMenuBar();
+
+        JMenu headquarterMenu = new JMenu("Inventory");
+
+        for (Material m : Material.values()) {
+            JMenuItem item = new JMenuItem(m.name());
+
+            item.setEnabled(false);
+
+            materialMenuItemMap.put(m, item);
+            headquarterMenu.add(item);
+        }
+
+        menubar.add(headquarterMenu);
+
+        return menubar;
+    }
+
     private enum UiState {
         IDLE, BUILDING_ROAD, POINT_SELECTED
     }
@@ -146,14 +177,17 @@ public class App extends JFrame {
     class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener, ComponentListener {
         private static final long serialVersionUID = 1L;
 
-        private final int INPUT_CLEAR_DELAY = 5000;
-        private final int DEFAULT_TICK = 200;
+        private final static int INPUT_CLEAR_DELAY = 5000;
+        private final static int DEFAULT_TICK = 100;
+        private final static int STATS_PERIOD = 10000;
 
         private final List<ComputerPlayer> computerPlayers;
         private final ScenarioCreator      creator;
         private final Timer                gameLoopTimer;
         private final int                  widthInPoints;
         private final int                  heightInPoints;
+        private final Timer                clearInputTimer;
+        private final Timer                statisticsTimer;
 
         private UiState              state;
         private List<Point>          roadPoints;
@@ -163,7 +197,6 @@ public class App extends JFrame {
         private String               previousKeys;
         private GameDrawer           gameDrawer;
         private boolean              turboModeEnabled;
-        private final Timer          clearInputTimer;
         private Player               controlledPlayer;
         private java.awt.Point       dragStarted;
         private int                  paddingPixelsLeft;
@@ -183,6 +216,7 @@ public class App extends JFrame {
             creator            = new ScenarioCreator();
             clearInputTimer    = new Timer("Clear input timer");
             gameLoopTimer      = new Timer("Game loop timer");
+            statisticsTimer    = new Timer("Statistics timer");
             dragStarted        = new java.awt.Point(0, 0);
 
             /* Create the game drawer with the right size of the playing field */
@@ -267,7 +301,7 @@ public class App extends JFrame {
             turboModeEnabled = !turboModeEnabled;
 
             if (turboModeEnabled) {
-                tick = 30;
+                tick = 20;
             } else {
                 tick = DEFAULT_TICK;
             }
@@ -366,11 +400,15 @@ public class App extends JFrame {
 
                     showAvailableSpots = !showAvailableSpots;
                 } else if (previousKeys.equals("+")) {
-                    addBonusResourcesForPlayer(controlledPlayer);
+                    gameDrawer.zoomIn(1);
+                } else if (previousKeys.equals("-")) {
+                    gameDrawer.zoomOut(1);
                 } else if (previousKeys.equals("A")) {
                     if (map.isBuildingAtPoint(selectedPoint) && !controlledPlayer.isWithinBorder(selectedPoint)) {
                         attackHouse(selectedPoint);
                     }
+                } else if (previousKeys.equals("B")) {
+                    addBonusResourcesForPlayer(controlledPlayer);
                 } else if (previousKeys.equals("bak")) {
                     placeBuilding(controlledPlayer, BAKERY, selectedPoint);
                     setState(UiState.IDLE);
@@ -622,6 +660,9 @@ public class App extends JFrame {
             	break;
             case MILITARY_PRODUCER:
             	computerPlayers.add(new MiltaryProducer(controlledPlayer, map));
+                break;
+            case COMPOSITE_PLAYER:
+                computerPlayers.add(new CompositePlayer(controlledPlayer, map));
             }
         }
 
@@ -688,6 +729,28 @@ public class App extends JFrame {
             TimerTask task = new GameLoopTask();
 
             gameLoopTimer.schedule(task, tick, tick);
+
+            /* Start the statistics collection */
+            TimerTask statisticsTask = new StatisticsTask();
+
+            statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
+        }
+
+        private class StatisticsTask extends TimerTask {
+
+            @Override
+            public void run() {
+                for (Map.Entry<Material, Integer> pair : 
+                        controlledPlayer.getInventory().entrySet()) {
+                    Material m     = pair.getKey();
+                    int amount     = pair.getValue();
+                    JMenuItem item = materialMenuItemMap.get(m);
+
+                    item.setEnabled(amount > 0);
+                    item.setText(m.name() + ": " + amount);
+                    item.updateUI();
+                }
+            }
         }
 
         private class GameLoopTask extends TimerTask {
