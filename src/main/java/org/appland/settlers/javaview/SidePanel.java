@@ -25,10 +25,16 @@ import static org.appland.settlers.computer.PlayerType.COIN_PRODUCER;
 import static org.appland.settlers.computer.PlayerType.COMPOSITE_PLAYER;
 import static org.appland.settlers.computer.PlayerType.MILITARY_PRODUCER;
 import org.appland.settlers.model.Building;
+import org.appland.settlers.model.CoalMine;
+import org.appland.settlers.model.Fishery;
 import org.appland.settlers.model.GameMap;
+import org.appland.settlers.model.GoldMine;
+import org.appland.settlers.model.GraniteMine;
+import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
+import org.appland.settlers.model.Quarry;
 
 /**
  *
@@ -403,6 +409,17 @@ public class SidePanel extends JTabbedPane {
                 if (!building.isPromotionEnabled()) {
                     info += "Promotions disabled<br>";
                 }
+            }
+
+            /* Note if the building has run out of natural resources */
+            if ((building instanceof GoldMine    ||
+                 building instanceof IronMine    ||
+                 building instanceof CoalMine    ||
+                 building instanceof Quarry      ||
+                 building instanceof GraniteMine ||
+                 building instanceof Fishery) &&
+                 building.outOfNaturalResources()) {
+                info += "No more available resources<br>";
             }
 
             /* Print material the building needs */
