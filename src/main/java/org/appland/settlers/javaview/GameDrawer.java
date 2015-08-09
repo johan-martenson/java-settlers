@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import static java.awt.Color.DARK_GRAY;
 import static java.awt.Color.ORANGE;
+import static java.awt.Color.RED;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -320,9 +321,14 @@ public class GameDrawer {
 
     private void drawHouseTitles(Graphics2D g, List<Building> houses) {
 
-        g.setColor(ORANGE);
-
         for (Building b : houses) {
+
+            if (b.outOfNaturalResources()) {
+                g.setColor(RED);
+            } else {
+                g.setColor(ORANGE);
+            }
+
             String title = b.getClass().getSimpleName();
             Point p = b.getPosition();
 
