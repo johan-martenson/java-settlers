@@ -16,8 +16,6 @@ import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Road;
 import org.appland.settlers.model.Stone;
-import org.appland.settlers.model.Tile;
-import static org.appland.settlers.model.Tile.Vegetation.WATER;
 
 /**
  *
@@ -28,24 +26,16 @@ public class ScenarioCreator {
     void placeOpponent(Player opponent, GameMap map) throws Exception {
 
         /* Place opponent's headquarter */
-        Point point1 = new Point(45, 21);
+        Point point1 = new Point(53, 31);
         Headquarter headquarter1 = map.placeBuilding(new Headquarter(opponent), point1);
 
         /* Place barracks for opponent */
-        Point point3 = new Point(29, 21);
+        Point point3 = new Point(37, 29);
         Building barracks0 = new Barracks(opponent);
         map.placeBuilding(barracks0, point3);
 
         /* Connect the barracks with the headquarter */
         Road road = map.placeAutoSelectedRoad(opponent, barracks0.getFlag(), headquarter1.getFlag());
-    }
-
-    private void placeWaterOnMap(Point p1, Point p2, Point p3, GameMap map) throws Exception {
-        Tile tile = map.getTerrain().getTile(p1, p2, p3);
-
-        tile.setVegetationType(WATER);
-
-        ((GameMapRecordingAdapter)map).recordSetTileVegetation(p1, p2, p3, WATER);
     }
 
     void createInitialTerrain(GameMap map) throws Exception {
@@ -54,12 +44,8 @@ public class ScenarioCreator {
         /* Create a small lake */
         Point lakeCenter0 = new Point(10, 4);
 
-        placeWaterOnMap(lakeCenter0, lakeCenter0.left(),      lakeCenter0.upLeft(), map);
-        placeWaterOnMap(lakeCenter0, lakeCenter0.upLeft(),    lakeCenter0.upRight(), map);
-        placeWaterOnMap(lakeCenter0, lakeCenter0.upRight(),   lakeCenter0.right(), map);
-        placeWaterOnMap(lakeCenter0, lakeCenter0.right(),     lakeCenter0.downRight(), map);
-        placeWaterOnMap(lakeCenter0, lakeCenter0.downRight(), lakeCenter0.downLeft(), map);
-        placeWaterOnMap(lakeCenter0, lakeCenter0.downLeft(),  lakeCenter0.left(), map);
+        map.surroundPointWithWater(lakeCenter0);
+        map.surroundPointWithWater(lakeCenter0.right().right());
 
         /* Create a small mountain */
         Point p0 = new Point(5, 13);
@@ -122,16 +108,12 @@ public class ScenarioCreator {
         map.placeTree(point3.right());
 
         /* Set up terrain for the second player */
-        
+
         /* Create a small lake */
         Point lakeCenter1 = new Point(40, 20);
 
-        placeWaterOnMap(lakeCenter1, lakeCenter1.left(),      lakeCenter1.upLeft(), map);
-        placeWaterOnMap(lakeCenter1, lakeCenter1.upLeft(),    lakeCenter1.upRight(), map);
-        placeWaterOnMap(lakeCenter1, lakeCenter1.upRight(),   lakeCenter1.right(), map);
-        placeWaterOnMap(lakeCenter1, lakeCenter1.right(),     lakeCenter1.downRight(), map);
-        placeWaterOnMap(lakeCenter1, lakeCenter1.downRight(), lakeCenter1.downLeft(), map);
-        placeWaterOnMap(lakeCenter1, lakeCenter1.downLeft(),  lakeCenter1.left(), map);
+        map.surroundPointWithWater(lakeCenter1);
+        map.surroundPointWithWater(lakeCenter1.right().right());
 
         /* Create a small mountain */
         Point p10 = new Point(45, 27);
