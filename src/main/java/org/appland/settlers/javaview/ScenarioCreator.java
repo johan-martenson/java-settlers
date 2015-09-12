@@ -90,7 +90,9 @@ public class ScenarioCreator {
 
         Stone stone0 = map.placeStone(stonePoint0);
         Stone stone1 = map.placeStone(stonePoint0.downRight());
-        Stone stone2 = map.placeStone(stonePoint0.upRight());
+
+        Point stonePoint2 = new Point(8, 24);
+        Stone stone2 = map.placeStone(stonePoint2);
 
         /* Place forest */
         Point point0 = new Point(20, 4);
