@@ -804,6 +804,12 @@ public class App extends JFrame {
                     /* Print API recording to make the fault reproducable */
                     ((GameMapRecordingAdapter)map).printRecordingOnConsole();
 
+                    try {
+                        writeSnapshots();
+                    } catch (Exception ex1) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                    }
+
                     System.exit(1);
                 }
 
