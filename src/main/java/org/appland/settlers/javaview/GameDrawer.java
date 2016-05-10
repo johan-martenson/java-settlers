@@ -182,97 +182,99 @@ public class GameDrawer {
 
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
-        /* Remove previously copied pieces */
-        workers.clear();
-        animals.clear();
+        synchronized (map) {
+            /* Remove previously copied pieces */
+            workers.clear();
+            animals.clear();
 
-        /* Get copy of pieces to work on */
-        copyListAtomically(map.getWorkers(), workers);
-        copyListAtomically(map.getWildAnimals(), animals);
+            /* Get copy of pieces to work on */
+            copyListAtomically(map.getWorkers(), workers);
+            copyListAtomically(map.getWildAnimals(), animals);
 
-        /* Remove sprites drawn in the previous frame */
-        spritesToDraw.clear();
+            /* Remove sprites drawn in the previous frame */
+            spritesToDraw.clear();
 
-        /* Draw the terrain */
-        if (terrainImage != null) {
-                int marginXInPoints = (terrainPrerenderedWidthInPoints-widthInPoints) / 2;
-                int marginYInPoints = (terrainPrerenderedHeightInPoints-heightInPoints) / 2;
-                
-                int tw = terrainImage.getWidth();
-                int th = terrainImage.getHeight();
-                
-                g.drawImage(terrainImage,
-                        0,           //dx1
-                        0,           //dy1
-                        width,       //dx2
-                        height,      //dy2
-                        (marginXInPoints / terrainPrerenderedWidthInPoints) * tw, //sx1
-                        (marginYInPoints / terrainPrerenderedHeightInPoints) * th, //sy1
-                        (marginXInPoints + widthInPoints) / terrainPrerenderedWidthInPoints * tw,        //sx2
-                        (marginYInPoints + heightInPoints) / terrainPrerenderedHeightInPoints * th,      //sy2
-                        null);      //ImageObserver
-        }
+            /* Draw the terrain */
+            if (terrainImage != null) {
+                    int marginXInPoints = (terrainPrerenderedWidthInPoints-widthInPoints) / 2;
+                    int marginYInPoints = (terrainPrerenderedHeightInPoints-heightInPoints) / 2;
 
-        /* Draw roads directly on the ground first */
-        drawRoads(g);
+                    int tw = terrainImage.getWidth();
+                    int th = terrainImage.getHeight();
 
-        /* Collect sprites to draw */
-        collectHouseSprites(map);
-        collectTreeSprites(map);
-        collectStoneSprites(map);
-
-        drawCrops(g);
-
-        drawPersons(g, workers);
-
-        drawBorders(g);
-
-        drawFlags(g);
-
-        drawSigns(g);
-
-        drawProjectiles(g);
-
-        drawWildAnimals(g, animals);
-
-        /* Draw the available spots for the next point for a road if a road is being built */
-        if (showAvailableSpots) {
-            drawAvailableSpots(g, player);
-        }
-
-        /* Draw the chosen points so far for a road being built if needed */
-        if (ongoingRoadPoints != null && !ongoingRoadPoints.isEmpty()) {
-            drawPreliminaryRoad(g, ongoingRoadPoints);
-
-            drawLastSelectedPoint(g, ongoingRoadPoints);
-
-            try {
-                drawPossibleRoadConnections(g, player, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    g.drawImage(terrainImage,
+                            0,           //dx1
+                            0,           //dy1
+                            width,       //dx2
+                            height,      //dy2
+                            (marginXInPoints / terrainPrerenderedWidthInPoints) * tw, //sx1
+                            (marginYInPoints / terrainPrerenderedHeightInPoints) * th, //sy1
+                            (marginXInPoints + widthInPoints) / terrainPrerenderedWidthInPoints * tw,        //sx2
+                            (marginYInPoints + heightInPoints) / terrainPrerenderedHeightInPoints * th,      //sy2
+                            null);      //ImageObserver
             }
-        } else if (selected != null) {
-            drawSelectedPoint(g, selected);
+
+            /* Draw roads directly on the ground first */
+            drawRoads(g);
+
+            /* Collect sprites to draw */
+            collectHouseSprites(map);
+            collectTreeSprites(map);
+            collectStoneSprites(map);
+
+            drawCrops(g);
+
+            drawPersons(g, workers);
+
+            drawBorders(g);
+
+            drawFlags(g);
+
+            drawSigns(g);
+
+            drawProjectiles(g);
+
+            drawWildAnimals(g, animals);
+
+            /* Draw the available spots for the next point for a road if a road is being built */
+            if (showAvailableSpots) {
+                drawAvailableSpots(g, player);
+            }
+
+            /* Draw the chosen points so far for a road being built if needed */
+            if (ongoingRoadPoints != null && !ongoingRoadPoints.isEmpty()) {
+                drawPreliminaryRoad(g, ongoingRoadPoints);
+
+                drawLastSelectedPoint(g, ongoingRoadPoints);
+
+                try {
+                    drawPossibleRoadConnections(g, player, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
+                } catch (Exception ex) {
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (selected != null) {
+                drawSelectedPoint(g, selected);
+            }
+
+            /* Sort the sprites so the front sprites are drawn first */
+            Collections.sort(spritesToDraw, spriteSorter);
+
+            /* Draw sprites */
+            for (SpriteInfo si : spritesToDraw) {
+                drawSprite(g, si);
+            }
+
+            /* Draw headings for the houses */
+            drawHouseTitles(g, map.getBuildings());
+
+            /* Draw the hovering spot on top */
+            if (hoveringSpot != null) {
+                drawHoveringPoint(g, hoveringSpot);
+            }
+
+            /* Draw the fog of war */
+            drawFogOfWar(g, player);
         }
-
-        /* Sort the sprites so the front sprites are drawn first */
-        Collections.sort(spritesToDraw, spriteSorter);
-
-        /* Draw sprites */
-        for (SpriteInfo si : spritesToDraw) {
-            drawSprite(g, si);
-        }
-
-        /* Draw headings for the houses */
-        drawHouseTitles(g, map.getBuildings());
-
-        /* Draw the hovering spot on top */
-        if (hoveringSpot != null) {
-            drawHoveringPoint(g, hoveringSpot);
-        }
-
-        /* Draw the fog of war */
-        drawFogOfWar(g, player);
     }
 
     private void drawSprite(Graphics2D g, SpriteInfo si) {
@@ -1020,6 +1022,9 @@ public class GameDrawer {
 
     void setMap(GameMap m) {
         map = m;
+
+        widthInPoints = m.getWidth();
+        heightInPoints = m.getHeight();
 
         try {
             terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);

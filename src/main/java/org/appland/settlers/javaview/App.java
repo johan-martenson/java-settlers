@@ -102,32 +102,31 @@ import static org.appland.settlers.javaview.HouseType.SLAUGHTER_HOUSE;
 import static org.appland.settlers.javaview.HouseType.WATCH_TOWER;
 import static org.appland.settlers.javaview.HouseType.WELL;
 import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
+import org.appland.settlers.maps.MapFile;
+import org.appland.settlers.maps.MapLoader;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 public class App extends JFrame {
     private static final long serialVersionUID = 1L;
     private final SidePanel sidePanel;
     private final Map<Material, JMenuItem> materialMenuItemMap;
+    private final GameCanvas canvas;
+
+    @Option(name="--file", usage="Map file to load")
+    String filename;
 
     public App() throws Exception {
         super();
-
-        /* Set the default size of the window */
-        setSize(600, 500);
-
-        /* Maximize by default */
-        setExtendedState(Frame.MAXIMIZED_BOTH);
 
         /* Create the side panel */
         sidePanel = new SidePanel();
 
         /* Create the canvas to draw on */
-        GameCanvas canvas = new GameCanvas(100, 100);
+        canvas = new GameCanvas(100, 100);
 
         /* Connect the side panel with the canvas */
         sidePanel.setCommandListener(canvas);
-
-        /* Exit if the window is closed */
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         /* Add the canvas and the sidepanel */
         getContentPane().add(canvas);
@@ -142,6 +141,18 @@ public class App extends JFrame {
 
         /* Set title to "Settlers 2" */
         setTitle("Settlers 2");
+    }
+    
+    public void start() throws Exception {
+
+        /* Set the default size of the window */
+        setSize(600, 500);
+
+        /* Maximize by default */
+        setExtendedState(Frame.MAXIMIZED_BOTH);
+
+        /* Exit if the window is closed */
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         /* Create the starting position */
         canvas.prepareGame();
@@ -301,7 +312,7 @@ public class App extends JFrame {
             turboModeEnabled = !turboModeEnabled;
 
             if (turboModeEnabled) {
-                tick = 20;
+                tick = 5;
             } else {
                 tick = DEFAULT_TICK;
             }
@@ -415,6 +426,8 @@ public class App extends JFrame {
                 } else if (previousKeys.equals("bar")) {
                     placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
                     setState(UiState.IDLE);
+                } else if (previousKeys.equals("C")) {
+                    enableComputerPlayer(PlayerType.COMPOSITE_PLAYER);
                 } else if (previousKeys.equals("ca")) {
                     placeBuilding(controlledPlayer, CATAPULT, selectedPoint);
                     setState(UiState.IDLE);
@@ -884,18 +897,44 @@ public class App extends JFrame {
             /* Create game map */
             map = new GameMapRecordingAdapter(players, widthInPoints, heightInPoints);
 
+            if (filename != null) {
+                MapLoader mapLoader = new MapLoader();
+                MapFile mf = mapLoader.loadMapFromFile(filename);
+                map = mapLoader.convertMapFileToGameMap(mf);
+                map.setPlayers(players);
+            } else {
+
+                /* Create the terrain */
+                creator.createInitialTerrain(map);
+            }
+
             sidePanel.setMap(map);
 
             gameDrawer.setMap(map);
 
-            /* Create the terrain */
-            creator.createInitialTerrain(map);
+            if (map.getStartingPoints() == null ||
+                map.getStartingPoints().isEmpty()) {
 
-            /* Place player to be controlled */
-            creator.placeInitialPlayer(player0, map);
+                System.out.println("Placing players old-fashioned style");
 
-            /* Place the opponent */
-            creator.placeOpponent(player1, map);
+                /* Place player to be controlled */
+                creator.placeInitialPlayer(player0, map);
+
+                /* Place the opponent */
+                creator.placeOpponent(player1, map);
+            } else {
+                try {
+                    System.out.println("Placing players using starting points from map");
+                    map.placeBuilding(new Headquarter(player0),
+                            map.getStartingPoints().get(0));
+
+                    map.placeBuilding(new Headquarter(player1),
+                            map.getStartingPoints().get(1));
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+
+            }
 
             repaint();
         }
@@ -936,7 +975,7 @@ public class App extends JFrame {
 
             /* Translate the screen coordinates to a point in the game */
             Point p = screenPointToGamePoint(me.getPoint());
-
+            System.out.println("Clicked at gamepoint: " + p);
             try {
                 if (isDoubleClick(me)) {
                     if (state == UiState.IDLE || state == UiState.POINT_SELECTED) {
@@ -1107,7 +1146,14 @@ public class App extends JFrame {
 
         /* Create the game window */
         try {
+
+            /* Read the map filename if there is one */
             App app = new App();
+            CmdLineParser parser = new CmdLineParser(app);
+
+            parser.parseArgument(args);
+
+            app.start();
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             System.exit(1);
