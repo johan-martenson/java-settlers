@@ -32,6 +32,7 @@ import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.GraniteMine;
 import org.appland.settlers.model.IronMine;
 import org.appland.settlers.model.Material;
+import org.appland.settlers.model.Military;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
@@ -213,8 +214,11 @@ public class SidePanel extends JTabbedPane {
     private class OwnBuildingSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
+        JPanel controlPanel;
+        JPanel infoPanel;
         private final JLabel  titleField;
         private final JLabel  infoField;
+        private final JLabel  bottonInfoField;
 
         private final JButton removeHouseButton;
         private final JButton stopProductionButton;
@@ -224,19 +228,22 @@ public class SidePanel extends JTabbedPane {
         private final JButton startCoins;
 
         public OwnBuildingSpotPanel() {
-            JPanel control = new JPanel();
-            JPanel info    = new JPanel();
+            controlPanel = new JPanel();
+            infoPanel    = new JPanel();
 
-            control.setLayout(new GridLayout(1 + HouseType.values().length, 1));
+            controlPanel.setLayout(new GridLayout(1 + 6, 1)); // Number of buttons + 1
+            infoPanel.setLayout(new BorderLayout());
 
             /* Create title field */
             titleField = new JLabel("");
 
-            /* Create info field */
+            /* Create info fields */
             infoField = new JLabel("");
+            bottonInfoField = new JLabel("");
 
             /* Add info field to the panel */
-            info.add(infoField);
+            infoPanel.add(infoField, BorderLayout.CENTER);
+            infoPanel.add(bottonInfoField, BorderLayout.SOUTH);
 
             /* Create buttons */
             removeHouseButton      = new JButton("Remove building");
@@ -247,12 +254,12 @@ public class SidePanel extends JTabbedPane {
             startCoins             = new JButton("Resume coins");
 
             /* Add buttons to the panel */
-            control.add(removeHouseButton);
-            control.add(stopProductionButton);
-            control.add(evacuateButton);
-            control.add(cancelEvacuationButton);
-            control.add(stopCoins);
-            control.add(startCoins);
+            controlPanel.add(removeHouseButton);
+            controlPanel.add(stopProductionButton);
+            controlPanel.add(evacuateButton);
+            controlPanel.add(cancelEvacuationButton);
+            controlPanel.add(stopCoins);
+            controlPanel.add(startCoins);
 
             /* Add action listeners */
             removeHouseButton.addActionListener(new ActionListener() {
@@ -319,8 +326,8 @@ public class SidePanel extends JTabbedPane {
             setLayout(new BorderLayout());
 
             add(titleField, BorderLayout.NORTH);
-            add(info, BorderLayout.CENTER);
-            add(control, BorderLayout.SOUTH);
+            add(infoPanel, BorderLayout.CENTER);
+            add(controlPanel, BorderLayout.SOUTH);
 
             /* Show the panel */
             setVisible(true);
@@ -409,6 +416,11 @@ public class SidePanel extends JTabbedPane {
                 if (!building.isPromotionEnabled()) {
                     info += "Promotions disabled<br>";
                 }
+
+                /* Print a list of the hosted militaries */
+                for (Military military : building.getHostedMilitary()) {
+                    info += "" + military.getRank() + "<br>";
+                }
             }
 
             /* Note if the building has run out of natural resources */
@@ -445,11 +457,17 @@ public class SidePanel extends JTabbedPane {
                 }
             }
 
+            /* Print the selected point at the bottom */
+            bottonInfoField.setText("" + selectedPoint.x + ", " + selectedPoint.y);
+
             /* Set the title */
             titleField.setText(title);
 
             /* Set the info text */
             infoField.setText(info);
+
+            /* Update the layout of the panel to make the full text visible */
+            infoPanel.updateUI();
         }
     }
     
