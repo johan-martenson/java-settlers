@@ -398,7 +398,7 @@ public class SidePanel extends JTabbedPane {
 
             /* Print deployed militaries if it's a military building */
             if (building.isMilitaryBuilding()) {
-                info += building.getHostedMilitary() + " of " + building.getMaxHostedMilitary() + " deployed <br>";
+                info += building.getNumberOfHostedMilitary() + " of " + building.getMaxHostedMilitary() + " deployed <br>";
 
                 /* Print if the building is evacuated */
                 if (building.isEvacuated()) {

@@ -106,6 +106,8 @@ import org.appland.settlers.maps.MapFile;
 import org.appland.settlers.maps.MapLoader;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import static java.lang.Math.abs;
+import static java.lang.Math.round;
 
 public class App extends JFrame {
     private static final long serialVersionUID = 1L;
