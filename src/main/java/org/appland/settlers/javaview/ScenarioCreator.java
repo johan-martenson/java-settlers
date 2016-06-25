@@ -26,11 +26,11 @@ public class ScenarioCreator {
     void placeOpponent(Player opponent, GameMap map) throws Exception {
 
         /* Place opponent's headquarter */
-        Point point1 = new Point(53, 31);
+        Point point1 = new Point(41, 13);
         Headquarter headquarter1 = map.placeBuilding(new Headquarter(opponent), point1);
 
         /* Place barracks for opponent */
-        Point point3 = new Point(37, 29);
+        Point point3 = new Point(33, 13);
         Building barracks0 = new Barracks(opponent);
         map.placeBuilding(barracks0, point3);
 

@@ -84,6 +84,8 @@ public class GameDrawer {
     private final Color MAIN_ROAD_COLOR         = Color.LIGHT_GRAY;
     private final Color HOVERING_COLOR          = Color.LIGHT_GRAY;
     private final Color SELECTED_POINT_COLOR    = Color.ORANGE;
+    private final Color BEER_COLOR              = new Color(0x555555);
+    private final Color COIN_COLOR              = Color.YELLOW;
 
     private final Color AVAILABLE_CONSTRUCTION_COLOR = Color.ORANGE;
 
@@ -126,8 +128,8 @@ public class GameDrawer {
     private final List<SpriteInfo>       spritesToDraw;
     private final Comparator<SpriteInfo> spriteSorter;
 
-    private final List<Worker>     workers;
-    private final List<WildAnimal> animals;
+    private List<Worker>     workers;
+    private List<WildAnimal> animals;
 
     GameDrawer(int w, int h, int wP, int hP) {
         width  = w;
@@ -184,12 +186,14 @@ public class GameDrawer {
 
         synchronized (map) {
             /* Remove previously copied pieces */
-            workers.clear();
-            animals.clear();
+            //workers.clear();
+            //animals.clear();
 
             /* Get copy of pieces to work on */
-            copyListAtomically(map.getWorkers(), workers);
-            copyListAtomically(map.getWildAnimals(), animals);
+            //copyListAtomically(map.getWorkers(), workers);
+            workers = map.getWorkers();
+            //copyListAtomically(map.getWildAnimals(), animals);
+            animals = map.getWildAnimals();
 
             /* Remove sprites drawn in the previous frame */
             spritesToDraw.clear();
@@ -273,7 +277,7 @@ public class GameDrawer {
             }
 
             /* Draw the fog of war */
-            drawFogOfWar(g, player);
+            //drawFogOfWar(g, player);
         }
     }
 
@@ -340,7 +344,7 @@ public class GameDrawer {
 
             g.drawString(title, p.x*drawer.getScaleX() - 50, height - (p.y*drawer.getScaleY()) - 40);
 
-            if (b.ready() && b.getWorker() == null && b.getHostedMilitary() == 0) {
+            if (b.ready() && !b.occupied()) {
                 g.drawString("(unoccupied)", p.x*drawer.getScaleX() - 50, height- (p.y*drawer.getScaleY()) - 40 + g.getFontMetrics().getHeight());
             }
         }
@@ -1002,6 +1006,10 @@ public class GameDrawer {
             return COAL_COLOR;
         case PIG:
             return PIG_COLOR;
+        case BEER:
+            return BEER_COLOR;
+        case COIN:
+            return COIN_COLOR;
         default:
             return Color.RED;
         }

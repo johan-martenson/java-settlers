@@ -111,7 +111,9 @@ public class App extends JFrame {
     private static final long serialVersionUID = 1L;
     private final SidePanel sidePanel;
     private final Map<Material, JMenuItem> materialMenuItemMap;
+    private final Map<Integer, JMenuItem> transportPriorityMap;
     private final GameCanvas canvas;
+    private final static String GAME_LOOP_THREAD_NAME = "Game loop timer";
 
     @Option(name="--file", usage="Map file to load")
     String filename;
@@ -134,6 +136,8 @@ public class App extends JFrame {
 
         /* Create window menu */
         materialMenuItemMap = new HashMap<>();
+        transportPriorityMap = new HashMap<>();
+
         setJMenuBar(createMenuBar());
 
         /* Show the window early so we can calculate the width and height ratio */
@@ -154,6 +158,9 @@ public class App extends JFrame {
         /* Exit if the window is closed */
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        /* Start the drawing thread */
+
+
         /* Create the starting position */
         canvas.prepareGame();
 
@@ -165,6 +172,7 @@ public class App extends JFrame {
 
         JMenuBar menubar = new JMenuBar();
 
+        /* Show the inventory */
         JMenu headquarterMenu = new JMenu("Inventory");
 
         for (Material m : Material.values()) {
@@ -177,6 +185,23 @@ public class App extends JFrame {
         }
 
         menubar.add(headquarterMenu);
+
+        /* Show the transportation priority */
+        JMenu transportPriorityMenu = new JMenu("Transport Priority");
+
+        int i = 0;
+        for (Material m : Material.values()) {
+            JMenuItem item = new JMenuItem(m.name());
+
+            item.setEnabled(false);
+
+            transportPriorityMap.put(i, item);
+            transportPriorityMenu.add(item);
+
+            i++;
+        }
+
+        menubar.add(transportPriorityMenu);
 
         return menubar;
     }
@@ -194,12 +219,13 @@ public class App extends JFrame {
 
         private final List<ComputerPlayer> computerPlayers;
         private final ScenarioCreator      creator;
-        private final Timer                gameLoopTimer;
         private final int                  widthInPoints;
         private final int                  heightInPoints;
         private final Timer                clearInputTimer;
         private final Timer                statisticsTimer;
+        private final Timer                drawingTimer;
 
+        private Timer                gameLoopTimer;
         private UiState              state;
         private List<Point>          roadPoints;
         private boolean              showAvailableSpots;
@@ -226,8 +252,9 @@ public class App extends JFrame {
             showAvailableSpots = false;
             creator            = new ScenarioCreator();
             clearInputTimer    = new Timer("Clear input timer");
-            gameLoopTimer      = new Timer("Game loop timer");
+            gameLoopTimer      = new Timer(GAME_LOOP_THREAD_NAME);
             statisticsTimer    = new Timer("Statistics timer");
+            drawingTimer       = new Timer("Drawing timer");
             dragStarted        = new java.awt.Point(0, 0);
 
             /* Create the game drawer with the right size of the playing field */
@@ -257,8 +284,6 @@ public class App extends JFrame {
                 @Override
                 public void componentResized(ComponentEvent evt) {                    
                     gameDrawer.recalculateScale(getWidth(), getHeight());
-
-                    repaint();
                 }
             });
 
@@ -272,8 +297,6 @@ public class App extends JFrame {
 
                     /* Update the hovering spot in the game drawer */
                     gameDrawer.setHoveringSpot(point);
-
-                    repaint();
                 }
 
                 @Override
@@ -290,8 +313,6 @@ public class App extends JFrame {
                     paddingPixelsDown += changeY;
 
                     dragStarted = dropPoint;
-
-                    repaint();
                 }
             });
 
@@ -299,6 +320,9 @@ public class App extends JFrame {
             state = UiState.IDLE;
 
             setVisible(true);
+
+            /* Start the drawing timer */
+            drawingTimer.schedule(new DrawerTask(), 17, 17);
 
             requestFocus();
         }
@@ -312,12 +336,14 @@ public class App extends JFrame {
             turboModeEnabled = !turboModeEnabled;
 
             if (turboModeEnabled) {
-                tick = 5;
+                tick = 1;
             } else {
                 tick = DEFAULT_TICK;
             }
 
             /* Update the timer */
+            gameLoopTimer.cancel();
+            gameLoopTimer = new Timer(GAME_LOOP_THREAD_NAME);
             gameLoopTimer.schedule(new GameLoopTask(), tick, tick);
         }
 
@@ -387,8 +413,6 @@ public class App extends JFrame {
                     roadPoints.add(point);
                 }
             }
-
-            repaint();
         }
 
         private Point getLastSelectedWayPoint() {
@@ -456,7 +480,6 @@ public class App extends JFrame {
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("gr")) {
                     placeBuilding(controlledPlayer, GRANITEMINE, selectedPoint);
-                    repaint();
                 } else if (previousKeys.equals("gu")) {
                     placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
                     setState(UiState.IDLE);
@@ -465,13 +488,10 @@ public class App extends JFrame {
                     setState(UiState.IDLE);
                 } else if (previousKeys.equals("i")) {
                     placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
-                    repaint();
                 } else if (previousKeys.equals("mil")) {
                     placeBuilding(controlledPlayer, MILL, selectedPoint);
-                    repaint();
                 } else if (previousKeys.equals("min")) {
                     placeBuilding(controlledPlayer, MINT, selectedPoint);
-                    repaint();
                 } else if (previousKeys.equals("p")) {
                     placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
                     setState(UiState.IDLE);
@@ -526,8 +546,6 @@ public class App extends JFrame {
             if (!keepPreviousKeys) {
                 previousKeys = "";
                 setTitle("Settlers 2");
-
-                repaint();
             }
         }
 
@@ -630,8 +648,6 @@ public class App extends JFrame {
             controlledPlayer = player;
 
             sidePanel.setPlayer(player);
-
-            repaint();
         }
 
         @Override
@@ -749,19 +765,41 @@ public class App extends JFrame {
             statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
         }
 
+        private class DrawerTask extends TimerTask {
+
+            @Override
+            public void run() {
+                repaint();
+            }
+
+        }
         private class StatisticsTask extends TimerTask {
 
             @Override
             public void run() {
-                for (Map.Entry<Material, Integer> pair : 
+                try {
+                    for (Map.Entry<Material, Integer> pair : 
                         controlledPlayer.getInventory().entrySet()) {
-                    Material m     = pair.getKey();
-                    int amount     = pair.getValue();
-                    JMenuItem item = materialMenuItemMap.get(m);
+                        Material m     = pair.getKey();
+                        int amount     = pair.getValue();
+                        JMenuItem item = materialMenuItemMap.get(m);
 
-                    item.setEnabled(amount > 0);
-                    item.setText(m.name() + ": " + amount);
-                    item.updateUI();
+                        item.setEnabled(amount > 0);
+                        item.setText(m.name() + ": " + amount);
+                        item.updateUI();
+                    }
+
+                    int i = 0;
+                    for (Material m : controlledPlayer.getTransportPriorityList()) {
+                        JMenuItem item = transportPriorityMap.get(i);
+
+                        item.setText(m.name() + " (" + controlledPlayer.getInventory().get(m) + ")");
+                        item.updateUI();
+
+                        i++;
+                    }
+                } catch (Exception e) {
+                    System.out.println("Exception collecting statistics " + e);
                 }
             }
         }
@@ -827,7 +865,6 @@ public class App extends JFrame {
                 }
 
                 /* Re-draw the scene */
-                repaint();
             }
         }
 
