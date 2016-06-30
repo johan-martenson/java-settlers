@@ -22,10 +22,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
-import static java.lang.Math.round;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -120,6 +118,21 @@ public class App extends JFrame {
     @Option(name="--file", usage="Map file to load")
     String filename;
 
+    @Option(name="--computer-player-one",
+            usage="Computer player for player one",
+            required=false)
+    String computerPlayerOne;
+
+    @Option(name="--computer-player-two",
+            usage="Computer player for player two",
+            required=false)
+    String computerPlayerTwo;
+
+    @Option(name="--tick",
+            usage="The time (in milliseconds) between each step of the game",
+            required=false)
+    int tick;
+
     public App() throws Exception {
         super();
 
@@ -165,6 +178,26 @@ public class App extends JFrame {
 
         /* Create the starting position */
         canvas.prepareGame();
+
+        /* Start computer players if they have been configured */
+        System.out.println("Computer player one: " + computerPlayerOne);
+        System.out.println("Computer player two: " + computerPlayerTwo);
+        List<Player> players = canvas.getPlayers();
+
+        if (computerPlayerOne != null) {
+            canvas.setControlledPlayer(players.get(0));
+            canvas.enableComputerPlayer(PlayerType.playerTypeFromString(computerPlayerOne));
+        }
+
+        if (computerPlayerTwo != null) {
+            canvas.setControlledPlayer(players.get(1));
+            canvas.enableComputerPlayer(PlayerType.playerTypeFromString(computerPlayerTwo));
+        }
+
+        /* Set the tick if it has been configured */
+        if (tick != 0) {
+            canvas.setTick(tick);
+        }
 
         /* Start the game */
         canvas.startGame();
@@ -767,6 +800,16 @@ public class App extends JFrame {
             statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
         }
 
+        @Override
+        public List<Player> getPlayers() {
+            return map.getPlayers();
+        }
+
+        @Override
+        public void setTick(int tick) {
+            this.tick = tick;
+        }
+
         private class DrawerTask extends TimerTask {
 
             @Override
@@ -817,9 +860,6 @@ public class App extends JFrame {
                         computerPlayer.turn();
                     } catch (Exception ex) {
 
-                        /* Print exception and backtrace */
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
                         /* Print API recording to make the fault reproducable */
                         ((GameMapRecordingAdapter)map).printRecordingOnConsole();
 
@@ -842,6 +882,9 @@ public class App extends JFrame {
                             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
                         }
 
+                        /* Print exception and backtrace */
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
                         System.exit(1);
                     }
                 }
@@ -851,9 +894,6 @@ public class App extends JFrame {
                     map.stepTime();
                 } catch (Exception ex) {
 
-                    /* Print exception and backtrace */
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
                     /* Print API recording to make the fault reproducable */
                     ((GameMapRecordingAdapter)map).printRecordingOnConsole();
 
@@ -862,6 +902,9 @@ public class App extends JFrame {
                     } catch (Exception ex1) {
                         Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
                     }
+
+                    /* Print exception and backtrace */
+                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
 
                     System.exit(1);
                 }
