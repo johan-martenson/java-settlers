@@ -115,6 +115,11 @@ public class App extends JFrame {
     private final GameCanvas canvas;
     private final static String GAME_LOOP_THREAD_NAME = "Game loop timer";
 
+    @Option(name="--no-graphics",
+            usage="Run the game without graphics",
+            required=false)
+    boolean headless = false;
+
     @Option(name="--file", usage="Map file to load")
     String filename;
 
@@ -131,7 +136,12 @@ public class App extends JFrame {
     @Option(name="--tick",
             usage="The time (in milliseconds) between each step of the game",
             required=false)
-    int tick;
+    int tick = 30;
+
+    @Option(name="--players",
+            usage="The number of players (defaults to 2)",
+            required=false)
+    int numberOfPlayers = 2;
 
     public App() throws Exception {
         super();
@@ -155,9 +165,6 @@ public class App extends JFrame {
 
         setJMenuBar(createMenuBar());
 
-        /* Show the window early so we can calculate the width and height ratio */
-        setVisible(true);
-
         /* Set title to "Settlers 2" */
         setTitle("Settlers 2");
     }
@@ -172,6 +179,13 @@ public class App extends JFrame {
 
         /* Exit if the window is closed */
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        /* Show the window early so we can calculate the width and height ratio */
+        if (!headless) {
+            setVisible(true);
+        } else {
+            System.out.println("Graphics are disabled.");
+        }
 
         /* Start the drawing thread */
 
@@ -195,9 +209,7 @@ public class App extends JFrame {
         }
 
         /* Set the tick if it has been configured */
-        if (tick != 0) {
-            canvas.setTick(tick);
-        }
+        canvas.setTick(tick);
 
         /* Start the game */
         canvas.startGame();
@@ -259,6 +271,7 @@ public class App extends JFrame {
         private final Timer                clearInputTimer;
         private final Timer                statisticsTimer;
         private final Timer                drawingTimer;
+        private final Object               gameLogicLock;
 
         private Timer                gameLoopTimer;
         private UiState              state;
@@ -291,6 +304,7 @@ public class App extends JFrame {
             statisticsTimer    = new Timer("Statistics timer");
             drawingTimer       = new Timer("Drawing timer");
             dragStarted        = new java.awt.Point(0, 0);
+            gameLogicLock      = new Object();
 
             /* Create the game drawer with the right size of the playing field */
             gameDrawer = new GameDrawer(w, h, 40, 40);
@@ -357,7 +371,11 @@ public class App extends JFrame {
             setVisible(true);
 
             /* Start the drawing timer */
-            drawingTimer.schedule(new DrawerTask(), 17, 17);
+            if (!headless) {
+                drawingTimer.schedule(new DrawerTask(), 17, 17);
+            } else {
+                System.out.println("Skipping drawing thread.");
+            }
 
             requestFocus();
         }
@@ -789,15 +807,21 @@ public class App extends JFrame {
 
         private void startGame() {
 
-            /* Start game tick */
-            TimerTask task = new GameLoopTask();
-
-            gameLoopTimer.schedule(task, tick, tick);
-
             /* Start the statistics collection */
             TimerTask statisticsTask = new StatisticsTask();
 
             statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
+
+            /* Start game tick */
+            TimerTask task = new GameLoopTask();
+
+            if (tick == 0) {
+                while (true) {
+                    task.run();
+                }
+            } else {
+                gameLoopTimer.schedule(task, tick, tick);
+            }
         }
 
         @Override
@@ -822,7 +846,7 @@ public class App extends JFrame {
 
             @Override
             public void run() {
-                try {
+                synchronized (gameLogicLock) {
                     for (Map.Entry<Material, Integer> pair : 
                         controlledPlayer.getInventory().entrySet()) {
                         Material m     = pair.getKey();
@@ -843,8 +867,6 @@ public class App extends JFrame {
 
                         i++;
                     }
-                } catch (Exception e) {
-                    System.out.println("Exception collecting statistics " + e);
                 }
             }
         }
@@ -854,32 +876,67 @@ public class App extends JFrame {
             @Override
             public void run() {
 
-                /* Call any computer players if available */
-                for (ComputerPlayer computerPlayer : computerPlayers) {
+                synchronized (gameLogicLock) {
+
+                    /* Call any computer players if available */
+                    for (ComputerPlayer computerPlayer : computerPlayers) {
+                        try {
+                            computerPlayer.turn();
+                        } catch (Exception ex) {
+
+                            /* Print API recording to make the fault reproducable */
+                            try {
+                                ((GameMapRecordingAdapter)map).printRecordingOnConsole();
+                            } catch (Exception e) {
+                                
+                            }
+
+                            for (Flag flag : map.getFlags()) {
+                                System.out.println("FLAG: " + flag.getPosition());
+                            }
+
+                            for (Road road : map.getRoads()) {
+                                System.out.println("" + road.getWayPoints());
+                            }
+
+                            for (Building building : computerPlayer.getControlledPlayer().getBuildings()) {
+                                System.out.println("" + building.getClass() + " " + building.getPosition());
+                            }
+
+                            /* Save snapshots for each player */
+                            if (!headless) {
+                                try {
+                                    writeSnapshots();
+                                } catch (Exception ex1) {
+                                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                                }
+                            }
+
+                            /* Print exception and backtrace */
+                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+
+                            System.exit(1);
+                        }
+                    }
+
+                    /* Run the game logic one more step */
                     try {
-                        computerPlayer.turn();
+                        map.stepTime();
                     } catch (Exception ex) {
 
                         /* Print API recording to make the fault reproducable */
-                        ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-
-                        for (Flag flag : map.getFlags()) {
-                            System.out.println("FLAG: " + flag.getPosition());
-                        }
-
-                        for (Road road : map.getRoads()) {
-                            System.out.println("" + road.getWayPoints());
-                        }
-
-                        for (Building building : computerPlayer.getControlledPlayer().getBuildings()) {
-                            System.out.println("" + building.getClass() + " " + building.getPosition());
-                        }
-
-                        /* Save snapshots for each player */
                         try {
-                            writeSnapshots();
-                        } catch (Exception ex1) {
-                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                            ((GameMapRecordingAdapter)map).printRecordingOnConsole();
+                        } catch (Exception e) {
+                            
+                        }
+
+                        if (!headless) {
+                            try {
+                                writeSnapshots();
+                            } catch (Exception ex1) {
+                                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                            }
                         }
 
                         /* Print exception and backtrace */
@@ -887,29 +944,9 @@ public class App extends JFrame {
 
                         System.exit(1);
                     }
+
+                    /* Re-draw the scene */
                 }
-
-                /* Run the game logic one more step */
-                try {
-                    map.stepTime();
-                } catch (Exception ex) {
-
-                    /* Print API recording to make the fault reproducable */
-                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-
-                    try {
-                        writeSnapshots();
-                    } catch (Exception ex1) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
-                    }
-
-                    /* Print exception and backtrace */
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
-                    System.exit(1);
-                }
-
-                /* Re-draw the scene */
             }
         }
 
@@ -1000,22 +1037,27 @@ public class App extends JFrame {
                 System.out.println("Placing players old-fashioned style");
 
                 /* Place player to be controlled */
-                creator.placeInitialPlayer(player0, map);
+                if (numberOfPlayers > 0) {
+                    creator.placeInitialPlayer(player0, map);
+                }
 
                 /* Place the opponent */
-                creator.placeOpponent(player1, map);
+                if (numberOfPlayers > 1) {
+                    creator.placeOpponent(player1, map);
+                }
             } else {
                 try {
                     System.out.println("Placing players using starting points from map");
-                    map.placeBuilding(new Headquarter(player0),
-                            map.getStartingPoints().get(0));
+                    if (numberOfPlayers > 0) {
+                        map.placeBuilding(new Headquarter(player0), map.getStartingPoints().get(0));
+                    }
 
-                    map.placeBuilding(new Headquarter(player1),
-                            map.getStartingPoints().get(1));
+                    if (numberOfPlayers > 1) {
+                        map.placeBuilding(new Headquarter(player1), map.getStartingPoints().get(1));
+                    }
                 } catch (Exception e) {
-                    System.out.println(e);
+                    e.printStackTrace(System.out);
                 }
-
             }
 
             repaint();
