@@ -1,0 +1,975 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>React Tutorial</title>
+    <script src="https://npmcdn.com/react@15.3.1/dist/react.js"></script>
+    <script src="https://npmcdn.com/react-dom@15.3.1/dist/react-dom.js"></script>
+    <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <script src="https://npmcdn.com/jquery@3.1.0/dist/jquery.min.js"></script>
+    <script src="https://npmcdn.com/remarkable@1.6.2/dist/remarkable.min.js"></script>
+
+    <style>
+    canvas {
+	user-select: none;
+    }
+    .button {
+            -webkit-border-radius: 7;
+            -moz-border-radius: 7;
+        border-radius: 7px;
+        font-family: Arial;
+        color: #ffffff;
+        font-size: 20px;
+        background: #3498db;
+        padding: 10px 20px 10px 20px;
+        text-decoration: none;
+    }
+
+    .button:hover {
+        background: #3cb0fd;
+        text-decoration: none;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/babel">
+
+    /*
+       zIndex table
+       ------------
+      0                    | canvas
+      1                    | terrain
+      2                    | roads
+      3                    | houses
+      4 + distance_to_back | remaining
+      500                  | house titles
+      1000                 | toolbar
+      1001                 | buttons
+    */
+
+    // Global state that doesn't fit in React (because of React's
+    // asynchronous way of updating setState)
+    //
+    // Updating it will not trigger React to re-draw the screen
+    var globalSyncState = {
+        mouseDown: false,
+        mouseDownX: 0,
+        mouseDownY: 0,
+        width: 0,
+        height: 0
+    }
+
+    var buttonStyle = {
+        WebkitBorderRadius: 7,
+        MozBorderRadius: 7,
+        borderRadius: '7px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        fontSize: '20px',
+        background: '#3498db',
+        padding: '5px 10px 5px 10px',
+        margin: '4px 4px 4px 4px',
+        textDecoration: 'none'
+    }
+
+    var buttonStyleHover = {
+        WebkitBorderRadius: 7,
+        MozBorderRadius: 7,
+        borderRadius: '7px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        fontSize: '20px',
+        padding: '5px 10px 5px 10px',
+        margin: '4px 4px 4px 4px',
+        background: '#3cb0fd',
+        textDecoration: 'none'
+    }
+
+    var vegetationToInt = {
+        "GRASS": 0,
+        "MOUNTAIN": 1,
+        "SWAMP": 2,
+        "WATER": 3
+    };
+
+    var intToVegetationColor = {
+        0: "green",
+        1: "gray",
+        2: "brown",
+        3: "blue"
+    };
+
+    function House(x, y, type) {
+        this.x = x
+        this.y = y
+        this.type = type
+    }
+
+    var UpwardsTriangle = React.createClass({
+        getDefaultProps: function() {
+            return ({
+                color: 'blue',
+                height: 10,
+                width: 10
+            });
+        },
+
+        render: function() {
+
+            var style = {
+                position: 'absolute',
+                top: this.props.y + 'px',
+                left: this.props.x + 'px',
+                width: 0,
+                height: 0,
+                borderStyle: 'solid',
+                borderWidth: '0 ' + this.props.width + 'px ' + this.props.height + 'px ' + this.props.width + 'px',
+                borderColor: 'transparent transparent ' + this.props.color,
+                pointerEvents: 'none'
+            }
+
+            return <div className="UpwardsTriangle" style={style} />;
+        }
+    });
+
+    var DownwardsTriangle = React.createClass({
+        getDefaultProps: function() {
+            return ({
+                color: 'blue',
+                height: 10,
+                width: 10
+            });
+        }, 
+
+        render: function() {
+            var style = {
+                position: 'absolute',
+                top: this.props.y + 'px',
+                left: this.props.x + 'px',
+                width: 0,
+                height: 0,
+                borderStyle: 'solid',
+                borderWidth: this.props.height + 'px ' + this.props.width + 'px ' + '0 ' + this.props.width + 'px',
+                borderColor: this.props.color + ' transparent transparent transparent',
+                pointerEvents: 'none'
+            };
+
+            return <div className="DownwardsTriangle" style={style} />;
+        }
+    });
+
+    var Line = React.createClass({
+        getDefaultProps: function() {
+            return ({
+                color: 'white',
+                width: '1px',
+                zIndex: 0
+            });
+        },
+
+        render: function() {
+
+            var length = Math.sqrt(
+                (this.props.startX - this.props.endX) * (this.props.startX - this.props.endX) 
+              + (this.props.startY - this.props.endY) * (this.props.startY - this.props.endY));
+
+            var angle = (180 / 3.1415) * Math.acos((this.props.startY - this.props.endY) / length);
+            var angle = (180 / 3.1415) * Math.acos((this.props.endY - this.props.startY) / length);
+            
+            // Negate the angle if mouse pointer is to the right of the origin point
+            if(this.props.endX > this.props.startX) {
+                angle *= -1;
+            }
+            
+            var lineStyle = {
+                backgroundColor:       this.props.color,
+                width:                 this.props.width,
+                left:                  this.props.startX,
+                top:                   this.props.startY,
+                position:              'absolute',
+                zIndex:                this.props.zIndex,
+                WebkitTransformOrigin: 'top left',
+                MozTransformOrigin:    'top left',
+                OTransformOrigin:      'top left',
+                MsTransformOrigin:     'top left',
+                transformOrigin:       'top left',
+                height:                length,
+
+                /* transform-origin sets rotation around top left (instead of the geometrical center) */
+
+                WebkitTransform: 'rotate(' + angle + 'deg)',
+                MozTransform: 'rotate(' + angle + 'deg)',
+                OTransform: 'rotate(' + angle + 'deg)',
+                MsTransform: 'rotate(' + angle + 'deg)',
+                transform: 'rotate(' + angle + 'deg)'
+            };
+
+            return (
+                    <div className="Line" style={lineStyle}/>
+            );
+        }
+    });
+
+    var Road = React.createClass({
+        getDefaultProps: function() {
+            return {
+                zIndex: 0
+            };
+        },
+
+        render: function() {
+
+            var scaled = this.props.points.map(
+                function (p) {
+                    return {x: p.x * this.props.scale + this.props.translateX,
+                            y: p.y * this.props.scale + this.props.translateY};
+                }.bind(this));
+
+            var splice0 = scaled.slice(0, this.props.points.length - 1);
+            var splice1 = scaled.slice(1, this.props.points.length);
+
+            return (
+                    <span>
+
+                       {splice0.map(
+                           function (p0, i) {
+                               var p1 = splice1[i];
+
+                               return (
+                                       <Line startX={p0.x}
+                                             startY={p0.y}
+                                             endX={p1.x}
+                                             endY={p1.y}
+                                             key={i}
+                                             width={3}
+                                             color='yellow'
+                                             zIndex={this.props.zIndex}
+                                       />
+                               );
+                           }.bind(this))
+                       }
+                    </span>
+            );
+        }
+    });
+
+    var MyButton = React.createClass({
+        getInitialState: function() {
+            return {
+                style: buttonStyle
+            }
+        },
+
+        onMouseOver: function() {
+            this.setState({
+                style: buttonStyleHover
+            });
+        },
+
+        onMouseOut: function() {
+            this.setState({
+                style: buttonStyle
+            });
+        },
+
+        onClick: function(e) {
+            this.props.onClick();
+
+            e.stopPropagation();
+        },
+
+        render: function() {
+            return (
+                    <span className="MyButton"
+                          onClick={this.onClick}
+                          onMouseOver={this.onMouseOver}
+                          onMouseOut={this.onMouseOut}
+                          style={this.state.style}>
+                    {this.props.label}
+                    </span>
+            );
+        }
+    });
+
+    var LabelWithStepper = React.createClass({
+
+        increase: function() {
+            if (this.props.currentValue + this.props.step < this.props.upperLimit) {
+                this.props.setValue(this.props.currentValue + this.props.step);
+            }
+        },
+
+        decrease: function() {
+            if (this.props.currentValue - this.props.step > this.props.lowerLimit) {
+                this.props.setValue(this.props.currentValue - this.props.step);
+            }
+        },
+
+        render: function() {
+            var textStyle = {
+                color: "#ffffff",
+                margin: '5px 5px 5px 5px'
+            }
+
+            var style = {
+                zIndex: 1000
+            };
+            
+            return (
+                    <span className="LabelWithStepper" style={style}>
+                    <span style={textStyle}>
+                    {this.props.description}: {this.props.currentValue}
+                    </span>
+                    <MyButton
+                          label={this.props.increaseLabel}
+                          onClick={this.increase}/>
+                    <MyButton
+                          label={this.props.decreaseLabel}
+                          onClick={this.decrease}/>
+                    </span>
+            );
+        }
+    });
+
+    var InfoLabel = React.createClass({
+        render: function() {
+            var style = {
+		userSelect: 'none',
+		backgroundColor: 'CadetBlue',
+		color: 'white',
+                margin: '5px 5px 5px 5px',
+		zIndex: 1001
+            }
+
+            return (<span className="InfoLabel"
+                         style={style}>
+                    Moved: [{this.props.translateX}, {this.props.translateY}], 
+                    Mouse down: {this.props.mouseDown.toString()}
+                    Selected: [{this.props.selected.x}, {this.props.selected.y}]
+                    </span>
+                   );
+        }
+    });
+
+    var Toolbar = React.createClass({
+        render: function() {
+            var style = {
+                position: 'absolute',
+                top: '1em',
+                left: '1em',
+                zIndex: 1000
+            };
+
+            return (<div className="Toolbar" style={style}>
+
+                        <LabelWithStepper
+                            currentValue={this.props.currentZoom}
+                            setValue={this.props.setZoom}
+                            upperLimit={this.props.maxZoom}
+                            lowerLimit={this.props.minZoom}
+                            step={this.props.zoomSteps}
+                            increaseLabel="+"
+                            decreaseLabel="-"
+                            description="Scale"
+                        />
+
+                        <InfoLabel
+                            translateX={this.props.translateX}
+                            translateY={this.props.translateY}
+                            mouseDown={this.props.mouseDown}
+                            selected={this.props.selected}
+                        />
+
+                    </div>
+            );
+        }
+
+    });
+
+    var HouseTitle = React.createClass({
+        getDefaultProps: function() {
+            return {
+                zIndex: 0
+            };
+        },
+
+	render: function() {
+	    var style = {
+                zIndex: this.props.zIndex,
+		userSelect: 'none',
+		position: 'absolute',
+		top: this.props.y*this.props.scale + this.props.translateY - 20,
+		left: this.props.x*this.props.scale + this.props.translateX,
+		color: 'white'
+	    }
+
+	    return (
+		    <div style={style}>
+		    {this.props.type}
+		    </div>
+	    );
+	}
+    });
+
+    var Worker = React.createClass({
+        getDefaultProps: function() {
+            return {
+                zIndex: 0
+            };
+        },
+
+        render: function() {
+            var style = {
+                zIndex: this.props.zIndex,
+	        userSelect: 'none',
+	        position: 'absolute',
+	        top: this.props.y*this.props.scale + this.props.translateY,
+	        left: this.props.x*this.props.scale + this.props.translateX
+            }
+
+            if (this.props.progress != 0) {
+                var p = this.props
+
+                style.top = (p.previous_y + (p.progress/100)*(p.next_y - p.previous_y))*p.scale + p.translateY
+                style.left = (p.previous_x + (p.progress/100)*(p.next_x - p.previous_x))*p.scale + p.translateX
+            }
+
+            return (
+	            <div style={style} className="Worker">
+		    <img
+                        src="walking-guy.jpg"
+                        width="20"
+                        height="20" />
+		    </div>
+            );
+        }
+    });
+
+
+    var HouseTexture = React.createClass({
+        getDefaultProps: function() {
+            return {
+                zIndex: 0
+            };
+        },
+
+        shouldComponentUpdate: function(nextProps, nextState) {
+            return this.props.zIndex != nextProps.zIndex         ||
+                   this.props.y != nextProps.y                   ||
+                   this.props.x != nextProps.x                   ||
+                   this.props.translateX != nextProps.translateX ||
+                   this.props.translateY != nextProps.translateY ||
+                   this.props.scale != nextProps.scale;
+        },
+        
+        render: function() {
+
+	    var houseStyle = {
+                zIndex: this.props.zIndex,
+		userSelect: 'none',
+		position: 'absolute',
+		top: this.props.y*this.props.scale + this.props.translateY,
+		left: this.props.x*this.props.scale + this.props.translateX
+	    }
+
+            return (
+	        <div style={houseStyle} className="HouseTexture">
+		    <img
+		        className="houseTexture"
+		        src="house.jpg"
+		        width="50"
+		        height="50"
+		    />
+		</div>
+            );
+        }
+    });
+
+    var Terrain = React.createClass({
+        shouldComponentUpdate: function(nextProps, nextState) {
+            return this.props.scale != nextProps.scale              ||
+                   this.props.terrain != nextProps.terrain          ||
+                   this.props.translateX != nextProps.translateX    ||
+                   this.props.translateY != nextProps.translateY    ||
+                   this.props.screenWidth != nextProps.screenWidth  ||
+                   this.props.screenHeight != nextProps.screenHeight;
+        },
+
+        render: function() {
+
+            return (
+                    <div>
+                    {this.props.terrain.map(
+                        function(tile, index) {
+                            var screenX = (tile.x * this.props.scale) + this.props.translateX;
+                            var screenY = (tile.y * this.props.scale) + this.props.translateY;
+
+                            if (screenX > 0 && screenX < this.props.screenWidth &&
+                                screenY > 0 && screenY < this.props.screenHeight) {
+
+                                var vegetation = tile.straightBelow;
+
+                                return (
+                                        <DownwardsTriangle
+                                    width={2*this.props.scale}
+                                    height={this.props.scale}
+                                    x={(tile.x - 1)*this.props.scale + this.props.translateX}
+                                    y={tile.y*this.props.scale + this.props.translateY}
+                                    color={intToVegetationColor[vegetation]}
+                                    key={index}
+                                        />
+                                );
+                            }
+                        }.bind(this))
+                    }
+
+                {this.props.terrain.map(
+                    function(tile, index) {
+                        var screenX = (tile.x * this.props.scale) + this.props.translateX;
+                        var screenY = (tile.y * this.props.scale) + this.props.translateY;
+
+                        if (screenX > 0 && screenX < this.props.screenWidth &&
+                            screenY > 0 && screenY < this.props.screenHeight) {
+
+                            var vegetation = tile.belowToTheRight;
+
+                            return (
+                                    <UpwardsTriangle
+                                width={2*this.props.scale}
+                                height={this.props.scale}
+                                x={(tile.x)*this.props.scale + this.props.translateX}
+                                y={tile.y*this.props.scale + this.props.translateY}
+                                color={intToVegetationColor[vegetation]}
+                                key={index}
+                                    />
+                            );
+                        }
+                    }.bind(this))
+                }
+
+                </div>
+            );
+        }
+    });
+
+    var Canvas = React.createClass({
+        getInitialState: function() {
+	    return {
+		houses: [],
+                workers: [],
+                roads: [],
+		translateX: 0,
+		translateY: 0,
+                selected: {x: 0, y: 0},
+		scale: 30,
+                terrain: [],
+                gameWidth: 0,
+                gameHeight: 0
+	    };
+	},
+
+        setZoom: function(s) {
+            console.info("Zooming to, " + s + "from " + this.state.scale)
+
+            var midScreen = {
+                x: globalSyncState.width / 2,
+                y: globalSyncState.height / 2
+            };
+
+            var gamePointMiddle = {
+                x: (midScreen.x - this.state.translateX) / this.state.scale,
+                y: (midScreen.y - this.state.translateY) / this.state.scale,
+            };
+
+            var newTranslate = {
+                x: midScreen.x - (gamePointMiddle.x * s),
+                y: midScreen.y - (gamePointMiddle.y * s)
+            }
+            
+            if (this.state.scale > 1) {
+
+                this.setState({
+	            houses: this.state.houses,
+                    workers: this.state.workers,
+                    roads: this.state.roads,
+		    translateX: newTranslate.x,
+		    translateY: newTranslate.y,
+                    selected: this.state.selected,
+		    scale: s,
+                    terrain: this.state.terrain,
+                    gameWidth: this.state.gameWidth,
+                    gameHeight: this.state.gameHeight
+                });
+            }
+        },
+        
+	onMouseDown: function(event) {
+            globalSyncState.mouseDown = true;
+            globalSyncState.originalMouseDownX = event.pageX;
+            globalSyncState.originalMouseDownY = event.pageY;
+
+            globalSyncState.currentMouseDown = {x: event.pageX,
+                                                y: event.pageY};
+            
+	    this.setState({
+		houses: this.state.houses,
+                workers: this.state.workers,
+                roads: this.state.roads,
+		translateX: this.state.translateX,
+		translateY: this.state.translateY,
+                selected: this.state.selected,
+		scale: this.state.scale,
+                terrain: this.state.terrain,
+                gameWidth: this.state.gameWidth,
+                gameHeight: this.state.gameHeight
+	    });
+
+            event.stopPropagation();
+
+            return false;
+        },
+
+	onMouseMove: function(event) {
+	    if (globalSyncState.mouseDown) {
+		var deltaX = (event.pageX - globalSyncState.currentMouseDown.x) / 4.0;
+		var deltaY = (event.pageY - globalSyncState.currentMouseDown.y) / 4.0;
+
+		this.setState({
+		    houses: this.state.houses,
+                    workers: this.state.workers,
+                    roads: this.state.roads,
+		    translateX: this.state.translateX - deltaX,
+		    translateY: this.state.translateY - deltaY,
+                    selected: this.state.selected,
+		    scale: this.state.scale,
+                    terrain: this.state.terrain,
+                    gameWidth: this.state.gameWidth,
+                    gameHeight: this.state.gameHeight
+		});
+
+                globalSyncState.currentMouseDown = {x: event.pageX,
+                                                    y: event.pageY};
+            }
+	},
+
+	onMouseUp: function(event) {
+            globalSyncState.mouseDown = false
+
+            if (event.pageX == globalSyncState.originalMouseDownX &&
+                event.pageY == globalSyncState.originalMouseDownY) {
+                this.setState({
+		    houses: this.state.houses,
+                    workers: this.state.workers,
+                    roads: this.state.roads,
+		    translateX: this.state.translateX,
+		    translateY: this.state.translateY,
+                    selected: {x: event.pageX,
+                               y: event.pageY},
+		    scale: this.state.scale,
+                    terrain: this.state.terrain,
+                    gameWidth: this.state.gameWidth,
+                    gameHeight: this.state.gameHeight});
+            }
+        },
+
+        onMouseOut: function(event) {
+            globalSyncState.mouseDown = false
+        },
+
+	componentDidMount: function() {
+
+            // Store the width and height of the canvas when it's been rendered
+            globalSyncState.width = this.refs.canvas.clientWidth;
+            globalSyncState.height = this.refs.canvas.clientHeight;
+
+            console.info("Width " + globalSyncState.width + ", height " + globalSyncState.height);
+            
+            // Declare functions to get data from the server
+            var getTerrainFromServer = function() {
+                $.ajax({
+                    url: this.props.url + "/terrain",
+                    dataType: 'json',
+                    cache: false,
+
+                    success: function(data) {
+                        console.info(JSON.stringify(data));
+
+                        var start = 1;
+                        var count = 0;
+                        var terrain = new Array(((data.width * data.height) / 2) + 1);
+
+                        console.info("Length " + data.straightBelow.length);
+                        console.info("Length " + data.belowToTheRight.length);
+                        console.info("Width " + data.width);
+                        console.info("Height " + data.height);
+                        
+                        for (var y = 1; y < data.height; y++) {
+                            for (var x = start; x + 1 < data.width; x+= 2) {
+
+                                var tile = {
+                                    x: x,
+                                    y: y,
+                                    straightBelow: vegetationToInt[data.straightBelow[count]],
+                                    belowToTheRight: vegetationToInt[data.belowToTheRight[count]]
+                                };
+
+                                terrain[count] = tile;
+
+                                count++;
+                            }
+
+                            if (start == 1) {
+                                start = 2;
+                            } else {
+                                start = 1;
+                            }
+                        }
+
+                        console.info("Setting terrain");
+                        
+                        this.setState({
+                            houses: this.state.houses,
+                            workers: this.state.workers,
+                            roads: this.state.roads,
+                            translateX: this.state.translateX,
+                            translateY: this.state.translateY,
+                            selected: this.state.selected,
+                            scale: this.state.scale,
+                            terrain: terrain,
+                            gameWidth: data.width,
+                            gameHeight: data.height
+                        });
+                    }.bind(this),
+
+                    error: function(xhr, status, err) {
+			console.error("error sucks");
+			console.error(xhr);
+			console.error(status);
+			console.error(err);
+
+		    }.bind(this)
+                });
+            }.bind(this)
+
+	    var updateGameFromServer = function() {
+
+		$.ajax({
+		    url: this.props.url + "/viewForPlayer?player=0",
+		    dataType: 'json',
+		    cache: false,
+
+		    success: function(data) {
+                        //                        console.info(JSON.stringify(data));
+
+                        // Center the view on the headquarter on the first update
+                        var translateX = this.state.translateX;
+                        var translateY = this.state.translateY;
+
+                        if (this.state.gameWidth == 0) {
+                            var headquarter = data.houses.find(h => h.type == "Headquarter");
+
+                            console.info(headquarter);
+
+                            translateX = (globalSyncState.width / 2) - headquarter.x*this.state.scale;
+                            translateY = (globalSyncState.height / 2) - headquarter.y*this.state.scale;
+                        }
+
+			this.setState({
+			    houses: data.houses,
+                            workers: data.workers,
+                            roads: data.roads,
+			    translateX: translateX,
+			    translateY: translateY,
+                            selected: this.state.selected,
+			    scale: this.state.scale,
+                            terrain: this.state.terrain,
+                            gameWidth: this.state.gameWidth,
+                            gameHeight: this.state.gameHeight
+			});
+
+			setTimeout(function() {
+			    updateGameFromServer();
+			}, 100);
+
+		    }.bind(this),
+
+		    error: function(xhr, status, err) {
+			console.error("error sucks");
+			console.error(xhr);
+			console.error(status);
+			console.error(err);
+
+			setTimeout(function() {
+			    updateGameFromServer(this);
+			}, 100);
+		    }.bind(this)
+		})
+	    }.bind(this)
+
+
+            // Move the workers locally to cover for periods between updates
+            var moveWorkersLocally = function() {
+
+                // Move workers
+                movedWorkers = this.state.workers.map(
+                    function(w) {
+                        
+                    });
+
+                
+
+                // Schedule the next run
+                setTimeout(function() {
+                    moveWorkersLocally(this);
+                }, 20);
+            }
+
+            // Start getting game updates continuously from the server
+	    updateGameFromServer();
+
+            // Get the terrain once
+            console.info("Time to get terrain?");
+            console.info(this.state.terrain);
+            if (this.state.terrain.length == 0) {
+                console.info("Getting terrain from the server");
+                getTerrainFromServer();
+            }
+	},
+
+        render: function() {
+	    var canvasStyle = {
+		userSelect: 'none',
+		backgroundColor: '#000000',
+		height: '100vh',
+		width: '100%'
+	    }
+
+            return (
+		    <div className="Canvas"
+		         style={canvasStyle}
+                         id="gameCanvas"
+                         onMouseDown={this.onMouseDown}
+                         onMouseMove={this.onMouseMove}
+                         onMouseUp={this.onMouseUp}
+                         onMouseOut={this.onMouseOut}
+                         onContextMenu={this.onMouseDown}
+                         ref="canvas">
+
+                    <div>
+
+                    <Terrain terrain={this.state.terrain}
+                             scale={this.state.scale}
+                             translateX={this.state.translateX}
+                             translateY={this.state.translateY}
+                             screenWidth={globalSyncState.width}
+                             screenHeight={globalSyncState.height}
+                    />
+                
+                        {this.state.houses.map(function(house, i) {
+                            screenX = (house.x * this.state.scale) + this.state.translateX;
+                            screenY = (house.y * this.state.scale) + this.state.translateY;
+
+                            if (screenX > 0 && screenX < globalSyncState.width &&
+                                screenY > 0 && screenY < globalSyncState.height) {
+			        return <HouseTexture
+		                type={house.type}
+                                x={house.x}
+                                y={house.y}
+                                key={i}
+                                translateX={this.state.translateX}
+                                translateY={this.state.translateY}
+                                scale={this.state.scale}
+                                zIndex={3} />;
+                            }
+			}, this)}
+
+                        {this.state.houses.map(function(house, i) {
+                            screenX = (house.x * this.state.scale) + this.state.translateX;
+                            screenY = (house.y * this.state.scale) + this.state.translateY;
+
+                            if (screenX > 0 && screenX < globalSyncState.width &&
+                                screenY > 0 && screenY < globalSyncState.height) {
+			        return <HouseTitle
+                                type={house.type}
+                                x={house.x}
+                                y={house.y}
+                                translateX={this.state.translateX}
+                                translateY={this.state.translateY}
+                                key={i}
+                                scale={this.state.scale}
+                                zIndex={3} />;
+                            }
+			}, this)}
+
+                        {this.state.workers.filter(w => !w.inside).map(function(worker, i) {
+                            screenX = (worker.x * this.state.scale) + this.state.translateX;
+                            screenY = (worker.y * this.state.scale) + this.state.translateY;
+
+                            if (screenX > 0 && screenX < globalSyncState.width &&
+                                screenY > 0 && screenY < globalSyncState.height) {
+                                return <Worker
+                                type={worker.type}
+                                x={worker.x}
+                                y={worker.y}
+                                translateX={this.state.translateX}
+                                translateY={this.state.translateY}
+                                key={i}
+                                progress={worker.percentage_traveled}
+                                previous_x={worker.previous_x}
+                                previous_y={worker.previous_y}
+                                next_x={worker.next_x}
+                                next_y={worker.next_y}
+                                scale={this.state.scale}
+                                zIndex={4} />;
+                            }
+                        }, this)}
+
+                        {this.state.roads.map(function(road, i) {
+                            screenX = (road.startX * this.state.scale) + this.state.translateX;
+                            screenY = (road.startY * this.state.scale) + this.state.translateY;
+
+                            if (screenX > 0 && screenX < globalSyncState.width &&
+                                screenY > 0 && screenY < globalSyncState.height) {
+                                return <Road
+                                         startX={road.startX}
+                                         startY={road.startY}
+                                         endX={road.endX}
+                                         endY={road.endY}
+                                         scale={this.state.scale}
+                                         translateX={this.state.translateX}
+                                         translateY={this.state.translateY}
+                                         points={road.points}
+                                         zIndex={2}
+                                         key={i}
+                                />;
+                            }
+                        }, this)}
+                
+                    </div>
+                
+                    <Toolbar
+                            translateX={this.state.translateX}
+                            translateY={this.state.translateY}
+                            mouseDown={globalSyncState.mouseDown}
+                            setZoom={this.setZoom}
+                            currentZoom={this.state.scale}
+                            zoomSteps={1}
+                            minZoom={1}
+                            maxZoom={this.props.maxZoom}
+                            zIndex={1000}
+                            selected={this.state.selected}
+                        />
+                </div>
+            );
+        }
+    });
+ReactDOM.render(
+    <Canvas url="http://localhost:8080" maxZoom={30}/>,
+    document.getElementById('content')
+);
+
+    </script>
+  </body>
+</html>

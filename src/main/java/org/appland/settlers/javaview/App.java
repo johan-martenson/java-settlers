@@ -143,6 +143,16 @@ public class App extends JFrame {
             required=false)
     int numberOfPlayers = 2;
 
+    @Option(name="--rest-server",
+            usage="Enable REST server for remote players",
+            required=false)
+    boolean enableRestServer = false;
+
+    @Option(name="--port",
+            usage="Port to expose the REST server on",
+            required=false)
+    int port = 8080;
+
     public App() throws Exception {
         super();
 
@@ -210,6 +220,13 @@ public class App extends JFrame {
 
         /* Set the tick if it has been configured */
         canvas.setTick(tick);
+
+        /* Start REST server if configured to */
+        if (enableRestServer) {
+            RestServer restServer = new RestServer(canvas.map, port);
+            restServer.setGameSpeed(tick);
+            restServer.startServer();
+        }
 
         /* Start the game */
         canvas.startGame();
