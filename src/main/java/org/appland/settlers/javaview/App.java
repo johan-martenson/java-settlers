@@ -22,8 +22,6 @@ import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-import static java.lang.Math.ceil;
-import static java.lang.Math.floor;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -104,8 +102,6 @@ import org.appland.settlers.maps.MapFile;
 import org.appland.settlers.maps.MapLoader;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import static java.lang.Math.abs;
-import static java.lang.Math.round;
 
 public class App extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -359,7 +355,7 @@ public class App extends JFrame {
                 public void mouseMoved(MouseEvent me) {
 
                     /* Get point the mouse hovers over on the game map */
-                    Point point = screenPointToGamePoint(new java.awt.Point(me.getX(), me.getY()));
+                    Point point = gameDrawer.screenPointToGamePoint(new java.awt.Point(me.getX(), me.getY()));
 
                     /* Update the hovering spot in the game drawer */
                     gameDrawer.setHoveringSpot(point);
@@ -379,6 +375,8 @@ public class App extends JFrame {
                     paddingPixelsDown += changeY;
 
                     dragStarted = dropPoint;
+
+                    gameDrawer.move(changeX, changeY);
                 }
             });
 
@@ -718,6 +716,7 @@ public class App extends JFrame {
             controlledPlayer = player;
 
             sidePanel.setPlayer(player);
+            gameDrawer.centerOn(controlledPlayer);
         }
 
         @Override
@@ -763,45 +762,6 @@ public class App extends JFrame {
             case COMPOSITE_PLAYER:
                 computerPlayers.add(new CompositePlayer(controlledPlayer, map));
             }
-        }
-
-        private Point screenPointToGamePoint(java.awt.Point screenPoint) {
-
-            /* Adjust for padding */
-            java.awt.Point point = new java.awt.Point(screenPoint.x - paddingPixelsLeft, screenPoint.y - paddingPixelsDown);
-
-            /* Go from surface coordinates to game points */
-            double px = (double) point.x / gameDrawer.getScaleX();
-            double py = (double) (getHeight() - point.y) / gameDrawer.getScaleY();
-
-            /* Round to integers */
-            int roundedX = (int) round(px);
-            int roundedY = (int) round(py);
-
-            /* Calculate the error */
-            double errorX = abs(px - roundedX);
-            double errorY = abs(py - roundedY);
-
-            /* Adjust the values if needed to avoid invalid points */
-            if ((roundedX + roundedY) % 2 != 0) {
-                if (errorX < errorY) {
-                    if (roundedY > py) {
-                        roundedY = (int) floor(py);
-                    } else {
-                        roundedY = (int) ceil(py);
-                    }
-                } else if (errorX > errorY) {
-                    if (roundedX > px) {
-                        roundedX = (int) floor(px);
-                    } else {
-                        roundedX = (int) ceil(px);
-                    }
-                } else {
-                    roundedX++;
-                }
-            }
-
-            return new Point(roundedX, roundedY);
         }
 
         @Override
@@ -1047,6 +1007,7 @@ public class App extends JFrame {
             sidePanel.setMap(map);
 
             gameDrawer.setMap(map);
+            gameDrawer.centerOn(controlledPlayer);
 
             if (map.getStartingPoints() == null ||
                 map.getStartingPoints().isEmpty()) {
@@ -1100,9 +1061,6 @@ public class App extends JFrame {
             graphics.setColor(BLACK);
             graphics.fillRect(0, 0, getWidth(), getHeight());
 
-            /* Move the scene a bit */
-            graphics.translate(paddingPixelsLeft, paddingPixelsDown);
-
             /* Draw the scene */
             try {
                 gameDrawer.drawScene((Graphics2D)graphics, controlledPlayer, selectedPoint, roadPoints, showAvailableSpots);
@@ -1115,7 +1073,7 @@ public class App extends JFrame {
         public void mouseClicked(MouseEvent me) {
 
             /* Translate the screen coordinates to a point in the game */
-            Point p = screenPointToGamePoint(me.getPoint());
+            Point p = gameDrawer.screenPointToGamePoint(me.getPoint());
             System.out.println("Clicked at gamepoint: " + p);
             try {
                 if (isDoubleClick(me)) {

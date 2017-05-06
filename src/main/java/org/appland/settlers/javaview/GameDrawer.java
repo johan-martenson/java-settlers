@@ -9,22 +9,21 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Paint;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import static java.lang.Math.abs;
+import static java.lang.Math.ceil;
+import static java.lang.Math.floor;
+import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -50,7 +49,7 @@ import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
 import static org.appland.settlers.model.Size.SMALL;
 import org.appland.settlers.model.Stone;
-import org.appland.settlers.model.Terrain;
+import org.appland.settlers.model.Storage;
 import org.appland.settlers.model.Tile;
 import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.WildAnimal;
@@ -62,7 +61,6 @@ import org.appland.settlers.model.Worker;
  */
 public class GameDrawer {
 
-    private final Color FOG_OF_WAR_COLOR        = Color.BLACK;
     private final Color POSSIBLE_WAYPOINT_COLOR = Color.ORANGE;
     private final Color SIGN_BACKGROUND_COLOR   = new Color(0xCCAAAA);
     private final Color FLAG_POLE_COLOR         = DARK_GRAY;
@@ -87,6 +85,23 @@ public class GameDrawer {
     private final Color BEER_COLOR              = new Color(0x555555);
     private final Color COIN_COLOR              = Color.YELLOW;
 
+    private final static double OVAL_HEIGHT_TO_WIDTH_RATIO = 0.8;
+    private final static int MARKER_WIDTH = 50;
+    private final static int MARKER_HEIGHT = (int)(MARKER_WIDTH * OVAL_HEIGHT_TO_WIDTH_RATIO);
+
+    private final static int SPOT_WIDTH = 50;
+    private final static int SPOT_HEIGHT = (int)(SPOT_WIDTH * OVAL_HEIGHT_TO_WIDTH_RATIO);
+
+    private final static int CARGO_WIDTH = 35;
+    private final static int CARGO_HEIGHT = 35;
+
+    private final int AVAILABLE_SMALL_HOUSE_WIDTH   = 20;
+    private final int AVAILABLE_SMALL_HOUSE_HEIGHT  = 20;
+    private final int AVAILABLE_MEDIUM_HOUSE_WIDTH  = 20;
+    private final int AVAILABLE_MEDIUM_HOUSE_HEIGHT = 20;
+    private final int AVAILABLE_LARGE_HOUSE_WIDTH   = 20;
+    private final int AVAILABLE_LARGE_HOUSE_HEIGHT  = 20;
+
     private final Color AVAILABLE_CONSTRUCTION_COLOR = Color.ORANGE;
 
     private final int MAIN_ROAD_WIDTH  = 7;
@@ -107,15 +122,11 @@ public class GameDrawer {
     private int           width;
     private int           heightInPoints;
     private int           widthInPoints;
-    private int           terrainPrerenderedWidthInPoints;
-    private int           terrainPrerenderedHeightInPoints;
     private GameMap       map;
-    private ScaledDrawer  drawer;
     private Point         hoveringSpot;
     private TexturePaint  grassTexture;
     private TexturePaint  waterTexture;
     private TexturePaint  mountainTexture;
-    private BufferedImage terrainImage;
     private Image         houseImage;
     private Image         stoneImage;
     private Image         fireImage;
@@ -123,142 +134,61 @@ public class GameDrawer {
     private Image         treeImage;
     private Image         headquarterImage;
 
-    private final Map<Class, Image>      spriteMap;
-    private final Map<Class, Dimension>  dimensionMap;
     private final List<SpriteInfo>       spritesToDraw;
     private final Comparator<SpriteInfo> spriteSorter;
 
     private List<Worker>     workers;
     private List<WildAnimal> animals;
 
-    GameDrawer(int w, int h, int wP, int hP) {
+    private double scale;
+    private int translateX;
+    private int translateY;
+
+    GameDrawer(int w, int h, int wP, int hP) throws IOException {
         width  = w;
         height = h;
 
-        widthInPoints  = wP;
+        widthInPoints = wP;
         heightInPoints = hP;
 
-        drawer = new ScaledDrawer(500, 500, w, h);
+        scale = 30;
 
         /* No hovering spot exists on startup */
         hoveringSpot = null;
 
         /* Prepare brushes */
-        try {
-            loadBrushes();
-        } catch (IOException ex) {
-            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        loadBrushes();
 
         /* Create the list to store pieces to draw for each frame */
         spritesToDraw = new ArrayList<>();
         spriteSorter = new SpriteSorter();
-
-        /* Set up a mapping from classes to images for pieces to draw */
-        spriteMap = new HashMap<>();
-
-        spriteMap.put(Tree.class, treeImage);
-        spriteMap.put(Building.class, houseImage);
-        spriteMap.put(Stone.class, stoneImage);
-
-        /* Set up a mapping of dimensions for the pieces to draw */
-        dimensionMap = new HashMap<>();
-
-        dimensionMap.put(Tree.class, new Dimension(30, 10));
-        dimensionMap.put(Building.class, new Dimension(20, 20));
-        dimensionMap.put(Headquarter.class, new Dimension(30, 30));
-        dimensionMap.put(Stone.class, new Dimension(10, 10));
 
         /* Create lists to store temporary copies to avoid synchronization issues */
         workers = new ArrayList<>();
         animals = new ArrayList<>();
     }
 
-    double getScaleX() {
-        return drawer.getScaleX();
-    }
-
-    double getScaleY() {
-        return drawer.getScaleY();
-    }
-
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
         synchronized (map) {
-            /* Remove previously copied pieces */
-            //workers.clear();
-            //animals.clear();
 
             /* Get copy of pieces to work on */
-            //copyListAtomically(map.getWorkers(), workers);
             workers = map.getWorkers();
-            //copyListAtomically(map.getWildAnimals(), animals);
             animals = map.getWildAnimals();
 
             /* Remove sprites drawn in the previous frame */
             spritesToDraw.clear();
 
             /* Draw the terrain */
-            if (terrainImage != null) {
-                    int marginXInPoints = (terrainPrerenderedWidthInPoints-widthInPoints) / 2;
-                    int marginYInPoints = (terrainPrerenderedHeightInPoints-heightInPoints) / 2;
-
-                    int tw = terrainImage.getWidth();
-                    int th = terrainImage.getHeight();
-
-                    g.drawImage(terrainImage,
-                            0,           //dx1
-                            0,           //dy1
-                            width,       //dx2
-                            height,      //dy2
-                            (marginXInPoints / terrainPrerenderedWidthInPoints) * tw, //sx1
-                            (marginYInPoints / terrainPrerenderedHeightInPoints) * th, //sy1
-                            (marginXInPoints + widthInPoints) / terrainPrerenderedWidthInPoints * tw,        //sx2
-                            (marginYInPoints + heightInPoints) / terrainPrerenderedHeightInPoints * th,      //sy2
-                            null);      //ImageObserver
-            }
+            drawTerrain(player, g);
 
             /* Draw roads directly on the ground first */
-            drawRoads(g);
+            drawRoads(g, player);
 
             /* Collect sprites to draw */
-            collectHouseSprites(map);
-            collectTreeSprites(map);
-            collectStoneSprites(map);
-
-            drawCrops(g);
-
-            drawPersons(g, workers);
-
-            drawBorders(g);
-
-            drawFlags(g);
-
-            drawSigns(g);
-
-            drawProjectiles(g);
-
-            drawWildAnimals(g, animals);
-
-            /* Draw the available spots for the next point for a road if a road is being built */
-            if (showAvailableSpots) {
-                drawAvailableSpots(g, player);
-            }
-
-            /* Draw the chosen points so far for a road being built if needed */
-            if (ongoingRoadPoints != null && !ongoingRoadPoints.isEmpty()) {
-                drawPreliminaryRoad(g, ongoingRoadPoints);
-
-                drawLastSelectedPoint(g, ongoingRoadPoints);
-
-                try {
-                    drawPossibleRoadConnections(g, player, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            } else if (selected != null) {
-                drawSelectedPoint(g, selected);
-            }
+            collectHouseSprites(map, player);
+            collectTreeSprites(map, player);
+            collectStoneSprites(map, player);
 
             /* Sort the sprites so the front sprites are drawn first */
             Collections.sort(spritesToDraw, spriteSorter);
@@ -268,33 +198,147 @@ public class GameDrawer {
                 drawSprite(g, si);
             }
 
+            drawCrops(g, player);
+
+            drawPersons(g, workers, player);
+
+            drawBorders(g, player);
+
+            drawFlags(g, player);
+
+            drawSigns(g, player);
+
+            drawProjectiles(g);
+
+            drawWildAnimals(g, animals, player);
+
+            /* Draw the available spots for the next point for a road if a road is being built */
+            if (showAvailableSpots) {
+                drawAvailableSpots(g, player);
+            }
+
+            /* Draw the chosen points so far for a road being built if needed */
+            if (ongoingRoadPoints != null && !ongoingRoadPoints.isEmpty()) {
+                drawPreliminaryRoad(g, ongoingRoadPoints, player);
+
+                drawLastSelectedPoint(g, ongoingRoadPoints, player);
+
+                drawPossibleRoadConnections(g, player, ongoingRoadPoints.get(ongoingRoadPoints.size() - 1), ongoingRoadPoints);
+            } else if (selected != null) {
+                drawSelectedPoint(g, selected, player);
+            }
+
             /* Draw headings for the houses */
-            drawHouseTitles(g, map.getBuildings());
+            drawHouseTitles(g, map.getBuildings(), player);
 
             /* Draw the hovering spot on top */
             if (hoveringSpot != null) {
-                drawHoveringPoint(g, hoveringSpot);
+                drawHoveringPoint(g, hoveringSpot, player);
             }
+        }
+    }
 
-            /* Draw the fog of war */
-            //drawFogOfWar(g, player);
+    private void drawTerrain(Player player, Graphics2D g) {
+
+        /* Draw the terrain */
+        int startX;
+        boolean rowOffsetFlip = false;
+        
+        for (int y = 0; y < heightInPoints; y++) {
+            
+            int screenY = (int) (y * scale + translateY);
+            
+            if (rowOffsetFlip) {
+                startX = 1;
+            } else {
+                startX = 0;
+            }
+            
+            rowOffsetFlip = !rowOffsetFlip;
+            
+            /* Skip drawing lines not on screen */
+            if (screenY < 0 || screenY > height + scale) {
+                continue;
+            }
+            
+            /* Draw upwards triangles */
+            for (int x = startX; x < widthInPoints; x+= 2) {
+                
+                int screenX = (int) (x * scale + translateX);
+                
+                if (screenX < -scale || screenX > width - scale) {
+                    continue;
+                }
+                
+                Point p1 = new Point(x, y);
+                Point p2 = new Point(x + 2, y);
+                Point p3 = new Point(x + 1, y + 1);
+                
+                if (!player.getDiscoveredLand().contains(p1) ||
+                        !player.getDiscoveredLand().contains(p2) ||
+                        !player.getDiscoveredLand().contains(p3)) {
+                    continue;
+                }
+                
+                Tile t = map.getTerrain().getTile(p1, p2, p3);
+                prepareToDrawVegetation(t, g);
+                drawFilledTriangle(g,
+                        pointToScreenX(p1), pointToScreenY(p1),
+                        pointToScreenX(p2), pointToScreenY(p2),
+                        pointToScreenX(p3), pointToScreenY(p3));
+            }
+            
+            /* Draw downwards triangles */
+            for (int x = startX; x < widthInPoints; x += 2) {
+                
+                int screenX = (int) (x * scale + translateX);
+                
+                if (screenX < -scale || screenX > width - scale) {
+                    continue;
+                }
+                
+                Point p1 = new Point(x, y);
+                Point p2 = new Point(x + 2, y);
+                Point p3 = new Point(x + 1, y - 1);
+                
+                if (!player.getDiscoveredLand().contains(p1) ||
+                        !player.getDiscoveredLand().contains(p2) ||
+                        !player.getDiscoveredLand().contains(p3)) {
+                    continue;
+                }
+                
+                Tile t = map.getTerrain().getTile(p1, p2, p3);
+                
+                prepareToDrawVegetation(t, g);
+                drawFilledTriangle(g,
+                        pointToScreenX(p1), pointToScreenY(p1),
+                        pointToScreenX(p2), pointToScreenY(p2),
+                        pointToScreenX(p3), pointToScreenY(p3));
+            }
         }
     }
 
     private void drawSprite(Graphics2D g, SpriteInfo si) {
 
+        Point p = si.getPosition();
+        int spriteWidth = si.getWidth();
+        int spriteHeight = si.getHeight();
+
         if (si.getSprite() != null) {
-            drawer.drawScaledImage(g, si.getSprite(), si.getPosition(), 
-                    si.getWidth(), si.getHeight(), 
-                    si.getOffsetX(), si.getOffsetY());
+            Image img = si.getSprite();
+
+            g.drawImage(img, 
+                    pointToScreenX(p, si.offsetX), pointToScreenY(p, si.offsetY), 
+                    scaleOffset(spriteWidth), scaleOffset(spriteHeight),
+                    null);
         } else {
-            drawer.fillScaledRect(g, si.getPosition(), 
-                    si.getWidth(), si.getHeight(), 
-                    si.getOffsetX(), si.getOffsetY());
+            g.setColor(Color.RED);
+            g.fillRect(pointToScreenX(p), pointToScreenY(p),
+                    scaleOffset(spriteWidth), scaleOffset(spriteHeight));
         }
     }
 
-    private void collectHouseSprites(GameMap map) {
+    private void collectHouseSprites(GameMap map, Player player) {
 
         List<Building> houses = map.getBuildings();
 
@@ -302,32 +346,40 @@ public class GameDrawer {
             for (Building b : houses) {
                 Point p = b.getPosition();
 
+                if (!pointOnScreen(b.getPosition())) {
+                    continue;
+                }
+
+                if (!player.getDiscoveredLand().contains((b.getPosition()))) {
+                    continue;
+                }
+
+                int houseWidth = 250;
+                int houseHeight = 250;
+                
                 if (b.burningDown()) {
-                    spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), 50, 60, -15, -25));
-
-                    continue;
+                    spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
+                } else if (b.destroyed()) {
+                    spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
+                } else if (b instanceof Headquarter) {
+                    spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 200, 250, -15, -25));
+                } else {
+                    spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), houseWidth, houseHeight, (int)(houseWidth / 4), (int)(houseHeight / 4.0)));
                 }
-
-                if (b.destroyed()) {
-                    spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), 50, 60, -15, -25));
-
-                    continue;
-                }
-
-                if (b instanceof Headquarter) {
-                    spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 50, 60, -15, -25));
-
-                    continue;
-                }
-
-                spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), 50, 60, -15, -25));
             }
         }
     }
 
-    private void drawHouseTitles(Graphics2D g, List<Building> houses) {
+    private void drawHouseTitles(Graphics2D g, List<Building> houses, Player player) {
 
         for (Building b : houses) {
+            if (!pointOnScreen(b.getPosition())) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains((b.getPosition()))) {
+                continue;
+            }
 
             if (b.outOfNaturalResources()) {
                 g.setColor(RED);
@@ -342,18 +394,13 @@ public class GameDrawer {
                 title = "(" + title + ")";
             }
 
-            g.drawString(title, p.x*drawer.getScaleX() - 50, height - (p.y*drawer.getScaleY()) - 40);
+            int titleWidth = g.getFontMetrics().stringWidth(title);
+            g.drawString(title, pointToScreenX(p) - titleWidth / 2, pointToScreenY(p.up()));
 
             if (b.ready() && !b.occupied()) {
-                g.drawString("(unoccupied)", p.x*drawer.getScaleX() - 50, height- (p.y*drawer.getScaleY()) - 40 + g.getFontMetrics().getHeight());
+                int unoccupiedLabelWidth = g.getFontMetrics().stringWidth(title);
+                g.drawString("(unoccupied)", pointToScreenX(p) - unoccupiedLabelWidth / 2, pointToScreenY(p.up()) - 40 + g.getFontMetrics().getHeight());
             }
-        }
-    }
-
-    private <T> void copyListAtomically(Collection<T> from, Collection<T> to) {
-
-        synchronized (from) {
-            to.addAll(from);
         }
     }
 
@@ -361,11 +408,11 @@ public class GameDrawer {
 
         for (Projectile projectile : map.getProjectiles()) {
 
-            int xOrigOnScreen = drawer.toScreenX(projectile.getSource());
-            int yOrigOnScreen = drawer.toScreenY(projectile.getSource());
+            int xOrigOnScreen = pointToScreenX(projectile.getSource());
+            int yOrigOnScreen = pointToScreenY(projectile.getSource());
 
-            int xTargetOnScreen = drawer.toScreenX(projectile.getTarget());
-            int yTargetOnScreen = drawer.toScreenY(projectile.getTarget());
+            int xTargetOnScreen = pointToScreenX(projectile.getTarget());
+            int yTargetOnScreen = pointToScreenY(projectile.getTarget());
 
             int directionX = xTargetOnScreen - xOrigOnScreen;
             int directionY = yTargetOnScreen - yOrigOnScreen;
@@ -377,7 +424,7 @@ public class GameDrawer {
         }
     }
 
-    private void drawWildAnimals(Graphics2D g, List<WildAnimal> animals) {
+    private void drawWildAnimals(Graphics2D g, List<WildAnimal> animals, Player player) throws Exception {
 
         for (WildAnimal animal : animals) {
 
@@ -387,15 +434,18 @@ public class GameDrawer {
             if (!animal.isExactlyAtPoint()) {
                 Point next = null;
 
-                try {
-                    next = animal.getNextPoint();
-                } catch (Exception ex) {
-                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
-                    System.exit(1);
-                }
+                next = animal.getNextPoint();
 
                 Point last = animal.getLastPoint();
+
+                if (!pointOnScreen(last) && !pointOnScreen(next)) {
+                    continue;
+                }
+
+                if (!player.getDiscoveredLand().contains(last) &&
+                    !player.getDiscoveredLand().contains(next)) {
+                    continue;
+                }
 
                 if (next == null) {
                     actualX = last.x;
@@ -409,16 +459,44 @@ public class GameDrawer {
             }
 
             g.setColor(Color.RED);
-            g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4), 
-                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
-                       drawer.simpleScaleX(6), 
-                       drawer.simpleScaleY(5));
+            g.fillOval(         (int)(actualX * scale + translateX) - (int)(20.0 * scale / 100.0),
+                       height - (int)(actualY * scale + translateY) - (int)(50.0 * scale / 100.0), 
+                       (int)(30 * scale / 100),
+                       (int)(25 * scale / 100));
 
-            g.setColor(Color.BLACK);
-            g.drawOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4), 
-                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
-                       drawer.simpleScaleX(6), 
-                       drawer.simpleScaleY(5));
+        }
+    }
+
+    void move(int changeX, int changeY) {
+        translateX = translateX + changeX;
+        translateY = translateY - changeY;
+    }
+
+    private boolean pointOnScreen(Point position) {
+        int screenX = pointToScreenX(position);
+        int screenY = pointToScreenY(position);
+
+        return screenX > 0 && screenX < width && screenY > 0 && screenY < height;
+    }
+
+    void centerOn(Player controlledPlayer) {
+        Point point = null;
+
+        for (Building b : controlledPlayer.getBuildings()) {
+            if (b instanceof Headquarter) {
+                point = b.getPosition();
+
+                break;
+            }
+
+            if (point == null && b instanceof Storage) {
+                point = b.getPosition();
+            }
+        }
+
+        if (point != null) {
+            translateX = (int)((width  / 2) - (point.x * scale));
+            translateY = (int)((height / 2) - (point.y * scale));
         }
     }
 
@@ -480,46 +558,71 @@ public class GameDrawer {
 
     }
 
-    private void collectTreeSprites(GameMap map) {
+    private void collectTreeSprites(GameMap map, Player player) {
 
         Collection<Tree> trees = map.getTrees();
 
         synchronized (trees) {
 
             for (Tree t : trees) {
-
-                int base = 10;
-                int treeHeight = 60;
-
-                if (t.getSize() == SMALL) {
-                    base = 4;
-                    treeHeight = 20;
-                } else if (t.getSize() == MEDIUM) {
-                    base = 7;
-                    treeHeight = 40;
+                if (!pointOnScreen(t.getPosition())) {
+                    continue;
                 }
 
-                SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 2, treeHeight, -base, -treeHeight);
+                if (!player.getDiscoveredLand().contains((t.getPosition()))) {
+                    continue;
+                }
+
+                int base = 35;
+                int treeHeight = 400;
+
+                if (t.getSize() == SMALL) {
+                    base = 20;
+                    treeHeight = 200;
+                } else if (t.getSize() == MEDIUM) {
+                    base = 28;
+                    treeHeight = 300;
+                }
+
+                SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 5, treeHeight, -25, treeHeight);
                 spritesToDraw.add(si);
             }
         }
     }
 
-    private void collectStoneSprites(GameMap map) {
+    private void collectStoneSprites(GameMap map, Player player) {
 
         Collection<Stone> stones = map.getStones();
 
         synchronized (stones) {
             for (Stone s : stones) {
-                SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), 50, 60, -25, -35);
+                if (!pointOnScreen(s.getPosition())) {
+                    continue;
+                }
+
+                if (!player.getDiscoveredLand().contains((s.getPosition()))) {
+                    continue;
+                }
+
+                int stoneWidth = 250;
+                int stoneHeight = 250;
+                
+                SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), stoneWidth, stoneHeight, -(int)(stoneWidth / 2.0), -(int)(stoneHeight / 2.0));
                 spritesToDraw.add(si);
             }
         }
     }
 
-    private void drawCrops(Graphics2D g) {
+    private void drawCrops(Graphics2D g, Player player) {
 
         for (Crop c : map.getCrops()) {
+            if (!pointOnScreen(c.getPosition())) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains((c.getPosition()))) {
+                continue;
+            }
 
             switch (c.getGrowthState()) {
             case JUST_PLANTED:
@@ -535,72 +638,55 @@ public class GameDrawer {
                 g.setColor(new Color(0xAA, 0xCC, 55));
             }
 
-            drawer.fillScaledOval(g, c.getPosition(), 30, 15, -15, -7);
-
-            g.setColor(Color.BLACK);
-            drawer.drawScaledOval(g, c.getPosition(), 30, 15, -15, -7);
+            g.fillOval(pointToScreenX(c.getPosition(), -50),
+                    pointToScreenY(c.getPosition(), -30),
+                    scaleOffset(100),
+                    scaleOffset(60));
         }
     }
 
-    private void drawBorders(Graphics2D g) {
+    private void drawBorders(Graphics2D g, Player player) {
         for (Player playerIterator : map.getPlayers()) {
             for (Collection<Point> border : playerIterator.getBorders()) {
                 g.setColor(playerIterator.getColor());
-                    
+
                 for (Point p : border) {
-                    if (!isWithinScreen(p)) {
+                    if (!pointOnScreen(p)) {
                         continue;
                     }
 
-                    drawer.fillScaledOval(g, p, 6, 6, -3, -3);
+                    if (!player.getDiscoveredLand().contains((p))) {
+                        continue;
+                    }
+
+                    g.fillOval(pointToScreenX(p), pointToScreenY(p), scaleOffset(50), scaleOffset(50));
                 }
             }
         }
     }
 
-    private void drawFogOfWar(Graphics2D g, Player player) {
-
-        /* Avoid drawing if there is no field of view */
-        if (player.getFieldOfView() == null || player.getFieldOfView().size() < 3) {
-            return;
-        }
-
-        /* Create the area with the whole screen */
-        Area area = new Area(new Rectangle(0, 0, width, height));
-
-        List<Point> fov = player.getFieldOfView();
-
-        /* Create a polygon with the discovered land to cut out of the whole screen */
-        Point lastPointInFov = fov.get(fov.size() - 1);
-
-        Path2D.Double discoveredLand = new Path2D.Double();
-        discoveredLand.moveTo(drawer.toScreenX(lastPointInFov), drawer.toScreenY(lastPointInFov));
-
-        for (Point p : fov) {
-            discoveredLand.lineTo(drawer.toScreenX(p), drawer.toScreenY(p));
-        }
-
-        /* Remove the discovered land from the fog of war area */
-        area.subtract(new Area(discoveredLand));
-
-        g.setColor(FOG_OF_WAR_COLOR);
-
-        Shape oldClip = g.getClip();
-
-        g.setClip(area);
-
-        g.fillRect(0, 0, width, height);
-
-        g.setClip(oldClip);
-    }
-
-    private void drawSigns(Graphics2D g) {
+    private void drawSigns(Graphics2D g, Player player) {
         for (Sign s : map.getSigns()) {
+
+            if (!pointOnScreen(s.getPosition())) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains((s.getPosition()))) {
+                continue;
+            }
+
             g.setColor(SIGN_BACKGROUND_COLOR);
 
-            drawer.fillScaledRect(g, s.getPosition(), 2, 8, -1, -8);
+            g.fillRect(pointToScreenX(s.getPosition(), 10),
+                    pointToScreenY(s.getPosition(), 40),
+                    scaleOffset(-5),
+                    scaleOffset(-40));
 
-            drawer.fillScaledRect(g, s.getPosition(), 8, 8, -4, -15);
+            g.fillRect(pointToScreenX(s.getPosition(), 40),
+                    pointToScreenY(s.getPosition(), 40),
+                    scaleOffset(-20),
+                    scaleOffset(-45));
 
             if (s.isEmpty()) {
                 continue;
@@ -628,49 +714,72 @@ public class GameDrawer {
 
             switch (s.getSize()) {
             case LARGE:
-                drawer.fillScaledRect(g, s.getPosition(), 6, 6, -3, -14);
+                g.fillRect(
+                        pointToScreenX(s.getPosition(), 30),
+                        pointToScreenY(s.getPosition(), 30),
+                        -15,
+                        -70);
                 break;
             case MEDIUM:
-                drawer.fillScaledRect(g, s.getPosition(), 4, 4, -3, -14);
+                g.fillRect(
+                        pointToScreenX(s.getPosition(), 20),
+                        pointToScreenY(s.getPosition(), 20),
+                        -15,
+                        -70);
                 break;
             case SMALL:
-                drawer.fillScaledRect(g, s.getPosition(), 2, 2, -3, -14);
+                g.fillRect(
+                        pointToScreenX(s.getPosition(), 10),
+                        pointToScreenY(s.getPosition(), 10),
+                        -15,
+                        -70);
                 break;
             }
         }
     }
 
-    private boolean isWithinScreen(Point p) {
-        return p.x > 0 && p.x < widthInPoints && p.y > 0 && p.y < heightInPoints;
-    }
-
-    private void drawLastSelectedPoint(Graphics graphics, List<Point> ongoingRoadPoints) {
+    private void drawLastSelectedPoint(Graphics graphics, List<Point> ongoingRoadPoints, Player player) {
         Point selected = ongoingRoadPoints.get(ongoingRoadPoints.size() - 1);
 
-        graphics.setColor(Color.RED);
+        if (!pointOnScreen(selected)) {
+            return;
+        }
 
-        drawer.drawScaledFilledOval(graphics, selected, 7, 7);
+        if (!player.getDiscoveredLand().contains((selected))) {
+            return;
+        }
+
+        graphics.setColor(Color.RED);
+        graphics.fillOval(pointToScreenX(selected, -(int)(SPOT_WIDTH / 2.0)), pointToScreenY(selected, -(int)(SPOT_HEIGHT / 2.0)), SPOT_WIDTH, SPOT_HEIGHT);
     }
 
-    private void drawFlags(Graphics2D g) {
+    private void drawFlags(Graphics2D g, Player player) {
         for (Flag f : map.getFlags()) {
             Point p = f.getPosition();
 
+            if (!pointOnScreen(p)) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains((p))) {
+                continue;
+            }
+
             g.setColor(f.getPlayer().getColor());
-            drawer.fillScaledRect(g, f.getPosition(), 7, 7, 0, -15);
+            g.fillRect(pointToScreenX(p), pointToScreenY(p ,80), scaleOffset(40), scaleOffset(40));
 
             g.setColor(FLAG_POLE_COLOR);
-            drawer.fillScaledRect(g, f.getPosition(), 2, 16, -1, -16);
+            g.fillRect(pointToScreenX(p), pointToScreenY(p, 80), scaleOffset(10), scaleOffset(80));
 
+            /* Draw any stacked cargo */
             if (!f.getStackedCargo().isEmpty()) {
                 Color cargoColor = getColorForMaterial(f.getStackedCargo().get(f.getStackedCargo().size() - 1).getMaterial());
 
                 g.setColor(cargoColor);
-
-                g.fillRect((p.x*drawer.getScaleX()) - drawer.offsetScaleX(2),
-                         height - (p.y*drawer.getScaleY()) - drawer.offsetScaleY(6),
-                       drawer.simpleScaleX(5),
-                       drawer.simpleScaleY(5));
+                g.fillRect(pointToScreenX(p, 10),
+                           pointToScreenY(p, -10),
+                           scaleOffset(CARGO_WIDTH),
+                           scaleOffset(CARGO_HEIGHT));
             }
         }
     }
@@ -678,6 +787,14 @@ public class GameDrawer {
     private void drawPossibleRoadConnections(Graphics2D g, Player player, Point point, List<Point> roadPoints) throws Exception {
 
         for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(player, point)) {
+            if (!pointOnScreen(p)) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains(p)) {
+                continue;
+            }
+
             if (map.isFlagAtPoint(p)) {
                 continue;
             }
@@ -687,20 +804,30 @@ public class GameDrawer {
             }
 
             g.setColor(POSSIBLE_WAYPOINT_COLOR);
-            drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+            g.fillOval(pointToScreenX(p, (int)(-MARKER_WIDTH / 2.0)), pointToScreenY(p, (int)(MARKER_HEIGHT / 2.0)),
+                    scaleOffset(MARKER_WIDTH), scaleOffset(MARKER_HEIGHT));
 
             g.setColor(Color.DARK_GRAY);
-            drawer.drawScaledOval(g, p, 10, 10, -5, -5);
+            g.drawOval(pointToScreenX(p, (int)(-MARKER_WIDTH / 2.0)), pointToScreenY(p, (int)(MARKER_HEIGHT / 2.0)),
+                    scaleOffset(MARKER_WIDTH), scaleOffset(MARKER_HEIGHT));
         }
     }
 
-    private void drawPreliminaryRoad(Graphics2D g, List<Point> ongoingRoadPoints) {
+    private void drawPreliminaryRoad(Graphics2D g, List<Point> ongoingRoadPoints, Player player) {
         Point previous = null;
 
         Stroke oldStroke = g.getStroke();
         g.setStroke(new BasicStroke(3));
 
         for (Point current : ongoingRoadPoints) {
+            if (!pointOnScreen(current)) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains(current)) {
+                continue;
+            }
+
             if (previous == null) {
                 previous = current;
 
@@ -709,7 +836,7 @@ public class GameDrawer {
 
             g.setColor(Color.YELLOW);
 
-            drawer.drawScaledLine(g, previous, current);
+            g.drawLine(pointToScreenX(previous), pointToScreenY(previous), pointToScreenX(current), pointToScreenY(current));
 
             previous = current;
         }
@@ -717,11 +844,12 @@ public class GameDrawer {
         g.setStroke(oldStroke);
     }
 
-    private void drawRoads(Graphics2D g) {
+    private void drawRoads(Graphics2D g, Player player) {
         g.setColor(Color.ORANGE);
         Stroke oldStroke = g.getStroke();
 
         for (Road r : map.getRoads()) {
+
             if (r.isMainRoad()) {
                 g.setStroke(new BasicStroke(MAIN_ROAD_WIDTH));
                 g.setColor(MAIN_ROAD_COLOR);
@@ -738,7 +866,16 @@ public class GameDrawer {
                     continue;
                 }
 
-                drawer.drawScaledLine(g, previous, p);
+                if (!pointOnScreen(p) && !pointOnScreen(previous)) {
+                    continue;
+                }
+
+                if (!player.getDiscoveredLand().contains(p) &&
+                    !player.getDiscoveredLand().contains(previous)) {
+                    continue;
+                }
+
+                g.drawLine(pointToScreenX(previous), pointToScreenY(previous), pointToScreenX(p), pointToScreenY(p));
 
                 previous = p;
             }
@@ -747,65 +884,7 @@ public class GameDrawer {
         g.setStroke(oldStroke);
     }
 
-    private BufferedImage createTerrainTexture(int w, int h, int wip, int hip) throws Exception {
-        BufferedImage image = Utils.createOptimizedBufferedImage(w, h, false);
-        Terrain terrain     = map.getTerrain();
-        Graphics2D g        = image.createGraphics();
-
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        boolean rowOffsetFlip = true;
-
-        /* Place all possible flag points in the list */
-        int x, y;
-
-        for (y = 0; y < hip; y++) {
-
-            int startX;
-            if (rowOffsetFlip) {
-                startX = 0;
-            } else {
-                startX = 1;
-            }
-
-            /* Draw upwards triangles */
-            if (y < hip) {
-                for (x = startX; x < wip; x+= 2) {
-                    Point p1 = new Point(x, y);
-                    Point p2 = new Point(x + 2, y);
-                    Point p3 = new Point(x + 1, y + 1);
-
-                    Tile t = terrain.getTile(p1, p2, p3);
-
-                    drawTile(g, t, p1, p2, p3);
-                }
-            }
-
-            /* Draw downwards triangles */
-            if (y > 0) {
-                for (x = startX; x < wip; x += 2) {
-                    Point p1 = new Point(x, y);
-                    Point p2 = new Point(x + 2, y);
-                    Point p3 = new Point(x + 1, y - 1);
-
-                    Tile t = terrain.getTile(p1, p2, p3);
-
-                    drawTile(g, t, p1, p2, p3);
-                }
-            }
-
-            rowOffsetFlip = !rowOffsetFlip;
-        }
-
-        terrainPrerenderedWidthInPoints = wip;
-        terrainPrerenderedHeightInPoints = hip;
-            
-        return image;
-    }
-
-    private void drawTile(Graphics2D g, Tile t, Point p1, Point p2, Point p3) {
-        Paint oldPaint = g.getPaint();
-
+    private void prepareToDrawVegetation(Tile t, Graphics2D g) {
         switch (t.getVegetationType()) {
         case GRASS:
             if (grassTexture != null) {
@@ -834,16 +913,29 @@ public class GameDrawer {
         default:
             g.setColor(Color.GRAY);
         }
-
-        drawer.fillScaledTriangle(g, p1, p2, p3);
-
-        g.setPaint(oldPaint);
     }
 
-    private void drawPersons(Graphics2D g, List<Worker> workers) {
+    private void drawFilledTriangle(Graphics2D g, int x1, int y1, int x2, int y2, int x3, int y3) {
+        Path2D.Double triangle = new Path2D.Double();
+        triangle.moveTo(x1, y1);
+        triangle.lineTo(x2, y2);
+        triangle.lineTo(x3, y3);
+        triangle.closePath();
+        g.fill(triangle);
+    }
+
+    private void drawPersons(Graphics2D g, List<Worker> workers, Player player) {
 
         for (Worker w : workers) {
             if (w.isInsideBuilding()) {
+                continue;
+            }
+
+            if (!pointOnScreen(w.getPosition())) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains((w.getPosition()))) {
                 continue;
             }
 
@@ -890,19 +982,14 @@ public class GameDrawer {
             }
         }
 
-        g.fillOval((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(4),
-                   height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(10), 
-                   drawer.simpleScaleX(5), 
-                   drawer.simpleScaleY(15));
+        g.fillOval(toScreenX(actualX), toScreenY(actualY, 100), scaleOffset(50), scaleOffset(100));
 
+        /* Draw the cargo being carried (if any) */
         if (w.getCargo() != null ) {
             Color cargoColor = getColorForMaterial(w.getCargo().getMaterial());
 
             g.setColor(cargoColor);
-            g.fillRect((int)(actualX*drawer.getScaleX()) - drawer.offsetScaleX(2),
-                       height - (int)(actualY*drawer.getScaleY()) - drawer.offsetScaleY(6),
-                       drawer.simpleScaleX(5),
-                       drawer.simpleScaleY(5));
+            g.fillRect(toScreenX(actualX), toScreenY(actualY, 80), scaleOffset(CARGO_WIDTH), scaleOffset(CARGO_HEIGHT));
         }
     }
 
@@ -911,11 +998,27 @@ public class GameDrawer {
 
         /* Draw the available houses */
         for (Map.Entry<Point, Size> pair : houses.entrySet()) {
+            if (!pointOnScreen(pair.getKey())) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains(pair.getKey())) {
+                continue;
+            }
+
             drawAvailableHouse(g, pair.getKey(), pair.getValue());
         }
 
         /* Draw the available flags */
         for (Point p : map.getAvailableFlagPoints(player)) {
+            if (!pointOnScreen(p)) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains(p)) {
+                continue;
+            }
+
             if (houses.keySet().contains(p)) {
                 continue;
             }
@@ -925,6 +1028,14 @@ public class GameDrawer {
 
         /* Draw the available mines */
         for (Point p : map.getAvailableMinePoints(player)) {
+            if (!pointOnScreen(p)) {
+                continue;
+            }
+
+            if (!player.getDiscoveredLand().contains(p)) {
+                continue;
+            }
+
             drawAvailableMine(g, p);
         }
     }
@@ -932,54 +1043,56 @@ public class GameDrawer {
     private void drawAvailableFlag(Graphics2D g, Point p) {
 
         g.setColor(Color.ORANGE);
-        drawer.fillScaledRect(g, p, 2, 10, 5, -5);
+        g.fillRect(pointToScreenX(p, 10), pointToScreenY(p, 50), 25, -25);
 
         g.setColor(Color.BLACK);
-        drawer.drawScaledRect(g, p, 2, 10, 5, -5);
+        g.fillRect(pointToScreenX(p, 10), pointToScreenY(p, 50), 25, -25);
     }
 
 
     private void drawAvailableHouse(Graphics2D g, Point key, Size value) {
 
-        int houseWidth = 5;
-        int houseHeight = 5;
-
-        int verticalSpace = 2;
-
         /* Draw box for small houses */
         g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
-        drawer.fillScaledRect(g, key, houseWidth, houseHeight, -2, 0);
+        g.fillRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_SMALL_HOUSE_WIDTH, AVAILABLE_SMALL_HOUSE_HEIGHT);
 
         g.setColor(Color.BLACK);
-        drawer.drawScaledRect(g, key, houseWidth, houseHeight, -2, 0);
+        g.drawRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_SMALL_HOUSE_WIDTH, AVAILABLE_SMALL_HOUSE_HEIGHT);
 
         /* Draw box for medium houses */
         if (value != SMALL) {
 
             g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
-            drawer.fillScaledRect(g, key, houseWidth, houseHeight, -2, -houseHeight - verticalSpace);
+            g.fillRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_MEDIUM_HOUSE_WIDTH, AVAILABLE_MEDIUM_HOUSE_HEIGHT);
 
             g.setColor(Color.BLACK);
-            drawer.drawScaledRect(g, key, houseWidth, houseHeight, -2, -houseHeight - verticalSpace);
+            g.drawRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_MEDIUM_HOUSE_WIDTH, AVAILABLE_MEDIUM_HOUSE_HEIGHT);
         }
 
         if (value == LARGE) {
 
             g.setColor(AVAILABLE_CONSTRUCTION_COLOR);
-            drawer.fillScaledRect(g, key, houseWidth, houseHeight, -2, -2*houseHeight - 2*verticalSpace);
+            g.fillRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_LARGE_HOUSE_WIDTH, AVAILABLE_LARGE_HOUSE_HEIGHT);
 
             g.setColor(Color.BLACK);
-            drawer.drawScaledRect(g, key, houseWidth, houseHeight, -2, -2*houseHeight - 2*verticalSpace);
+            g.drawRect(pointToScreenX(key), pointToScreenY(key), AVAILABLE_LARGE_HOUSE_WIDTH, AVAILABLE_LARGE_HOUSE_HEIGHT);
         }
     }
 
-    private void drawSelectedPoint(Graphics2D g, Point p) {
+    private void drawSelectedPoint(Graphics2D g, Point p, Player player) {
+        if (!pointOnScreen(p)) {
+            return;
+        }
+
+        if (!player.getDiscoveredLand().contains(p)) {
+            return;
+        }
 
         g.setColor(SELECTED_POINT_COLOR);
-        drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+        g.fillOval(pointToScreenX(p, -(int)(SPOT_WIDTH / 2.0)), pointToScreenY(p, (int)(SPOT_HEIGHT / 2.0)), scaleOffset(SPOT_WIDTH), scaleOffset(SPOT_HEIGHT));
 
         g.setColor(Color.DARK_GRAY);
-        drawer.drawScaledOval(g, p, 10, 10, -5, -5);
+        g.drawOval(pointToScreenX(p, -(int)(SPOT_WIDTH / 2.0)), pointToScreenY(p, (int)(SPOT_HEIGHT / 2.0)), scaleOffset(SPOT_WIDTH), scaleOffset(SPOT_HEIGHT));
     }
 
     private Color getColorForMaterial(Material material) {
@@ -1018,14 +1131,6 @@ public class GameDrawer {
     void recalculateScale(int w, int h) {
         width  = w;
         height = h;
-
-        drawer.recalculateScale(width, height);
-
-        try {
-            terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
-        } catch (Exception ex) {
-            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     void setMap(GameMap m) {
@@ -1033,74 +1138,63 @@ public class GameDrawer {
 
         widthInPoints = m.getWidth();
         heightInPoints = m.getHeight();
-
-        try {
-            terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
-        } catch (Exception ex) {
-            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     void zoomIn(int notches) throws Exception {
-        if (widthInPoints < 10 || heightInPoints < 10) {
-            return;
-        }
-        
-        widthInPoints--;
-        heightInPoints--;
+        // screen = game * scale + translate
+        // screen/2 = game * scale + translate
+        // translate = screen/2 - game * scale
 
-        drawer.changeZoom(widthInPoints, heightInPoints);
-        
-        terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
+        double oldGameX = ((width  / 2) - translateX) / scale;
+        double oldGameY = ((height / 2) - translateY) / scale;
+
+        scale = scale + 1;
+
+        translateX = (int)((width  / 2) - oldGameX * scale);
+        translateY = (int)((height / 2) - oldGameY * scale);
     }
 
     void zoomOut(int notches) throws Exception {
-        if (widthInPoints > map.getWidth() || heightInPoints > map.getHeight()) {
-            return;
-        }
+        // screen = game * scale + translate
+        // screen/2 = game * scale + translate
+        // translate = screen/2 - game * scale
+
+        double oldGameX = ((width  / 2) - translateX) / scale;
+        double oldGameY = ((height / 2) - translateY) / scale;
+
+        scale = scale - 1;
         
-        widthInPoints++;
-        heightInPoints++;
-
-        drawer.changeZoom(widthInPoints, heightInPoints);
-
-        terrainImage = createTerrainTexture(width, height, widthInPoints, heightInPoints);
+        translateX = (int)((width  / 2) - oldGameX * scale);
+        translateY = (int)((height / 2) - oldGameY * scale);
     }
 
-    private TexturePaint createBrushFromImageResource(String res) {
-        try {
+    private TexturePaint createBrushFromImageResource(String res) throws IOException {
 
-            /* Load the image from the resource string */
-            URL url = Thread.currentThread().getContextClassLoader().getResource(res);
+        /* Load the image from the resource string */
+        URL url = Thread.currentThread().getContextClassLoader().getResource(res);
 
-            /* Leave early and return null if the url isn't valid */
-            if (url == null) {
-                System.out.println("Failed to load " + res + ", invalid file");
+        /* Leave early and return null if the url isn't valid */
+        if (url == null) {
+            System.out.println("Failed to load " + res + ", invalid file");
 
-                return null;
-            }
-
-            BufferedImage bi = ImageIO.read(url);
-
-            /* bi will be null if the resource couldn't be located */
-            if (bi == null) {
-                System.out.println("Failed to load " + res);
-
-                return null;
-            }
-
-            /* Create the brush */
-            Rectangle r = new Rectangle(0, 0, 100, 100);
-
-            System.out.println("Loaded " + res + " correctly " + new TexturePaint(bi, r));
-
-            return new TexturePaint(bi, r);
-        } catch (IOException ex) {
-            Logger.getLogger(GameDrawer.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
 
-        /* Return null if the image didn't load correctly */
-        return null;
+        BufferedImage bi = ImageIO.read(url);
+
+        /* bi will be null if the resource couldn't be located */
+        if (bi == null) {
+            System.out.println("Failed to load " + res);
+
+            return null;
+        }
+
+        /* Create the brush */
+        Rectangle r = new Rectangle(0, 0, 100, 100);
+
+        System.out.println("Loaded " + res + " correctly " + new TexturePaint(bi, r));
+
+        return new TexturePaint(bi, r);
     }
 
     private void loadBrushes() throws IOException {
@@ -1145,21 +1239,29 @@ public class GameDrawer {
         hoveringSpot = point;
     }
 
-    private void drawHoveringPoint(Graphics2D g, Point p) {
+    private void drawHoveringPoint(Graphics2D g, Point p, Player player) {
+
+        if (!pointOnScreen(p)) {
+            return;
+        }
+
+        if (!player.getDiscoveredLand().contains(p)) {
+            return;
+        }
 
         g.setColor(HOVERING_COLOR);
-        drawer.fillScaledOval(g, p, 10, 10, -5, -5);
+        g.fillOval(pointToScreenX(p, -(int)(SPOT_WIDTH / 2.0)), pointToScreenY(p, (int)(SPOT_HEIGHT / 2.0)), scaleOffset(SPOT_WIDTH), scaleOffset(SPOT_HEIGHT));
 
         g.setColor(Color.DARK_GRAY);
-        drawer.drawScaledOval(g, p, 10, 10, -5, -5);
+        g.drawOval(pointToScreenX(p, -(int)(SPOT_WIDTH / 2.0)), pointToScreenY(p, (int)(SPOT_HEIGHT / 2.0)), scaleOffset(SPOT_WIDTH), scaleOffset(SPOT_HEIGHT));
     }
 
     private void drawAvailableMine(Graphics2D g, Point p) {
         g.setColor(Color.ORANGE);
-        drawer.fillScaledOval(g, p, 6, 6, -3, -3);
+        g.fillOval(pointToScreenX(p, 30), pointToScreenY(p, 30), -15, -15);
 
         g.setColor(Color.BLACK);
-        drawer.drawScaledOval(g, p, 6, 6, -3, -3);
+        g.drawOval(pointToScreenX(p, 30), pointToScreenY(p, 30), -15, -15);
     }
 
     java.awt.Point gamePointToScreenPoint(java.awt.Point p, java.awt.Point gplowerLeft, java.awt.Point gpUpperRight, java.awt.Point upperLeft, java.awt.Point lowerRight) {
@@ -1184,5 +1286,77 @@ public class GameDrawer {
         double pixelsShownY = upperLeft.y - lowerRight.y;
 
         return new Dimension((int) (pixelsShownX / nrGamePointsX), (int) (pixelsShownY / nrGamePointsY));
+    }
+
+    int pointToScreenX(Point p) {
+        return (int)(p.x * scale + translateX);
+    }
+
+    int pointToScreenY(Point p) {
+        return height - (int)(p.y * scale + translateY);
+    }
+
+    int toScreenX(double x) {
+        return (int)(x * scale + translateX);
+    }
+
+    int toScreenY(double y) {
+        return height - (int)(y * scale + translateY);
+    }
+
+    int pointToScreenX(Point p, int offset) {
+        return (int)((p.x  + (offset / 100)) * scale + translateX);
+    }
+
+    int pointToScreenY(Point p, double offset) {
+        return height - (int)((p.y  + (offset / 100)) * scale + translateY);
+    }
+
+    int toScreenX(double x, int offset) {
+        return (int)((x  + (offset / 100)) * scale + translateX);
+    }
+
+    int toScreenY(double y, double offset) {
+        return height - (int)((y + (offset / 100))* scale + translateY);
+    }
+
+    int scaleOffset(double d) {
+        return (int)(d*scale/100);
+    }
+    
+    Point screenPointToGamePoint(java.awt.Point point) {
+
+        /* Go from surface coordinates to game points */
+        double px = (double) (point.x - translateX) / scale;
+        double py = (double) (height - point.y - translateY) / scale;
+
+        /* Round to integers */
+        int roundedX = (int) round(px);
+        int roundedY = (int) round(py);
+
+        /* Calculate the error */
+        double errorX = abs(px - roundedX);
+        double errorY = abs(py - roundedY);
+
+        /* Adjust the values if needed to avoid invalid points */
+        if ((roundedX + roundedY) % 2 != 0) {
+            if (errorX < errorY) {
+                if (roundedY > py) {
+                    roundedY = (int) floor(py);
+                } else {
+                    roundedY = (int) ceil(py);
+                }
+            } else if (errorX > errorY) {
+                if (roundedX > px) {
+                    roundedX = (int) floor(px);
+                } else {
+                    roundedX = (int) ceil(px);
+                }
+            } else {
+                roundedX++;
+            }
+        }
+
+        return new Point(roundedX, roundedY);
     }
 }
