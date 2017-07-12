@@ -247,6 +247,8 @@ public class GameDrawer {
         for (int y = 0; y < heightInPoints; y++) {
             
             int screenY = (int) (y * scale + translateY);
+            int screenTop = (int) (((y + 1) * scale) + translateY);
+            int screenBottom = (int) (((y - 1) * scale) + translateY);
             
             if (rowOffsetFlip) {
                 startX = 1;
@@ -257,19 +259,21 @@ public class GameDrawer {
             rowOffsetFlip = !rowOffsetFlip;
             
             /* Skip drawing lines not on screen */
-            if (screenY < 0 || screenY > height + scale) {
+            if (screenTop < 0 || screenBottom > height) {
                 continue;
             }
             
             /* Draw upwards triangles */
             for (int x = startX; x < widthInPoints; x+= 2) {
-                
-                int screenX = (int) (x * scale + translateX);
-                
-                if (screenX < -scale || screenX > width - scale) {
+
+                int screenLeft = (int) (x * scale + translateX);
+                int screenRight = (int) ((x + 2) * scale + translateX);
+
+                /* Skip drawing outside the screen */
+                if (screenRight < 0 || screenLeft > width /*- scale*/) {
                     continue;
                 }
-                
+
                 Point p1 = new Point(x, y);
                 Point p2 = new Point(x + 2, y);
                 Point p3 = new Point(x + 1, y + 1);
@@ -290,13 +294,14 @@ public class GameDrawer {
             
             /* Draw downwards triangles */
             for (int x = startX; x < widthInPoints; x += 2) {
-                
-                int screenX = (int) (x * scale + translateX);
-                
-                if (screenX < -scale || screenX > width - scale) {
+
+                int screenLeftX = (int) (x * scale + translateX);
+                int screenRightX = (int) ((x + 2) * scale + translateX);
+
+                if (screenRightX < 0 || screenLeftX > width /*- scale*/) {
                     continue;
                 }
-                
+
                 Point p1 = new Point(x, y);
                 Point p2 = new Point(x + 2, y);
                 Point p3 = new Point(x + 1, y - 1);
