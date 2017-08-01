@@ -174,7 +174,11 @@ public class App extends JFrame {
         /* Set title to "Settlers 2" */
         setTitle("Settlers 2");
     }
-    
+
+    void setSpeed(int tick) {
+        canvas.setSpeed(tick);
+    }
+
     public void start() throws Exception {
 
         /* Set the default size of the window */
@@ -219,7 +223,7 @@ public class App extends JFrame {
 
         /* Start REST server if configured to */
         if (enableRestServer) {
-            RestServer restServer = new RestServer(canvas.map, port);
+            RestServer restServer = new RestServer(canvas.map, port, this);
             restServer.setGameSpeed(tick);
             restServer.startServer();
         }
@@ -284,7 +288,6 @@ public class App extends JFrame {
         private final Timer                clearInputTimer;
         private final Timer                statisticsTimer;
         private final Timer                drawingTimer;
-        private final Object               gameLogicLock;
 
         private Timer                gameLoopTimer;
         private UiState              state;
@@ -297,8 +300,6 @@ public class App extends JFrame {
         private boolean              turboModeEnabled;
         private Player               controlledPlayer;
         private java.awt.Point       dragStarted;
-        private int                  paddingPixelsLeft;
-        private int                  paddingPixelsDown;
         private GameMap              map;
 
         public GameCanvas(int w, int h) throws Exception {
@@ -317,17 +318,12 @@ public class App extends JFrame {
             statisticsTimer    = new Timer("Statistics timer");
             drawingTimer       = new Timer("Drawing timer");
             dragStarted        = new java.awt.Point(0, 0);
-            gameLogicLock      = new Object();
 
             /* Create the game drawer with the right size of the playing field */
             gameDrawer = new GameDrawer(w, h, 40, 40);
 
             /* Create the initial game board */
             resetGame();
-
-            /* Keep the game scene un-dragged */
-            paddingPixelsLeft = 0;
-            paddingPixelsDown = 0;
 
             /* Create listener */
             setFocusable(true);
@@ -371,9 +367,6 @@ public class App extends JFrame {
                     int changeX = dropPoint.x - dragStarted.x;
                     int changeY = dropPoint.y - dragStarted.y;
 
-                    paddingPixelsLeft += changeX;
-                    paddingPixelsDown += changeY;
-
                     dragStarted = dropPoint;
 
                     gameDrawer.move(changeX, changeY);
@@ -404,10 +397,14 @@ public class App extends JFrame {
             turboModeEnabled = !turboModeEnabled;
 
             if (turboModeEnabled) {
-                tick = 1;
+                setSpeed(1);
             } else {
-                tick = DEFAULT_TICK;
+                setSpeed(DEFAULT_TICK);
             }
+        }
+
+        public void setSpeed(int tick) {
+            this.tick = tick;
 
             /* Update the timer */
             gameLoopTimer.cancel();
@@ -823,7 +820,7 @@ public class App extends JFrame {
 
             @Override
             public void run() {
-                synchronized (gameLogicLock) {
+                synchronized (map) {
                     for (Map.Entry<Material, Integer> pair : 
                         controlledPlayer.getInventory().entrySet()) {
                         Material m     = pair.getKey();
@@ -853,77 +850,77 @@ public class App extends JFrame {
             @Override
             public void run() {
 
-                synchronized (gameLogicLock) {
-
-                    /* Call any computer players if available */
-                    for (ComputerPlayer computerPlayer : computerPlayers) {
-                        try {
-                            computerPlayer.turn();
-                        } catch (Exception ex) {
-
-                            /* Print API recording to make the fault reproducable */
-                            try {
-                                ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-                            } catch (Exception e) {
-                                
-                            }
-
-                            for (Flag flag : map.getFlags()) {
-                                System.out.println("FLAG: " + flag.getPosition());
-                            }
-
-                            for (Road road : map.getRoads()) {
-                                System.out.println("" + road.getWayPoints());
-                            }
-
-                            for (Building building : computerPlayer.getControlledPlayer().getBuildings()) {
-                                System.out.println("" + building.getClass() + " " + building.getPosition());
-                            }
-
-                            /* Save snapshots for each player */
-                            if (!headless) {
-                                try {
-                                    writeSnapshots();
-                                } catch (Exception ex1) {
-                                    Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
-                                }
-                            }
-
-                            /* Print exception and backtrace */
-                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
-                            System.exit(1);
-                        }
-                    }
-
-                    /* Run the game logic one more step */
+                /* Call any computer players if available */
+                for (ComputerPlayer computerPlayer : computerPlayers) {
                     try {
-                        map.stepTime();
+                        synchronized (map) {
+                            computerPlayer.turn();
+                        }
                     } catch (Exception ex) {
 
-                        /* Print API recording to make the fault reproducable */
-                        try {
-                            ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-                        } catch (Exception e) {
-                            
-                        }
-
-                        if (!headless) {
-                            try {
-                                writeSnapshots();
-                            } catch (Exception ex1) {
-                                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
-                            }
-                        }
-
-                        /* Print exception and backtrace */
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        printTroubleshootingInformation(ex);
 
                         System.exit(1);
                     }
-
-                    /* Re-draw the scene */
                 }
+
+                /* Run the game logic one more step */
+                try {
+                    synchronized(map) {
+                        map.stepTime();
+                    }
+                } catch (Exception ex) {
+
+                    /* Print API recording to make the fault reproducable */
+                    try {
+                        ((GameMapRecordingAdapter)map).printRecordingOnConsole();
+                    } catch (Exception e) {
+
+                    }
+
+                    if (!headless) {
+                        try {
+                            writeSnapshots();
+                        } catch (Exception ex1) {
+                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                        }
+                    }
+
+                    printTroubleshootingInformation(ex);
+
+                    System.exit(1);
+                }
+            }
+
+            private void printTroubleshootingInformation(Exception ex) {
+                /* Print API recording to make the fault reproducable */
+                try {
+                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
+                } catch (Exception e) {}
+                
+                for (Flag flag : map.getFlags()) {
+                    System.out.println("FLAG: " + flag.getPosition());
+                }
+                
+                for (Road road : map.getRoads()) {
+                    System.out.println("" + road.getWayPoints());
+                }
+                
+                for (Building building : map.getBuildings()) {
+                    System.out.println("" + building.getClass() + " " + building.getPosition());
+                }
+                
+                /* Save snapshots for each player */
+                if (!headless) {
+                    try {
+                        writeSnapshots();
+                    } catch (Exception ex1) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+                    }
+                }
+                
+                /* Print exception and backtrace */
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
