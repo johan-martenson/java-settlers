@@ -135,6 +135,7 @@ public class BuildingFactory {
             break;
         case HUNTER_HUT:
             building = new HunterHut(player);
+            break;
         }
 
         return building;
