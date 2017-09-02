@@ -68,7 +68,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class RestServer extends AbstractHandler {
+public class RestServer extends AbstractHandler implements View {
 
     private final String PLAYER_PARAM = "player";
 
@@ -76,17 +76,16 @@ public class RestServer extends AbstractHandler {
     private final int port;
     private final Pattern INDIVIDUAL_FLAG  = Pattern.compile("/flags/([0-9A-Za-z]+)/?");
     private final Pattern INDIVIDUAL_HOUSE = Pattern.compile("/houses/([0-9A-Za-z]+)/?");
-    private int speed;
     private Map<Object, Integer> objectToId;
     private int ids;
     private Map<Integer, Object> idToObject;
-    private final App app;
+    private final Game game;
     private final Map<Pattern, String[]> allowedMethods;
 
-    public RestServer(GameMap map, int port, App app) {
+    public RestServer(GameMap map, int port, Game game) {
         this.map = map;
         this.port = port;
-        this.app = app;
+        this.game = game;
 
         this.objectToId = new HashMap<>();
         this.idToObject = new HashMap<>();
@@ -101,14 +100,10 @@ public class RestServer extends AbstractHandler {
         this.allowedMethods.put(Pattern.compile("/flags/.*"),      new String[] {"DELETE"});
         this.allowedMethods.put(Pattern.compile("/players"),       new String[] {"GET"});
         this.allowedMethods.put(Pattern.compile("/roads"),         new String[] {"POST"});
-        this.allowedMethods.put(Pattern.compile("/game"),          new String[] {"PUT"});
+        this.allowedMethods.put(Pattern.compile("/game"),          new String[] {"PUT", "GET"});
         this.allowedMethods.put(Pattern.compile("/houses"),        new String[] {"POST"});
-        this.allowedMethods.put(Pattern.compile("/houses/.*"),     new String[] {"DELETE"});
+        this.allowedMethods.put(Pattern.compile("/houses/.*"),     new String[] {"DELETE", "PUT"});
         this.allowedMethods.put(Pattern.compile("/viewForPlayer"), new String[] {"GET"});
-    }
-
-    void setGameSpeed(int speed) {
-        this.speed = speed;
     }
 
     @Override
@@ -194,6 +189,14 @@ public class RestServer extends AbstractHandler {
         if (target.equals("/buildings") && request.getMethod().equals("GET")) {
             int houseId = Integer.parseInt(request.getParameter("buildingId"));
 
+            String playerIdString = request.getParameter("playerId");
+
+            Player player = null;
+
+            if (playerIdString != null) {
+                player = (Player)getObjectFromId(Integer.parseInt(playerIdString));
+            }
+
             Building building = (Building)getObjectFromId(houseId);
             int playerId = getId(building.getPlayer());
 
@@ -208,6 +211,15 @@ public class RestServer extends AbstractHandler {
 
                 for (Material m : Material.values()) {
                     jsonInventory.put(m.name(), building.getAmount(m));
+                }
+
+                /* Fill in attack information if the player is included */
+                if (player != null && building.isMilitaryBuilding()) {
+                    try {
+                        jsonHouse.put("maxAttackers", player.getAvailableAttackersForBuilding(building));
+                    } catch (Exception ex) {
+                        Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
 
@@ -343,8 +355,9 @@ public class RestServer extends AbstractHandler {
 
         Matcher individualHouseMatcher = INDIVIDUAL_HOUSE.matcher(target);
 
-        /* Remove the given house */
-        if (individualHouseMatcher.matches() && request.getMethod().equals("DELETE")) {
+        /* Handle requests for an individual house */
+        if (individualHouseMatcher.matches()) {
+
             String houseIdString = individualHouseMatcher.group(1);
 
             if (houseIdString != null && !houseIdString.equals("")) {
@@ -352,18 +365,39 @@ public class RestServer extends AbstractHandler {
 
                 Building building = (Building)getObjectFromId(houseId);
 
-                try {
-                    synchronized (map) {
-                        building.tearDown();
+                /* Remove the given house */
+                if (request.getMethod().equals("DELETE")) {
+
+                    try {
+                        synchronized (map) {
+                            building.tearDown();
+                        }
+                    } catch (Exception ex) {
+                        Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                } catch (Exception ex) {
-                    Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
+
+                /* Update the given house (can only be used to trigger attacks) */
+                if (request.getMethod().equals("PUT")) {
+                    try {
+                        JSONObject body = requestBodyToJson(request);
+
+                        JSONObject attackJson = (JSONObject) body.get("attacked");
+
+                        System.out.println("Attacker " + attackJson.get("by"));
+                        System.out.println(((Long)attackJson.get("by")).intValue());
+                        System.out.println("Attackers " + attackJson.get("attackers"));
+                        System.out.println(((Long)attackJson.get("attackers")).intValue());
+                    } catch (ParseException ex) {
+                        Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                }
+
+                replyWithJson(response, baseRequest, messageToJson("Removed building " + houseIdString));
+
+                return;
             }
-
-            replyWithJson(response, baseRequest, messageToJson("Removed building " + houseIdString));
-
-            return;
         }
 
         /* Return the list of players */
@@ -437,17 +471,32 @@ public class RestServer extends AbstractHandler {
             }
         }
 
+        /* Return the game */
+        if (target.equals("/game") && request.getMethod().equals("GET")) {
+
+            JSONObject jsonGame = new JSONObject();
+
+            jsonGame.put("tickLength", game.getSpeed());
+
+            replyWithJson(response, baseRequest, jsonGame);
+
+            return;
+        }
+
         /* Handle update game */
         if (target.equals("/game") && request.getMethod().equals("PUT")) {
             try {
                 JSONObject jsonGame = requestBodyToJson(request);
-                int speed = ((Long)jsonGame.get("speed")).intValue();
+                int speed = ((Long)jsonGame.get("tickLength")).intValue();
 
-                app.setSpeed(speed);
+                game.setSpeed(speed);
             } catch (ParseException ex) {
                 Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
             }
 
+            replyWithJson(response, baseRequest, messageToJson("Set speed OK"));
+
+            return;
         }
 
         /* Handle create house */
@@ -478,6 +527,12 @@ public class RestServer extends AbstractHandler {
             int playerId = Integer.parseInt(request.getParameterValues(PLAYER_PARAM)[0]);
 
             Player player = (Player)getObjectFromId(playerId);
+
+            if (player == null) {
+                replyWithInvalidParameter(response, baseRequest, "Player does not exist " + playerId);
+
+                return;
+            }
 
             /* Create instances outside the synchronized block when possible */
             JSONObject view = new JSONObject();
@@ -1052,4 +1107,23 @@ public class RestServer extends AbstractHandler {
 
         return sb.toString();
     }
+
+    @Override
+    public void onSaveTroubleshootingInformation() {}
+
+    @Override
+    public void setMap(GameMap map) {
+        this.map = map;
+    }
+
+    @Override
+    public void onGameStarted() {}
+
+    private void replyWithInvalidParameter(HttpServletResponse response, Request baseRequest, String string) throws IOException {
+        response.setContentType("application/json;charset=utf-8");
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        baseRequest.setHandled(true);
+        response.getWriter().println(messageToJson(string));
+   }
 }

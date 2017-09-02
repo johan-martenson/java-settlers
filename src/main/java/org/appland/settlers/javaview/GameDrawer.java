@@ -2,6 +2,7 @@ package org.appland.settlers.javaview;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import static java.awt.Color.BLACK;
 import static java.awt.Color.DARK_GRAY;
 import static java.awt.Color.ORANGE;
 import static java.awt.Color.RED;
@@ -10,10 +11,19 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
@@ -21,6 +31,7 @@ import static java.lang.Math.floor;
 import static java.lang.Math.round;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -29,6 +40,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import javax.swing.JPanel;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Crop;
 import org.appland.settlers.model.Donkey;
@@ -49,8 +61,8 @@ import static org.appland.settlers.model.Size.LARGE;
 import static org.appland.settlers.model.Size.MEDIUM;
 import static org.appland.settlers.model.Size.SMALL;
 import org.appland.settlers.model.Stone;
-import org.appland.settlers.model.Storage;
 import org.appland.settlers.model.Tile;
+import org.appland.settlers.model.Tile.Vegetation;
 import org.appland.settlers.model.Tree;
 import org.appland.settlers.model.WildAnimal;
 import org.appland.settlers.model.Worker;
@@ -59,7 +71,7 @@ import org.appland.settlers.model.Worker;
  *
  * @author johan
  */
-public class GameDrawer {
+public class GameDrawer extends JPanel implements MouseListener, KeyListener, MouseWheelListener {
 
     private final Color POSSIBLE_WAYPOINT_COLOR = Color.ORANGE;
     private final Color SIGN_BACKGROUND_COLOR   = new Color(0xCCAAAA);
@@ -118,10 +130,6 @@ public class GameDrawer {
     private static final String TREE_TEXTURE     = "tree.png";
     private static final String HEADQUARTER_IMAGE = "headquarter.png";
 
-    private int           height;
-    private int           width;
-    private int           heightInPoints;
-    private int           widthInPoints;
     private GameMap       map;
     private Point         hoveringSpot;
     private TexturePaint  grassTexture;
@@ -139,19 +147,61 @@ public class GameDrawer {
 
     private List<Worker>     workers;
     private List<WildAnimal> animals;
+    private java.awt.Point dragStarted;
 
     private double scale;
     private int translateX;
     private int translateY;
+    private final App app;
+    private Player controlledPlayer;
 
-    GameDrawer(int w, int h, int wP, int hP) throws IOException {
-        width  = w;
-        height = h;
+    GameDrawer(GameMap map, final App app) throws IOException {
+        super();
 
-        widthInPoints = wP;
-        heightInPoints = hP;
+        this.app = app;
+
+        this.map = map;
 
         scale = 30;
+
+        dragStarted = new java.awt.Point(0, 0);
+
+        /* Create listeners */
+        setFocusable(true);
+        requestFocusInWindow();
+
+        addMouseListener(this);
+        addKeyListener(this);
+        addMouseWheelListener(this);
+
+        /* Add listeners */
+        addMouseMotionListener(new MouseMotionAdapter() {
+
+            @Override
+            public void mouseMoved(MouseEvent me) {
+
+                /* Get point the mouse hovers over on the game map */
+                Point point = screenPointToGamePoint(new java.awt.Point(me.getX(), me.getY()));
+
+                /* Update the hovering spot in the game drawer */
+                app.onGamePointHovered(point);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent me) {
+
+                /* Get the new point in surface coordinates */
+                java.awt.Point dropPoint = me.getPoint();
+
+                /* Determine the change from the original point */
+                int changeX = dropPoint.x - dragStarted.x;
+                int changeY = dropPoint.y - dragStarted.y;
+
+                dragStarted = dropPoint;
+
+                moveGameView(changeX, changeY);
+            }
+        });
 
         /* No hovering spot exists on startup */
         hoveringSpot = null;
@@ -243,82 +293,156 @@ public class GameDrawer {
         /* Draw the terrain */
         int startX;
         boolean rowOffsetFlip = false;
-        
-        for (int y = 0; y < heightInPoints; y++) {
-            
-            int screenY = (int) (y * scale + translateY);
-            int screenTop = (int) (((y + 1) * scale) + translateY);
-            int screenBottom = (int) (((y - 1) * scale) + translateY);
-            
+
+        /* Store points for tiles with the same vegetation to draw one large
+           polygons instead of many small triangles
+        */
+        List<Point> topPoints = new ArrayList<>();
+        List<Point> bottomPoints = new ArrayList<>();
+
+        Vegetation collectedVegetation = null;
+
+        /* Go through the tiles and draw the corresponding terrain */
+        for (int y = 0; y < map.getHeight(); y++) {
+
+            /* Start every second row on 0 and 1 respectively */
             if (rowOffsetFlip) {
                 startX = 1;
             } else {
                 startX = 0;
             }
-            
+
             rowOffsetFlip = !rowOffsetFlip;
-            
+
             /* Skip drawing lines not on screen */
-            if (screenTop < 0 || screenBottom > height) {
+            int screenTop    = (int) (((y + 1) * scale) + translateY);
+            int screenBottom = (int) (((y - 1) * scale) + translateY);
+
+            if (screenTop < 0 || screenBottom > getHeight()) {
                 continue;
             }
-            
-            /* Draw upwards triangles */
-            for (int x = startX; x < widthInPoints; x+= 2) {
 
+            /* Draw or collect upwards and downwards triangles */
+            for (int x = startX; x < map.getWidth(); x+= 2) {
+
+                /* Skip drawing outside the screen */
                 int screenLeft = (int) (x * scale + translateX);
                 int screenRight = (int) ((x + 2) * scale + translateX);
 
-                /* Skip drawing outside the screen */
-                if (screenRight < 0 || screenLeft > width /*- scale*/) {
+                if (screenRight < 0 || screenLeft > getWidth() /*- scale*/) {
                     continue;
                 }
 
-                Point p1 = new Point(x, y);
-                Point p2 = new Point(x + 2, y);
-                Point p3 = new Point(x + 1, y + 1);
-                
-                if (!player.getDiscoveredLand().contains(p1) ||
-                        !player.getDiscoveredLand().contains(p2) ||
-                        !player.getDiscoveredLand().contains(p3)) {
+                /* Calculate the bounding points for the upward and downward triangles */
+                Point left  = new Point(x    , y    );
+                Point right = new Point(x + 2, y    );
+                Point up    = new Point(x + 1, y + 1);
+                Point down  = new Point(x + 1, y - 1);
+
+                Vegetation vegetationUp   = null;
+                Vegetation vegetationDown = null;
+
+                /* Store the vegetation type for the upward tile if it's discovered by the player */
+                if (player.getDiscoveredLand().contains(left)  &&
+                    player.getDiscoveredLand().contains(right) &&
+                    player.getDiscoveredLand().contains(up)) {
+
+                    Tile tile = map.getTerrain().getTile(left, right, up);
+                    vegetationUp = tile.getVegetationType();
+                }
+
+                /* Store the vegetation type for the downward tile if it's discovered by the player */
+                if (player.getDiscoveredLand().contains(left)  &&
+                    player.getDiscoveredLand().contains(right) &&
+                    player.getDiscoveredLand().contains(down)) {
+
+                    Tile tile = map.getTerrain().getTile(left, right, down);
+                    vegetationDown = tile.getVegetationType();
+                }
+
+                /* Skip this line if there is nothing discovered on the line */
+                if (vegetationDown == null && vegetationUp == null) {
                     continue;
                 }
-                
-                Tile t = map.getTerrain().getTile(p1, p2, p3);
-                prepareToDrawVegetation(t, g);
-                drawFilledTriangle(g,
-                        pointToScreenX(p1), pointToScreenY(p1),
-                        pointToScreenX(p2), pointToScreenY(p2),
-                        pointToScreenX(p3), pointToScreenY(p3));
+
+                /* Draw the collected tiles if there is an ongoing collection of
+                   tiles with the same vegetation and the new upward tile has
+                   a different color
+                */
+                if (!topPoints.isEmpty()                  &&
+                    (vegetationUp   != collectedVegetation ||
+                     vegetationDown != collectedVegetation)) {
+
+                    /* Draw the collected tiles */
+                    drawCollectedTiles(g, topPoints, bottomPoints, collectedVegetation);
+
+                    /* Reset the collection */
+                    topPoints.clear();
+                    bottomPoints.clear();
+                    collectedVegetation = null;
+                }
+
+                /* Start collecting tiles with the same vegetation if there is no
+                   current collection and the two tiles match
+                */
+                if (topPoints.isEmpty() && vegetationUp == vegetationDown) {
+
+                    /* Fill the top line from left to right */
+                    topPoints.add(left);
+                    topPoints.add(up);
+                    topPoints.add(right);
+
+                    /* Fill the bottom line from right to left */
+                    bottomPoints.add(right);
+                    bottomPoints.add(down);
+
+                    /* Update what vegetation we're collecting tiles for */
+                    collectedVegetation = vegetationUp;
+
+                    continue;
+                }
+
+                /* Add to the collection if the upward and downward triangles match */
+                if (!topPoints.isEmpty()                  &&
+                    vegetationUp   == collectedVegetation &&
+                    vegetationDown == collectedVegetation) {
+
+                    /* Fill the top line from left to right */
+                    topPoints.add(up);
+                    topPoints.add(right);
+
+                    /* Fill the bottom line from right to left */
+                    bottomPoints.add(0, down);
+                    bottomPoints.add(0, right);
+
+                    continue;
+                }
+
+                /* Just draw the tiles if they don't match each other */
+                if (vegetationDown != null) {
+                    prepareToDrawVegetation(vegetationDown, g);
+                    drawFilledTriangle(g,
+                            pointToScreenX(left),  pointToScreenY(left),
+                            pointToScreenX(right), pointToScreenY(right),
+                            pointToScreenX(down),  pointToScreenY(down));
+                }
+
+                if (vegetationUp != null) {
+                    prepareToDrawVegetation(vegetationUp, g);
+                    drawFilledTriangle(g,
+                            pointToScreenX(left),  pointToScreenY(left),
+                            pointToScreenX(right), pointToScreenY(right),
+                            pointToScreenX(up),    pointToScreenY(up));
+                }
             }
-            
-            /* Draw downwards triangles */
-            for (int x = startX; x < widthInPoints; x += 2) {
 
-                int screenLeftX = (int) (x * scale + translateX);
-                int screenRightX = (int) ((x + 2) * scale + translateX);
+            /* Only collect single lines - draw the collected tiles and reset the collection */
+            if (!topPoints.isEmpty()) {
+                drawCollectedTiles(g, topPoints, bottomPoints, collectedVegetation);
 
-                if (screenRightX < 0 || screenLeftX > width /*- scale*/) {
-                    continue;
-                }
-
-                Point p1 = new Point(x, y);
-                Point p2 = new Point(x + 2, y);
-                Point p3 = new Point(x + 1, y - 1);
-                
-                if (!player.getDiscoveredLand().contains(p1) ||
-                        !player.getDiscoveredLand().contains(p2) ||
-                        !player.getDiscoveredLand().contains(p3)) {
-                    continue;
-                }
-                
-                Tile t = map.getTerrain().getTile(p1, p2, p3);
-                
-                prepareToDrawVegetation(t, g);
-                drawFilledTriangle(g,
-                        pointToScreenX(p1), pointToScreenY(p1),
-                        pointToScreenX(p2), pointToScreenY(p2),
-                        pointToScreenX(p3), pointToScreenY(p3));
+                topPoints.clear();
+                bottomPoints.clear();
+                collectedVegetation = null;
             }
         }
     }
@@ -436,43 +560,45 @@ public class GameDrawer {
             double actualX = animal.getPosition().x;
             double actualY = animal.getPosition().y;            
 
+            Point last = animal.getLastPoint();
+
+            if (animal.isExactlyAtPoint() && !pointOnScreen(animal.getPosition())) {
+                continue;
+            }
+
+            if (!animal.isExactlyAtPoint() && !pointOnScreen(last) && !pointOnScreen(animal.getNextPoint())) {
+                continue;
+            }
+
+            if (animal.isExactlyAtPoint() && !player.getDiscoveredLand().contains(animal.getPosition())) {
+                continue;
+            }
+
+            if (!animal.isExactlyAtPoint()                 &&
+                !player.getDiscoveredLand().contains(last) &&
+                !player.getDiscoveredLand().contains(animal.getNextPoint())) {
+                continue;
+            }
+
             if (!animal.isExactlyAtPoint()) {
-                Point next = null;
+                Point next = animal.getNextPoint();
 
-                next = animal.getNextPoint();
+                int percent = animal.getPercentageOfDistanceTraveled();
 
-                Point last = animal.getLastPoint();
-
-                if (!pointOnScreen(last) && !pointOnScreen(next)) {
-                    continue;
-                }
-
-                if (!player.getDiscoveredLand().contains(last) &&
-                    !player.getDiscoveredLand().contains(next)) {
-                    continue;
-                }
-
-                if (next == null) {
-                    actualX = last.x;
-                    actualY = last.y;
-                } else {
-                    int percent = animal.getPercentageOfDistanceTraveled();
-
-                    actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
-                    actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
-                }
+                actualX = last.x + (next.x - last.x)*((double)percent/(double)100);
+                actualY = last.y + (next.y - last.y)*((double)percent/(double)100);
             }
 
             g.setColor(Color.RED);
             g.fillOval(         (int)(actualX * scale + translateX) - (int)(20.0 * scale / 100.0),
-                       height - (int)(actualY * scale + translateY) - (int)(50.0 * scale / 100.0), 
+                       getHeight() - (int)(actualY * scale + translateY) - (int)(50.0 * scale / 100.0),
                        (int)(30 * scale / 100),
                        (int)(25 * scale / 100));
 
         }
     }
 
-    void move(int changeX, int changeY) {
+    void moveGameView(int changeX, int changeY) {
         translateX = translateX + changeX;
         translateY = translateY - changeY;
     }
@@ -481,28 +607,64 @@ public class GameDrawer {
         int screenX = pointToScreenX(position);
         int screenY = pointToScreenY(position);
 
-        return screenX > 0 && screenX < width && screenY > 0 && screenY < height;
+        return screenX > 0 && screenX < getWidth() && screenY > 0 && screenY < getHeight();
     }
 
-    void centerOn(Player controlledPlayer) {
-        Point point = null;
+    void centerOn(Point point) {
+        translateX = (int)((getWidth()  / 2) - (point.x * scale));
+        translateY = (int)((getHeight() / 2) - (point.y * scale));
+    }
 
-        for (Building b : controlledPlayer.getBuildings()) {
-            if (b instanceof Headquarter) {
-                point = b.getPosition();
+    private void drawFilledQuad(Graphics2D g, int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4) {
+        Path2D.Double quad = new Path2D.Double();
+        quad.moveTo(x1, y1);
+        quad.lineTo(x2, y2);
+        quad.lineTo(x3, y3);
+        quad.lineTo(x4, y4);
+        quad.closePath();
+        g.fill(quad);
+    }
 
-                break;
-            }
+    private void drawCollectedTiles(Graphics2D g, List<Point> topPoints, List<Point> bottomPoints, Vegetation vegetation) {
+        Path2D.Double polygon = new Path2D.Double();
 
-            if (point == null && b instanceof Storage) {
-                point = b.getPosition();
+        /* Draw the top line of the polygon */
+        boolean first = true;
+        for (Point point : topPoints) {
+
+            if (first) {
+                polygon.moveTo(pointToScreenX(point), pointToScreenY(point));
+
+                first = false;
+            } else {
+                polygon.lineTo(pointToScreenX(point), pointToScreenY(point));
             }
         }
 
-        if (point != null) {
-            translateX = (int)((width  / 2) - (point.x * scale));
-            translateY = (int)((height / 2) - (point.y * scale));
+        /* Draw the bottom line of the polygon */
+        first = true;
+        for (Point point : bottomPoints) {
+
+            /* Skip the first point because it's a duplicate of the last point in the top row */
+            if (first) {
+                first = false;
+
+                continue;
+            }
+
+            polygon.lineTo(pointToScreenX(point), pointToScreenY(point));
         }
+
+        /* Add the last line */
+        polygon.closePath();
+
+        /* Draw the polygon */
+        prepareToDrawVegetation(vegetation, g);
+
+        g.fill(polygon);
+        g.setColor(Color.YELLOW);
+
+        g.draw(polygon);
     }
 
     private class SpriteSorter implements Comparator<SpriteInfo> {
@@ -889,8 +1051,8 @@ public class GameDrawer {
         g.setStroke(oldStroke);
     }
 
-    private void prepareToDrawVegetation(Tile t, Graphics2D g) {
-        switch (t.getVegetationType()) {
+    private void prepareToDrawVegetation(Vegetation vegetation, Graphics2D g) {
+        switch (vegetation) {
         case GRASS:
             if (grassTexture != null) {
                 g.setPaint(grassTexture);
@@ -1133,16 +1295,12 @@ public class GameDrawer {
         }
     }
 
-    void recalculateScale(int w, int h) {
-        width  = w;
-        height = h;
+    void setControlledPlayer(Player player) {
+        this.controlledPlayer = player;
     }
 
     void setMap(GameMap m) {
         map = m;
-
-        widthInPoints = m.getWidth();
-        heightInPoints = m.getHeight();
     }
 
     void zoomIn(int notches) throws Exception {
@@ -1150,13 +1308,13 @@ public class GameDrawer {
         // screen/2 = game * scale + translate
         // translate = screen/2 - game * scale
 
-        double oldGameX = ((width  / 2) - translateX) / scale;
-        double oldGameY = ((height / 2) - translateY) / scale;
+        double oldGameX = ((getWidth()  / 2) - translateX) / scale;
+        double oldGameY = ((getHeight() / 2) - translateY) / scale;
 
         scale = scale + 1;
 
-        translateX = (int)((width  / 2) - oldGameX * scale);
-        translateY = (int)((height / 2) - oldGameY * scale);
+        translateX = (int)((getWidth()  / 2) - oldGameX * scale);
+        translateY = (int)((getHeight() / 2) - oldGameY * scale);
     }
 
     void zoomOut(int notches) throws Exception {
@@ -1164,13 +1322,13 @@ public class GameDrawer {
         // screen/2 = game * scale + translate
         // translate = screen/2 - game * scale
 
-        double oldGameX = ((width  / 2) - translateX) / scale;
-        double oldGameY = ((height / 2) - translateY) / scale;
+        double oldGameX = ((getWidth()  / 2) - translateX) / scale;
+        double oldGameY = ((getHeight() / 2) - translateY) / scale;
 
         scale = scale - 1;
         
-        translateX = (int)((width  / 2) - oldGameX * scale);
-        translateY = (int)((height / 2) - oldGameY * scale);
+        translateX = (int)((getWidth()  / 2) - oldGameX * scale);
+        translateY = (int)((getHeight() / 2) - oldGameY * scale);
     }
 
     private TexturePaint createBrushFromImageResource(String res) throws IOException {
@@ -1298,7 +1456,7 @@ public class GameDrawer {
     }
 
     int pointToScreenY(Point p) {
-        return height - (int)(p.y * scale + translateY);
+        return getHeight() - (int)(p.y * scale + translateY);
     }
 
     int toScreenX(double x) {
@@ -1306,7 +1464,7 @@ public class GameDrawer {
     }
 
     int toScreenY(double y) {
-        return height - (int)(y * scale + translateY);
+        return getHeight() - (int)(y * scale + translateY);
     }
 
     int pointToScreenX(Point p, int offset) {
@@ -1314,7 +1472,7 @@ public class GameDrawer {
     }
 
     int pointToScreenY(Point p, double offset) {
-        return height - (int)((p.y  + (offset / 100)) * scale + translateY);
+        return getHeight() - (int)((p.y  + (offset / 100)) * scale + translateY);
     }
 
     int toScreenX(double x, int offset) {
@@ -1322,7 +1480,7 @@ public class GameDrawer {
     }
 
     int toScreenY(double y, double offset) {
-        return height - (int)((y + (offset / 100))* scale + translateY);
+        return getHeight() - (int)((y + (offset / 100))* scale + translateY);
     }
 
     int scaleOffset(double d) {
@@ -1333,7 +1491,7 @@ public class GameDrawer {
 
         /* Go from surface coordinates to game points */
         double px = (double) (point.x - translateX) / scale;
-        double py = (double) (height - point.y - translateY) / scale;
+        double py = (double) (getHeight() - point.y - translateY) / scale;
 
         /* Round to integers */
         int roundedX = (int) round(px);
@@ -1363,5 +1521,116 @@ public class GameDrawer {
         }
 
         return new Point(roundedX, roundedY);
+    }
+
+    private boolean isDoubleClick(MouseEvent me) {
+        return me.getClickCount() > 1;
+    }
+
+    @Override
+    public void keyPressed(KeyEvent ke) {}
+
+    @Override
+    public void keyReleased(KeyEvent ke) {}
+
+    @Override
+    public void keyTyped(KeyEvent ke) {
+
+        /* Handle typing outside the drawer, in the GUI class */
+        app.keyTyped(ke);
+    }
+
+    @Override
+    public void paintComponent(Graphics graphics) {
+
+        /* Start with a black background */
+        graphics.setColor(BLACK);
+        graphics.fillRect(0, 0, getWidth(), getHeight());
+
+        /* Draw the scene */
+        try {
+            drawScene((Graphics2D)graphics,
+                    controlledPlayer,
+                    app.getSelectedPoint(),
+                    app.getRoadPoints(),
+                    app.showAvailableSpots());
+        } catch (Exception ex) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent me) {
+
+        /* Translate the screen coordinates to a point in the game */
+        Point p = screenPointToGamePoint(me.getPoint());
+        System.out.println("Clicked at gamepoint: " + p);
+
+        if (isDoubleClick(me)) {
+            app.onGamePointDoubleClicked(p);
+        }
+
+        if (!isDoubleClick(me)) {
+            app.onGamePointClicked(p);
+        }
+
+        repaint();
+    }
+
+    @Override
+    public void mousePressed(MouseEvent me) {
+
+        /* Remember the point in case this is the start of dragging operation
+           NOTE: The point is adjusted to the surface */
+        dragStarted = me.getPoint();
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent me) {}
+
+    @Override
+    public void mouseEntered(MouseEvent me) {}
+
+    @Override
+    public void mouseExited(MouseEvent me) {}
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent mwe) {
+
+        try {
+            int notches = mwe.getWheelRotation();
+            if (notches < 0) {
+                zoomIn(notches);
+            } else {
+                zoomOut(notches);
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        repaint();
+    }
+
+    void writeSnapshots() throws Exception {
+        String name = "Snapshot-" + Calendar.getInstance().getTime().toString();
+
+        /* Write an image to file for each player */
+        for (Player player : map.getPlayers()) {
+
+            /* Create an image to draw on */
+            BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            Graphics2D graphics = bi.createGraphics();
+
+            /* Draw the scene for the player */
+            drawScene(graphics, controlledPlayer, null, null, false);
+
+            /* Write the image to a file */
+            File outputfile = new File(name + "-" + player.getName() + ".png");
+
+            ImageIO.write(bi, "png", outputfile);
+
+            System.out.println("Wrote scene to " + outputfile.getAbsolutePath());
+        }
     }
 }

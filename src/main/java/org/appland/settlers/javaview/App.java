@@ -2,54 +2,32 @@ package org.appland.settlers.javaview;
 
 import java.awt.BorderLayout;
 
-import static java.awt.Color.BLACK;
-import static java.awt.Color.BLUE;
-import static java.awt.Color.ORANGE;
 
 import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JMenu;
 
-import org.appland.settlers.computer.AttackPlayer;
+
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
-import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
+import org.appland.settlers.model.Player;
+import org.appland.settlers.model.Point;
 
 import static org.appland.settlers.model.Material.COAL;
 import static org.appland.settlers.model.Material.COIN;
@@ -63,18 +41,7 @@ import static org.appland.settlers.model.Material.STONE;
 import static org.appland.settlers.model.Material.WHEAT;
 import static org.appland.settlers.model.Material.WOOD;
 
-import org.appland.settlers.model.Player;
-import org.appland.settlers.model.Point;
-import org.appland.settlers.model.Road;
-import org.appland.settlers.computer.CoinProducer;
-import org.appland.settlers.computer.CompositePlayer;
-import org.appland.settlers.computer.ComputerPlayer;
-import org.appland.settlers.computer.ConstructionPreparationPlayer;
-import org.appland.settlers.computer.ExpandLandPlayer;
-import org.appland.settlers.computer.FoodProducer;
-import org.appland.settlers.computer.MiltaryProducer;
 import org.appland.settlers.computer.PlayerType;
-import org.appland.settlers.computer.SearchForMineralsPlayer;
 
 import static org.appland.settlers.javaview.HouseType.BAKERY;
 import static org.appland.settlers.javaview.HouseType.BARRACKS;
@@ -98,88 +65,47 @@ import static org.appland.settlers.javaview.HouseType.SLAUGHTER_HOUSE;
 import static org.appland.settlers.javaview.HouseType.WATCH_TOWER;
 import static org.appland.settlers.javaview.HouseType.WELL;
 import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
-import org.appland.settlers.maps.MapFile;
-import org.appland.settlers.maps.MapLoader;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
+import org.appland.settlers.model.Storage;
 
-public class App extends JFrame {
+
+public class App extends JFrame implements View {
+
     private static final long serialVersionUID = 1L;
-    private final SidePanel sidePanel;
+
+    private final static int INPUT_CLEAR_DELAY = 5000;
+    private final static int STATS_PERIOD = 1000;
+    private final static String TITLE = "Settlers 2";
+
+    private final SidePanel                sidePanel;
     private final Map<Material, JMenuItem> materialMenuItemMap;
-    private final Map<Integer, JMenuItem> transportPriorityMap;
-    private final GameCanvas canvas;
-    private final static String GAME_LOOP_THREAD_NAME = "Game loop timer";
+    private final Map<Integer, JMenuItem>  transportPriorityMap;
+    private final GameDrawer               canvas;
+    private final StatisticsTask           statisticsTask;
+    private final Timer                    statisticsTimer;
+    private final Game                     game;
+    private final Timer                    clearInputTimer;
+    private final Timer                    drawingTimer;
 
-    @Option(name="--no-graphics",
-            usage="Run the game without graphics",
-            required=false)
-    boolean headless = false;
+    private boolean      turboModeEnabled = false;
+    private UiState      state;
+    private List<Point>  roadPoints;
+    private boolean      showAvailableSpots;
+    private Point        selectedPoint;
+    private String       previousKeys;
+    private Player       controlledPlayer;
+    private GameMap      map;
 
-    @Option(name="--file", usage="Map file to load")
-    String filename;
-
-    @Option(name="--computer-player-one",
-            usage="Computer player for player one",
-            required=false)
-    String computerPlayerOne;
-
-    @Option(name="--computer-player-two",
-            usage="Computer player for player two",
-            required=false)
-    String computerPlayerTwo;
-
-    @Option(name="--tick",
-            usage="The time (in milliseconds) between each step of the game",
-            required=false)
-    int tick = 30;
-
-    @Option(name="--players",
-            usage="The number of players (defaults to 2)",
-            required=false)
-    int numberOfPlayers = 2;
-
-    @Option(name="--rest-server",
-            usage="Enable REST server for remote players",
-            required=false)
-    boolean enableRestServer = false;
-
-    @Option(name="--port",
-            usage="Port to expose the REST server on",
-            required=false)
-    int port = 8080;
-
-    public App() throws Exception {
+    public App(Game game, GameMap map) throws Exception {
         super();
 
-        /* Create the side panel */
-        sidePanel = new SidePanel();
+        this.game = game;
+        this.map = map;
 
-        /* Create the canvas to draw on */
-        canvas = new GameCanvas(100, 100);
+        roadPoints         = new ArrayList<>();
+        showAvailableSpots = false;
+        clearInputTimer    = new Timer("Clear input timer");
 
-        /* Connect the side panel with the canvas */
-        sidePanel.setCommandListener(canvas);
-
-        /* Add the canvas and the sidepanel */
-        getContentPane().add(canvas);
-        getContentPane().add(sidePanel, BorderLayout.EAST);
-
-        /* Create window menu */
-        materialMenuItemMap = new HashMap<>();
-        transportPriorityMap = new HashMap<>();
-
-        setJMenuBar(createMenuBar());
-
-        /* Set title to "Settlers 2" */
-        setTitle("Settlers 2");
-    }
-
-    void setSpeed(int tick) {
-        canvas.setSpeed(tick);
-    }
-
-    public void start() throws Exception {
+        previousKeys = "";
 
         /* Set the default size of the window */
         setSize(600, 500);
@@ -190,46 +116,36 @@ public class App extends JFrame {
         /* Exit if the window is closed */
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        /* Show the window early so we can calculate the width and height ratio */
-        if (!headless) {
-            setVisible(true);
-        } else {
-            System.out.println("Graphics are disabled.");
-        }
+        /* Create the side panel */
+        sidePanel = new SidePanel(this);
 
-        /* Start the drawing thread */
+        /* Create the canvas to draw on */
+        canvas = new GameDrawer(map, this);
 
+        /* Connect the side panel with the canvas */
+        sidePanel.setCommandListener(this);
 
-        /* Create the starting position */
-        canvas.prepareGame();
+        /* Add the canvas and the sidepanel */
+        getContentPane().add(canvas);
+        getContentPane().add(sidePanel, BorderLayout.EAST);
 
-        /* Start computer players if they have been configured */
-        System.out.println("Computer player one: " + computerPlayerOne);
-        System.out.println("Computer player two: " + computerPlayerTwo);
-        List<Player> players = canvas.getPlayers();
+        /* Create window menu */
+        materialMenuItemMap = new HashMap<>();
+        transportPriorityMap = new HashMap<>();
 
-        if (computerPlayerOne != null) {
-            canvas.setControlledPlayer(players.get(0));
-            canvas.enableComputerPlayer(PlayerType.playerTypeFromString(computerPlayerOne));
-        }
+        /* Create timers and tasks */
+        statisticsTask  = new StatisticsTask(map, controlledPlayer);
+        statisticsTimer = new Timer("Statistics timer");
+        drawingTimer    = new Timer("Drawing timer");
 
-        if (computerPlayerTwo != null) {
-            canvas.setControlledPlayer(players.get(1));
-            canvas.enableComputerPlayer(PlayerType.playerTypeFromString(computerPlayerTwo));
-        }
+        setJMenuBar(createMenuBar());
+        setTitle(TITLE);
 
-        /* Set the tick if it has been configured */
-        canvas.setTick(tick);
+        /* Show the window */
+        setVisible(true);
 
-        /* Start REST server if configured to */
-        if (enableRestServer) {
-            RestServer restServer = new RestServer(canvas.map, port, this);
-            restServer.setGameSpeed(tick);
-            restServer.startServer();
-        }
-
-        /* Start the game */
-        canvas.startGame();
+        /* Initial state is UiState.IDLE */
+        state = UiState.IDLE;
     }
 
     private JMenuBar createMenuBar() {
@@ -270,989 +186,491 @@ public class App extends JFrame {
         return menubar;
     }
 
+    @Override
+    public void onSaveTroubleshootingInformation() {
+
+        /* Save snapshots for each player */
+        try {
+            canvas.writeSnapshots();
+        } catch (Exception ex1) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
+        }
+    }
+
+    void onGamePointHovered(Point point) {
+        canvas.setHoveringSpot(point);
+    }
+
+    public void setTick(int tick) {
+        game.setSpeed(tick);
+    }
+
+    void onGamePointClicked(Point p) {
+        try {
+            if (state == UiState.BUILDING_ROAD) {
+
+                if (map.isFlagAtPoint(p)) {
+
+                    addRoadPoint(p);
+                    map.placeRoad(controlledPlayer, roadPoints);
+
+                    setState(UiState.IDLE);
+                } else if (!map.isRoadAtPoint(p)) {
+                    addRoadPoint(p);
+                }
+            } else if (state == UiState.IDLE) {
+                selectPoint(p);
+
+                setState(UiState.POINT_SELECTED);
+            } else if (state == UiState.POINT_SELECTED) {
+                selectPoint(p);
+
+                setState(UiState.POINT_SELECTED);
+            }
+        } catch (Exception ex) {
+            roadPoints.clear();
+            setState(UiState.IDLE);
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void setMap(GameMap map) {
+        this.map = map;
+
+        sidePanel.setMap(map);
+        canvas.setMap(map);
+        statisticsTask.setMap(map);
+    }
+
+    @Override
+    public void onGameStarted() {
+
+        setControlledPlayer(map.getPlayers().get(0));
+
+        statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
+
+        /* Start the drawing timer */
+        drawingTimer.schedule(new DrawerTask(), 17, 17);
+    }
+
+    void startRoad(Point p) {
+
+        if (state != UiState.POINT_SELECTED) {
+            return;
+        }
+
+        roadPoints.clear();
+
+        addRoadPoint(p);
+
+        state = UiState.BUILDING_ROAD;
+
+        System.out.println("Started road");
+    }
+
+    private void addRoadPoint(Point point) {
+        if (roadPoints.isEmpty()) {
+            roadPoints.add(point);
+        } else {
+            Point last = getLastSelectedWayPoint();
+
+            if (!point.isAdjacent(last)) {
+                List<Point> pointsBetween = map.findAutoSelectedRoad(controlledPlayer, last, point, roadPoints);
+
+                boolean firstRun = true;
+
+                for (Point p : pointsBetween) {
+                    if (firstRun) {
+                        firstRun = false;
+                        continue;
+                    }
+
+                    roadPoints.add(p);
+                }
+            } else {
+                roadPoints.add(point);
+            }
+        }
+    }
+
+    List<Point> getRoadPoints() {
+        return this.roadPoints;
+    }
+
+    private void placeBuilding(Player player, HouseType houseType, Point p) throws Exception {
+
+        Building b = BuildingFactory.createBuilding(player, houseType);
+
+        if (b == null) {
+            throw new Exception("Can't build " + houseType);
+        }
+
+        map.placeBuilding(b, p);
+
+        System.out.println("Placing " + houseType + " at " + selectedPoint);
+    }
+
+    public void resetGame() throws Exception {
+
+        game.resetGame();
+
+        setState(UiState.IDLE);
+
+        repaint();
+    }
+
+    private void setState(UiState uiState) {
+        System.out.println("State change: " + state + " --> " + uiState);
+        state = uiState;
+    }
+
+    private void selectPoint(Point p) throws Exception {
+        selectedPoint = p;
+
+        sidePanel.setSelectedPoint(p);
+
+        requestFocus();
+    }
+
+    public void toggleTurbo() {
+        turboModeEnabled = !turboModeEnabled;
+
+        if (turboModeEnabled) {
+            game.setSpeed(1);
+        } else {
+            game.setSpeed(game.DEFAULT_TICK);
+        }
+    }
+
+    private Point getLastSelectedWayPoint() {
+        return roadPoints.get(roadPoints.size() - 1);
+    }
+
+    private void addBonusResourcesForPlayer(Player controlledPlayer) throws Exception {
+        Building headquarter = null;
+
+        /* Find headquarter */
+        for (Building b : controlledPlayer.getBuildings()) {
+            if (b instanceof Headquarter) {
+                headquarter = b;
+
+                break;
+            }
+        }
+
+        /* Fill headquarter with bonus resources */
+        if (headquarter != null) {
+            fillStorageWithMaterial(headquarter, WOOD,    100);
+            fillStorageWithMaterial(headquarter, PLANCK,  100);
+            fillStorageWithMaterial(headquarter, STONE,   100);
+            fillStorageWithMaterial(headquarter, GOLD,    100);
+            fillStorageWithMaterial(headquarter, COAL,    100);
+            fillStorageWithMaterial(headquarter, COIN,    100);
+            fillStorageWithMaterial(headquarter, FISH,    100);
+            fillStorageWithMaterial(headquarter, WHEAT,   100);
+            fillStorageWithMaterial(headquarter, FLOUR,   100);
+            fillStorageWithMaterial(headquarter, MEAT,    100);
+            fillStorageWithMaterial(headquarter, GENERAL, 100);
+        }
+    }
+
+    private void fillStorageWithMaterial(Building headquarter, Material material, int amount) throws Exception {
+        for (int i = 0; i < amount; i++) {
+            headquarter.putCargo(new Cargo(material, map));
+        }
+    }
+
+    public void setControlledPlayer(Player player) {
+        System.out.println("Changed control to " + player);
+
+        controlledPlayer = player;
+
+        sidePanel.setPlayer(player);
+        statisticsTask.setControlledPlayer(controlledPlayer);
+        canvas.setControlledPlayer(player);
+
+        centerOn(controlledPlayer);
+    }
+
+    public void enableComputerPlayer(PlayerType type) {
+        System.out.println("Enabling " + type.name() + "computer player for " + controlledPlayer.getName());
+        game.enableComputerPlayer(controlledPlayer, type);
+    }
+
+    public void dumpRecording() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    boolean showAvailableSpots() {
+        return showAvailableSpots;
+    }
+
     private enum UiState {
         IDLE, BUILDING_ROAD, POINT_SELECTED
     }
 
-    class GameCanvas extends JPanel implements MouseListener, KeyListener, CommandListener, MouseWheelListener, ComponentListener {
-        private static final long serialVersionUID = 1L;
+    void onGamePointDoubleClicked(Point point) {
+        try {
+            if (state == UiState.IDLE || state == UiState.POINT_SELECTED) {
+                if (map.isFlagAtPoint(point)) {
+                        startRoad(point);
 
-        private final static int INPUT_CLEAR_DELAY = 5000;
-        private final static int DEFAULT_TICK = 100;
-        private final static int STATS_PERIOD = 10000;
-
-        private final List<ComputerPlayer> computerPlayers;
-        private final ScenarioCreator      creator;
-        private final int                  widthInPoints;
-        private final int                  heightInPoints;
-        private final Timer                clearInputTimer;
-        private final Timer                statisticsTimer;
-        private final Timer                drawingTimer;
-
-        private Timer                gameLoopTimer;
-        private UiState              state;
-        private List<Point>          roadPoints;
-        private boolean              showAvailableSpots;
-        private Point                selectedPoint;
-        private int                  tick;
-        private String               previousKeys;
-        private GameDrawer           gameDrawer;
-        private boolean              turboModeEnabled;
-        private Player               controlledPlayer;
-        private java.awt.Point       dragStarted;
-        private GameMap              map;
-
-        public GameCanvas(int w, int h) throws Exception {
-            super();
-
-            computerPlayers    = new ArrayList<>();
-            widthInPoints      = w;
-            heightInPoints     = h;
-            tick               = 250;
-            turboModeEnabled   = false;
-            roadPoints         = new ArrayList<>();
-            showAvailableSpots = false;
-            creator            = new ScenarioCreator();
-            clearInputTimer    = new Timer("Clear input timer");
-            gameLoopTimer      = new Timer(GAME_LOOP_THREAD_NAME);
-            statisticsTimer    = new Timer("Statistics timer");
-            drawingTimer       = new Timer("Drawing timer");
-            dragStarted        = new java.awt.Point(0, 0);
-
-            /* Create the game drawer with the right size of the playing field */
-            gameDrawer = new GameDrawer(w, h, 40, 40);
-
-            /* Create the initial game board */
-            resetGame();
-
-            /* Create listener */
-            setFocusable(true);
-            requestFocusInWindow();
-
-            addMouseListener(this);
-            addKeyListener(this);
-            addMouseWheelListener(this);
-            addComponentListener(this);
-
-            previousKeys = "";
-            
-            /* Add action listeners */
-            addComponentListener(new ComponentAdapter() {
-
-                @Override
-                public void componentResized(ComponentEvent evt) {                    
-                    gameDrawer.recalculateScale(getWidth(), getHeight());
-                }
-            });
-
-            addMouseMotionListener(new MouseMotionAdapter() {
-
-                @Override
-                public void mouseMoved(MouseEvent me) {
-
-                    /* Get point the mouse hovers over on the game map */
-                    Point point = gameDrawer.screenPointToGamePoint(new java.awt.Point(me.getX(), me.getY()));
-
-                    /* Update the hovering spot in the game drawer */
-                    gameDrawer.setHoveringSpot(point);
-                }
-
-                @Override
-                public void mouseDragged(MouseEvent me) {
-
-                    /* Get the new point in surface coordinates */
-                    java.awt.Point dropPoint = me.getPoint();
-
-                    /* Determine the change from the original point */
-                    int changeX = dropPoint.x - dragStarted.x;
-                    int changeY = dropPoint.y - dragStarted.y;
-
-                    dragStarted = dropPoint;
-
-                    gameDrawer.move(changeX, changeY);
-                }
-            });
-
-            /* Initial state is UiState.IDLE */
-            state = UiState.IDLE;
-
-            setVisible(true);
-
-            /* Start the drawing timer */
-            if (!headless) {
-                drawingTimer.schedule(new DrawerTask(), 17, 17);
-            } else {
-                System.out.println("Skipping drawing thread.");
-            }
-
-            requestFocus();
-        }
-
-        private boolean isDoubleClick(MouseEvent me) {
-            return me.getClickCount() > 1;
-        }
-
-        @Override
-        public void toggleTurbo() {
-            turboModeEnabled = !turboModeEnabled;
-
-            if (turboModeEnabled) {
-                setSpeed(1);
-            } else {
-                setSpeed(DEFAULT_TICK);
-            }
-        }
-
-        public void setSpeed(int tick) {
-            this.tick = tick;
-
-            /* Update the timer */
-            gameLoopTimer.cancel();
-            gameLoopTimer = new Timer(GAME_LOOP_THREAD_NAME);
-            gameLoopTimer.schedule(new GameLoopTask(), tick, tick);
-        }
-
-        private void writeSnapshots() throws Exception {
-            String name = "Snapshot-" + Calendar.getInstance().getTime().toString();
-
-            /* Write an image to file for each player */
-            for (Player player : map.getPlayers()) {
-
-                /* Create an image to draw on */
-                BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
-
-                Graphics2D graphics = bi.createGraphics();
-
-                /* Draw the scene for the player */
-                gameDrawer.drawScene(graphics, controlledPlayer, null, null, false);
-
-                /* Write the image to a file */
-                File outputfile = new File(name + "-" + player.getName() + ".png");
-
-                ImageIO.write(bi, "png", outputfile);
-
-                System.out.println("Wrote scene to " + outputfile.getAbsolutePath());
-            }
-        }
-
-        private void startRoad(Point p) throws Exception {
-
-            if (!roadPoints.isEmpty()) {
-                throw new Exception("Already building a road, can't start a new one");
-            }
-
-            addRoadPoint(p);
-
-            System.out.println("Started road");
-        }
-        
-        private void buildRoad(List<Point> wayPoints) throws Exception {
-            
-            Road r = map.placeRoad(controlledPlayer, wayPoints);
-
-            roadPoints = new ArrayList<>();
-
-            System.out.println("Built road (" + wayPoints + ")");
-        }
-
-        private void addRoadPoint(Point point) {
-            if (roadPoints.isEmpty()) {
-                roadPoints.add(point);
-            } else {
-                Point last = getLastSelectedWayPoint();
-
-                if (!point.isAdjacent(last)) {
-                    List<Point> pointsBetween = map.findAutoSelectedRoad(controlledPlayer, last, point, roadPoints);
-                    
-                    boolean firstRun = true;
-                    
-                    for (Point p : pointsBetween) {
-                        if (firstRun) {
-                            firstRun = false;
-                            continue;
-                        }
-
-                        roadPoints.add(p);
-                    }
+                        setState(UiState.BUILDING_ROAD);
                 } else {
-                    roadPoints.add(point);
+                    map.placeFlag(controlledPlayer, point);
+
+                    setState(UiState.IDLE);
                 }
-            }
-        }
-
-        private Point getLastSelectedWayPoint() {
-            return roadPoints.get(roadPoints.size() - 1);
-        }
-
-        @Override
-        public void keyPressed(KeyEvent ke) {}
-
-        @Override
-        public void keyTyped(KeyEvent ke) {            
-            char key = ke.getKeyChar();
-            boolean keepPreviousKeys = false;
-            
-            previousKeys += key;
-            
-            try {
-                if (previousKeys.equals(" ")) {
-                    System.out.println("Toggle show available spots");
-
-                    showAvailableSpots = !showAvailableSpots;
-                } else if (previousKeys.equals("+")) {
-                    gameDrawer.zoomIn(1);
-                } else if (previousKeys.equals("-")) {
-                    gameDrawer.zoomOut(1);
-                } else if (previousKeys.equals("A")) {
-                    if (map.isBuildingAtPoint(selectedPoint) && !controlledPlayer.isWithinBorder(selectedPoint)) {
-                        attackHouse(selectedPoint);
-                    }
-                } else if (previousKeys.equals("B")) {
-                    addBonusResourcesForPlayer(controlledPlayer);
-                } else if (previousKeys.equals("bak")) {
-                    placeBuilding(controlledPlayer, BAKERY, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("bar")) {
-                    placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("C")) {
-                    enableComputerPlayer(PlayerType.COMPOSITE_PLAYER);
-                } else if (previousKeys.equals("ca")) {
-                    placeBuilding(controlledPlayer, CATAPULT, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("co")) {
-                    placeBuilding(controlledPlayer, COALMINE, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("d")) {
-                    placeBuilding(controlledPlayer, DONKEY_FARM, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("D")) {
-                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-                } else if (previousKeys.equals("fi")) {
-                    placeBuilding(controlledPlayer, FISHERY, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("fore")) {
-                    placeBuilding(controlledPlayer, HouseType.FORESTER, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("fort")) {
-                    placeBuilding(controlledPlayer, FORTRESS, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("fa")) {
-                    placeBuilding(controlledPlayer, FARM, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("go")) {
-                    placeBuilding(controlledPlayer, GOLDMINE, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("gr")) {
-                    placeBuilding(controlledPlayer, GRANITEMINE, selectedPoint);
-                } else if (previousKeys.equals("gu")) {
-                    placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("h")) {
-                    placeBuilding(controlledPlayer, HUNTER_HUT, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("i")) {
-                    placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
-                } else if (previousKeys.equals("mil")) {
-                    placeBuilding(controlledPlayer, MILL, selectedPoint);
-                } else if (previousKeys.equals("min")) {
-                    placeBuilding(controlledPlayer, MINT, selectedPoint);
-                } else if (previousKeys.equals("p")) {
-                    placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("S")) {
-                    writeSnapshots();
-                } else if (previousKeys.equals("sa")) {
-                    placeBuilding(controlledPlayer, SAWMILL, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("sl")) {
-                    placeBuilding(controlledPlayer, SLAUGHTER_HOUSE, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("T")) {
-                    toggleTurbo();
-                } else if (previousKeys.equals("wa")) {
-                    placeBuilding(controlledPlayer, WATCH_TOWER, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("we")) {
-                    placeBuilding(controlledPlayer, WELL, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (previousKeys.equals("wo")) {
-                    placeBuilding(controlledPlayer, WOODCUTTER, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (key == 'q') {
-                    placeBuilding(controlledPlayer, QUARRY, selectedPoint);
-                    setState(UiState.IDLE);
-                } else if (key == 'R') {
-                    resetGame();
-                } else if (key == 'X') {
-                    ((GameMapRecordingAdapter)map).recordMarker();
-                    System.out.println("Added marker to api recording");
-                } else if (key == KeyEvent.VK_ESCAPE) {
-                    System.out.println("Resetting state to idle");
-
-                    setState(UiState.IDLE);
-
-                    previousKeys = "";
-
-                    roadPoints.clear();
-                } else {
-                    keepPreviousKeys = true;
-
-                    setTitle("Settlers 2 (" + previousKeys +")");
-                
-                    clearInputTimer.purge();
-                    
-                    clearInputTimer.schedule(new ClearInputTask(), INPUT_CLEAR_DELAY);
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            if (!keepPreviousKeys) {
-                previousKeys = "";
-                setTitle("Settlers 2");
-            }
-        }
-
-        @Override
-        public void attackHouse(Point selectedPoint) {
-
-            try {
-                /* Find building to attack */
-                Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
-
-                /* Order attack */
-                int attackers = controlledPlayer.getAvailableAttackersForBuilding(buildingToAttack);
-                
-                controlledPlayer.attack(buildingToAttack, attackers);
-                
-                ((GameMapRecordingAdapter)map).recordAttack(controlledPlayer, buildingToAttack);
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-
-        @Override
-        public void evacuate(Point selectedPoint) throws Exception {
-
-            /* Find military building to evacuate */
-            Building building = map.getBuildingAtPoint(selectedPoint);
-
-            /* Order evacuation */
-            building.evacuate();
-        }
-
-        @Override
-        public void cancelEvacuation(Point selectedPoint) {
-
-            /* Find military building to re-populate */
-            Building building = map.getBuildingAtPoint(selectedPoint);
-
-            /* Order re-population */
-            building.cancelEvacuation();
-        }
-
-        private void addBonusResourcesForPlayer(Player controlledPlayer) throws Exception {
-            Building headquarter = null;
-
-            /* Find headquarter */
-            for (Building b : controlledPlayer.getBuildings()) {
-                if (b instanceof Headquarter) {
-                    headquarter = b;
-
-                    break;
-                }
-            }
-
-            /* Fill headquarter with bonus resources */
-            if (headquarter != null) {
-                fillStorageWithMaterial(headquarter, WOOD,    100);
-                fillStorageWithMaterial(headquarter, PLANCK,  100);
-                fillStorageWithMaterial(headquarter, STONE,   100);
-                fillStorageWithMaterial(headquarter, GOLD,    100);
-                fillStorageWithMaterial(headquarter, COAL,    100);
-                fillStorageWithMaterial(headquarter, COIN,    100);
-                fillStorageWithMaterial(headquarter, FISH,    100);
-                fillStorageWithMaterial(headquarter, WHEAT,   100);
-                fillStorageWithMaterial(headquarter, FLOUR,   100);
-                fillStorageWithMaterial(headquarter, MEAT,    100);
-                fillStorageWithMaterial(headquarter, GENERAL, 100);
-            }
-        }
-
-        private void fillStorageWithMaterial(Building headquarter, Material material, int amount) throws Exception {
-            for (int i = 0; i < amount; i++) {
-                headquarter.putCargo(new Cargo(material, map));
-            }
-        }
-
-        @Override
-        public void stopCoins(Point selectedPoint) {
-
-            /* Find building to stop coin delivery to */
-            Building b = map.getBuildingAtPoint(selectedPoint);
-
-            /* Stop coin delivery */
-            b.disablePromotions();
-        }
-
-        @Override
-        public void startCoins(Point selectedPoint) {
-
-            /* Find building to resume coin delivery to */
-            Building b = map.getBuildingAtPoint(selectedPoint);
-
-            /* Resume coin delivery */
-            b.enablePromotions();
-        }
-
-        @Override
-        public void setControlledPlayer(Player player) {
-            System.out.println("Changed control to " + player);
-
-            controlledPlayer = player;
-
-            sidePanel.setPlayer(player);
-            gameDrawer.centerOn(controlledPlayer);
-        }
-
-        @Override
-        public void enableComputerPlayer(PlayerType type) {
-            ComputerPlayer existingPlayer = null;
-
-            for (ComputerPlayer player : computerPlayers) {
-                if (player.getControlledPlayer().equals(controlledPlayer)) {
-                    existingPlayer = player;
-                }
-            }
-
-            if (existingPlayer != null) {
-                System.out.println("Replacing active computer player");
-
-                computerPlayers.remove(existingPlayer);
-            }
-
-            System.out.println("Enabling " + type.name() + "computer player for " + controlledPlayer.getName());
-
-            switch (type) {
-            case BUILDING:
-                computerPlayers.add(new ConstructionPreparationPlayer(controlledPlayer, map));
-                break;
-            case EXPANDING:
-                computerPlayers.add(new ExpandLandPlayer(controlledPlayer, map));
-                break;
-            case ATTACKING:
-                computerPlayers.add(new AttackPlayer(controlledPlayer, map));
-                break;
-            case MINERALS:
-                computerPlayers.add(new SearchForMineralsPlayer(controlledPlayer, map));
-                break;
-            case FOOD_PRODUCER:
-                computerPlayers.add(new FoodProducer(controlledPlayer, map));
-                break;
-            case COIN_PRODUCER:
-            	computerPlayers.add(new CoinProducer(controlledPlayer, map));
-            	break;
-            case MILITARY_PRODUCER:
-            	computerPlayers.add(new MiltaryProducer(controlledPlayer, map));
-                break;
-            case COMPOSITE_PLAYER:
-                computerPlayers.add(new CompositePlayer(controlledPlayer, map));
-            }
-        }
-
-        @Override
-        public void componentResized(ComponentEvent ce) {}
-
-        @Override
-        public void componentMoved(ComponentEvent ce) {}
-
-        @Override
-        public void componentShown(ComponentEvent ce) {}
-
-        @Override
-        public void componentHidden(ComponentEvent ce) {}
-
-        private void prepareGame() throws Exception {
-
-            /* Create the initial terrain and player positions */
-            resetGame();
-        }
-
-        private void startGame() {
-
-            /* Start the statistics collection */
-            TimerTask statisticsTask = new StatisticsTask();
-
-            statisticsTimer.schedule(statisticsTask, STATS_PERIOD, STATS_PERIOD);
-
-            /* Start game tick */
-            TimerTask task = new GameLoopTask();
-
-            if (tick == 0) {
-                while (true) {
-                    task.run();
-                }
-            } else {
-                gameLoopTimer.schedule(task, tick, tick);
-            }
-        }
-
-        @Override
-        public List<Player> getPlayers() {
-            return map.getPlayers();
-        }
-
-        @Override
-        public void setTick(int tick) {
-            this.tick = tick;
-        }
-
-        private class DrawerTask extends TimerTask {
-
-            @Override
-            public void run() {
-                repaint();
-            }
-
-        }
-        private class StatisticsTask extends TimerTask {
-
-            @Override
-            public void run() {
-                synchronized (map) {
-                    for (Map.Entry<Material, Integer> pair : 
-                        controlledPlayer.getInventory().entrySet()) {
-                        Material m     = pair.getKey();
-                        int amount     = pair.getValue();
-                        JMenuItem item = materialMenuItemMap.get(m);
-
-                        item.setEnabled(amount > 0);
-                        item.setText(m.name() + ": " + amount);
-                        item.updateUI();
-                    }
-
-                    int i = 0;
-                    for (Material m : controlledPlayer.getTransportPriorityList()) {
-                        JMenuItem item = transportPriorityMap.get(i);
-
-                        item.setText(m.name() + " (" + controlledPlayer.getInventory().get(m) + ")");
-                        item.updateUI();
-
-                        i++;
-                    }
-                }
-            }
-        }
-
-        private class GameLoopTask extends TimerTask {
-
-            @Override
-            public void run() {
-
-                /* Call any computer players if available */
-                for (ComputerPlayer computerPlayer : computerPlayers) {
-                    try {
-                        synchronized (map) {
-                            computerPlayer.turn();
-                        }
-                    } catch (Exception ex) {
-
-                        printTroubleshootingInformation(ex);
-
-                        System.exit(1);
-                    }
+            } else if (state == UiState.BUILDING_ROAD) {
+                map.placeFlag(controlledPlayer, point);
+
+                if (!point.equals(roadPoints.get(roadPoints.size() - 1))) {
+                    addRoadPoint(point);
                 }
 
-                /* Run the game logic one more step */
-                try {
-                    synchronized(map) {
-                        map.stepTime();
-                    }
-                } catch (Exception ex) {
+                map.placeRoad(controlledPlayer, roadPoints);
 
-                    /* Print API recording to make the fault reproducable */
-                    try {
-                        ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-                    } catch (Exception e) {
-
-                    }
-
-                    if (!headless) {
-                        try {
-                            writeSnapshots();
-                        } catch (Exception ex1) {
-                            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
-                        }
-                    }
-
-                    printTroubleshootingInformation(ex);
-
-                    System.exit(1);
-                }
-            }
-
-            private void printTroubleshootingInformation(Exception ex) {
-                /* Print API recording to make the fault reproducable */
-                try {
-                    ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-                } catch (Exception e) {}
-                
-                for (Flag flag : map.getFlags()) {
-                    System.out.println("FLAG: " + flag.getPosition());
-                }
-                
-                for (Road road : map.getRoads()) {
-                    System.out.println("" + road.getWayPoints());
-                }
-                
-                for (Building building : map.getBuildings()) {
-                    System.out.println("" + building.getClass() + " " + building.getPosition());
-                }
-                
-                /* Save snapshots for each player */
-                if (!headless) {
-                    try {
-                        writeSnapshots();
-                    } catch (Exception ex1) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex1);
-                    }
-                }
-                
-                /* Print exception and backtrace */
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-
-        private class ClearInputTask extends TimerTask {
-
-            @Override
-            public void run() {
-                previousKeys = "";
-
-                setTitle("Settlers 2");
-            }
-        }
-
-        @Override
-        public void keyReleased(KeyEvent ke) {}
-
-        @Override
-        public void placeFlag(Point p) throws Exception {
-
-            Flag flag = map.placeFlag(controlledPlayer, p);
-
-            System.out.println("Placed flag at " + p);
-        }
-
-        @Override
-        public void placeBuilding(HouseType type, Point p) throws Exception {
-            placeBuilding(controlledPlayer, type, p);
-        }
-
-        private void placeBuilding(Player player, HouseType houseType, Point p) throws Exception {
-
-            Building b = BuildingFactory.createBuilding(player, houseType);
-
-            if (b == null) {
-                throw new Exception("Can't build " + houseType);
-            }
-
-            map.placeBuilding(b, p);
-
-            System.out.println("Placing " + houseType + " at " + selectedPoint);
-        }
-
-        @Override
-        public void resetGame() throws Exception {
-            computerPlayers.clear();
-
-            if (map != null) {
-                ((GameMapRecordingAdapter)map).clear();
-            }
-
-            setState(UiState.IDLE);
-
-            /* Create players */
-            Player player0 = new Player("Player 0", BLUE);
-            Player player1 = new Player("Player 1", ORANGE);
-
-            List<Player> players = new LinkedList<>();
-
-            players.add(player0);
-            players.add(player1);
-
-            /* Choose the player to control */
-            controlledPlayer = player0;
-
-            sidePanel.setPlayer(controlledPlayer);
-
-            /* Create game map */
-            map = new GameMapRecordingAdapter(players, widthInPoints, heightInPoints);
-
-            if (filename != null) {
-                MapLoader mapLoader = new MapLoader();
-                MapFile mf = mapLoader.loadMapFromFile(filename);
-                map = mapLoader.convertMapFileToGameMap(mf);
-                map.setPlayers(players);
-            } else {
-
-                /* Create the terrain */
-                creator.createInitialTerrain(map);
-            }
-
-            sidePanel.setMap(map);
-
-            gameDrawer.setMap(map);
-            gameDrawer.centerOn(controlledPlayer);
-
-            if (map.getStartingPoints() == null ||
-                map.getStartingPoints().isEmpty()) {
-
-                System.out.println("Placing players old-fashioned style");
-
-                /* Place player to be controlled */
-                if (numberOfPlayers > 0) {
-                    creator.placeInitialPlayer(player0, map);
-                }
-
-                /* Place the opponent */
-                if (numberOfPlayers > 1) {
-                    creator.placeOpponent(player1, map);
-                }
-            } else {
-                try {
-                    System.out.println("Placing players using starting points from map");
-                    if (numberOfPlayers > 0) {
-                        map.placeBuilding(new Headquarter(player0), map.getStartingPoints().get(0));
-                    }
-
-                    if (numberOfPlayers > 1) {
-                        map.placeBuilding(new Headquarter(player1), map.getStartingPoints().get(1));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace(System.out);
-                }
-            }
-
-            repaint();
-        }
-
-        private void setState(UiState uiState) {
-            System.out.println("State change: " + state + " --> " + uiState);
-            state = uiState;            
-        }
-
-        private void selectPoint(Point p) throws Exception {
-            selectedPoint = p;
-
-            sidePanel.setSelectedPoint(p);
-
-            requestFocus();
-        }
-
-        @Override
-        public void paintComponent(Graphics graphics) {
-
-            /* Start with a black background */
-            graphics.setColor(BLACK);
-            graphics.fillRect(0, 0, getWidth(), getHeight());
-
-            /* Draw the scene */
-            try {
-                gameDrawer.drawScene((Graphics2D)graphics, controlledPlayer, selectedPoint, roadPoints, showAvailableSpots);
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        
-        @Override
-        public void mouseClicked(MouseEvent me) {
-
-            /* Translate the screen coordinates to a point in the game */
-            Point p = gameDrawer.screenPointToGamePoint(me.getPoint());
-            System.out.println("Clicked at gamepoint: " + p);
-            try {
-                if (isDoubleClick(me)) {
-                    if (state == UiState.IDLE || state == UiState.POINT_SELECTED) {
-                        if (map.isFlagAtPoint(p)) {
-                            startRoad(p);
-
-                            setState(UiState.BUILDING_ROAD);
-                        } else {
-                            placeFlag(p);
-                            
-                            setState(UiState.IDLE);
-                        }
-                    } else if (state == UiState.BUILDING_ROAD) {                        
-                        placeFlag(p);
-
-                        if (!p.equals(roadPoints.get(roadPoints.size() - 1))) {
-                            addRoadPoint(p);
-                        }
-
-                        buildRoad(roadPoints);
-        
-                        setState(UiState.IDLE);
-                    }
-                }
-
-                if (!isDoubleClick(me)) {
-                    if (state == UiState.BUILDING_ROAD) {
-
-                        if (map.isFlagAtPoint(p)) {
-
-                            addRoadPoint(p);
-                            buildRoad(roadPoints);
-                            
-                            setState(UiState.IDLE);
-                        } else if (!map.isRoadAtPoint(p)) {
-                            addRoadPoint(p);
-                        }
-                    } else if (state == UiState.IDLE) {
-                        selectPoint(p);
-                        
-                        setState(UiState.POINT_SELECTED);
-                    } else if (state == UiState.POINT_SELECTED) {
-                        if (me.getSource().equals(this)) {
-                            selectPoint(p);
-
-                            setState(UiState.POINT_SELECTED);
-                        }
-                    }
-                }
-                repaint();
-            } catch (Exception ex) {
-                roadPoints.clear();
                 setState(UiState.IDLE);
-                repaint();
             }
-        }
-
-        @Override
-        public void mousePressed(MouseEvent me) {
-
-            /* Remember the point in case this is the start of dragging operation
-               NOTE: The point is adjusted to the surface */
-            dragStarted = me.getPoint();
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent me) {}
-
-        @Override
-        public void mouseEntered(MouseEvent me) {}
-
-        @Override
-        public void mouseExited(MouseEvent me) {}
-
-        @Override
-        public void dumpRecording() {
-            ((GameMapRecordingAdapter)map).printRecordingOnConsole();
-        }
-
-        @Override
-        public void startRoadCommand(Point selectedPoint) {
-            if (state != UiState.POINT_SELECTED) {
-                return;
-            }
-            
-            try {
-                startRoad(selectedPoint);
-                
-                state = UiState.BUILDING_ROAD;
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-
-        @Override
-        public void removeFlagCommand(Point selectedPoint) throws Exception {
-            Flag flag = map.getFlagAtPoint(selectedPoint);
-
-            map.removeFlag(flag);
-        }
-
-        @Override
-        public void removeHouseCommand(Point selectedPoint) throws Exception {
-            Building b = map.getBuildingAtPoint(selectedPoint);
-
-            ((GameMapRecordingAdapter)map).recordTearDown(b);
-
-            b.tearDown();
-
-            System.out.println("Removed " + b);
-        }
-
-        @Override
-        public void removeRoadAtPoint(Point selectedPoint) throws Exception {
-            Road r = map.getRoadAtPoint(selectedPoint);
-
-            map.removeRoad(r);
-        }
-
-        @Override
-        public void callGeologist(Point selectedPoint) throws Exception {
-            Flag flag = map.getFlagAtPoint(selectedPoint);
-
-            ((GameMapRecordingAdapter)map).recordCallGeologistFromFlag(flag);
-
-            flag.callGeologist();
-        }
-
-        @Override
-        public void stopProduction(Point selectedPoint) throws Exception {
-            Building b = map.getBuildingAtPoint(selectedPoint);
-
-            if (b.isProductionEnabled()) {
-                b.stopProduction();
-            } else {
-                b.resumeProduction();
-            }
-        }
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent mwe) {
-
-            try {
-                int notches = mwe.getWheelRotation();
-                if (notches < 0) {
-                    gameDrawer.zoomIn(notches);
-                } else {
-                    gameDrawer.zoomOut(notches);
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            repaint();
-        }
-
-        @Override
-        public void callScout(Point selectedPoint) throws Exception {
-            Flag flag = map.getFlagAtPoint(selectedPoint);
-
-            flag.callScout();
-
-            ((GameMapRecordingAdapter)map).recordCallScoutFromFlag(flag);
+        } catch (Exception ex) {
+            roadPoints.clear();
+            setState(UiState.IDLE);
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public static void main(String[] args) {
+    private class ClearInputTask extends TimerTask {
 
-        /* Create the game window */
+        @Override
+        public void run() {
+            previousKeys = "";
+
+            setTitle(TITLE);
+        }
+    }
+
+    private class StatisticsTask extends TimerTask {
+
+        private GameMap map;
+        private Player  player;
+
+        StatisticsTask(GameMap map, Player player) {
+            this.map = map;
+            this.player = player;
+        }
+
+        void setMap(GameMap map) {
+            this.map = map;
+        }
+
+        void setControlledPlayer(Player player) {
+            this.player = player;
+        }
+
+        @Override
+        public void run() {
+            Map<Material, Integer> inventory = new HashMap<>();
+            Map<Integer, String> transport = new HashMap<>();
+
+            synchronized (map) {
+                for (Map.Entry<Material, Integer> pair : player.getInventory().entrySet()) {
+                    Material m     = pair.getKey();
+                    int amount     = pair.getValue();
+
+                    inventory.put(m, amount);
+                }
+
+                int i = 0;
+                for (Material m : player.getTransportPriorityList()) {
+                    transport.put(i, m.name() + " (" + player.getInventory().get(m) + ")");
+                }
+            }
+
+            for (Map.Entry<Material, Integer> pair : inventory.entrySet()) {
+                Material m = pair.getKey();
+                int amount = pair.getValue();
+
+                JMenuItem item = materialMenuItemMap.get(m);
+
+                item.setEnabled(amount > 0);
+                item.setText(m.name() + ": " + amount);
+                item.updateUI();
+            }
+
+            int i = 0;
+            for (Material m : Material.values()) {
+                    JMenuItem item = transportPriorityMap.get(i);
+
+                    item.setText(transport.get(i));
+                    item.updateUI();
+
+                    i++;
+            }
+        }
+    }
+
+    public void keyTyped(KeyEvent ke) {
+        char key = ke.getKeyChar();
+        boolean keepPreviousKeys = false;
+
+        previousKeys += key;
+
         try {
+            if (previousKeys.equals(" ")) {
+                System.out.println("Toggle show available spots");
 
-            /* Read the map filename if there is one */
-            App app = new App();
-            CmdLineParser parser = new CmdLineParser(app);
+                showAvailableSpots = !showAvailableSpots;
+            } else if (previousKeys.equals("+")) {
+                canvas.zoomIn(1);
+            } else if (previousKeys.equals("-")) {
+                canvas.zoomOut(1);
+            } else if (previousKeys.equals("A")) {
+                if (map.isBuildingAtPoint(selectedPoint) && !controlledPlayer.isWithinBorder(selectedPoint)) {
+                    /* Find building to attack */
+                    Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
 
-            parser.parseArgument(args);
+                    /* Order attack */
+                    int attackers = controlledPlayer.getAvailableAttackersForBuilding(buildingToAttack);
 
-            app.start();
+                    controlledPlayer.attack(buildingToAttack, attackers);
+                }
+            } else if (previousKeys.equals("B")) {
+                addBonusResourcesForPlayer(controlledPlayer);
+            } else if (previousKeys.equals("bak")) {
+                placeBuilding(controlledPlayer, BAKERY, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("bar")) {
+                placeBuilding(controlledPlayer, BARRACKS, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("C")) {
+                enableComputerPlayer(PlayerType.COMPOSITE_PLAYER);
+            } else if (previousKeys.equals("ca")) {
+                placeBuilding(controlledPlayer, CATAPULT, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("co")) {
+                placeBuilding(controlledPlayer, COALMINE, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("d")) {
+                placeBuilding(controlledPlayer, DONKEY_FARM, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("D")) {
+                ((GameMapRecordingAdapter)map).printRecordingOnConsole();
+            } else if (previousKeys.equals("fi")) {
+                placeBuilding(controlledPlayer, FISHERY, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("fore")) {
+                placeBuilding(controlledPlayer, HouseType.FORESTER, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("fort")) {
+                placeBuilding(controlledPlayer, FORTRESS, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("fa")) {
+                placeBuilding(controlledPlayer, FARM, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("go")) {
+                placeBuilding(controlledPlayer, GOLDMINE, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("gr")) {
+                placeBuilding(controlledPlayer, GRANITEMINE, selectedPoint);
+            } else if (previousKeys.equals("gu")) {
+                placeBuilding(controlledPlayer, GUARD_HOUSE, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("h")) {
+                placeBuilding(controlledPlayer, HUNTER_HUT, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("i")) {
+                placeBuilding(controlledPlayer, IRONMINE, selectedPoint);
+            } else if (previousKeys.equals("mil")) {
+                placeBuilding(controlledPlayer, MILL, selectedPoint);
+            } else if (previousKeys.equals("min")) {
+                placeBuilding(controlledPlayer, MINT, selectedPoint);
+            } else if (previousKeys.equals("p")) {
+                placeBuilding(controlledPlayer, PIG_FARM, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("S")) {
+                canvas.writeSnapshots();
+            } else if (previousKeys.equals("sa")) {
+                placeBuilding(controlledPlayer, SAWMILL, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("sl")) {
+                placeBuilding(controlledPlayer, SLAUGHTER_HOUSE, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("T")) {
+                toggleTurbo();
+            } else if (previousKeys.equals("wa")) {
+                placeBuilding(controlledPlayer, WATCH_TOWER, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("we")) {
+                placeBuilding(controlledPlayer, WELL, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (previousKeys.equals("wo")) {
+                placeBuilding(controlledPlayer, WOODCUTTER, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (key == 'q') {
+                placeBuilding(controlledPlayer, QUARRY, selectedPoint);
+                setState(UiState.IDLE);
+            } else if (key == 'R') {
+                resetGame();
+            } else if (key == KeyEvent.VK_ESCAPE) {
+                System.out.println("Resetting state to idle");
+
+                setState(UiState.IDLE);
+
+                previousKeys = "";
+
+                roadPoints.clear();
+            } else {
+                keepPreviousKeys = true;
+
+                setTitle(TITLE + " (" + previousKeys +")");
+
+                clearInputTimer.purge();
+
+                clearInputTimer.schedule(new ClearInputTask(), INPUT_CLEAR_DELAY);
+            }
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            System.exit(1);
+        }
+
+        if (!keepPreviousKeys) {
+            previousKeys = "";
+            setTitle("Settlers 2");
+        }
+    }
+
+    void centerOn(Player controlledPlayer) {
+
+        /* Find the point to center on */
+        Point point = null;
+
+        for (Building b : controlledPlayer.getBuildings()) {
+            if (b instanceof Headquarter) {
+                point = b.getPosition();
+
+                break;
+            }
+
+            if (point == null && b instanceof Storage) {
+                point = b.getPosition();
+            }
+        }
+
+        /* Only center if we know where to center */
+        if (point != null) {
+            canvas.centerOn(point);
+        }
+    }
+
+    Point getSelectedPoint() {
+        return this.selectedPoint;
+    }
+
+    private class DrawerTask extends TimerTask {
+
+        @Override
+        public void run() {
+            repaint();
         }
     }
 }

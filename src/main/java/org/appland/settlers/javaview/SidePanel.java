@@ -27,6 +27,7 @@ import static org.appland.settlers.computer.PlayerType.MILITARY_PRODUCER;
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.CoalMine;
 import org.appland.settlers.model.Fishery;
+import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.GoldMine;
 import org.appland.settlers.model.GraniteMine;
@@ -36,6 +37,7 @@ import org.appland.settlers.model.Military;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
 import org.appland.settlers.model.Quarry;
+import org.appland.settlers.model.Road;
 
 /**
  *
@@ -60,14 +62,10 @@ public class SidePanel extends JTabbedPane {
     private final JPanel               gamePlayPanel;
     private final CardLayout           gamePanelSelector;
 
-    private CommandListener commandListener;
-    private Point           selectedPoint;
-    private GameMap         map;
-    private Player          player;
-
-    SidePanel() {
-        this(null);
-    }
+    private App     commandListener;
+    private Point   selectedPoint;
+    private GameMap map;
+    private Player  player;
 
     void setMap(GameMap m) {
         map = m;
@@ -79,8 +77,8 @@ public class SidePanel extends JTabbedPane {
         player = p;
     }
 
-    void setCommandListener(CommandListener canvas) {
-        commandListener = canvas;
+    void setCommandListener(App app) {
+        commandListener = app;
     }
 
     private class NonePanel extends JPanel {
@@ -130,7 +128,15 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.attackHouse(selectedPoint);
+
+                        /* Find building to attack */
+                        Building buildingToAttack = map.getBuildingAtPoint(selectedPoint);
+
+                        /* Order attack */
+                        int attackers = player.getAvailableAttackersForBuilding(buildingToAttack);
+
+                        player.attack(buildingToAttack, attackers);
+
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -199,7 +205,9 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.removeRoadAtPoint(selectedPoint);
+                        Road r = map.getRoadAtPoint(selectedPoint);
+
+                        map.removeRoad(r);
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -267,7 +275,9 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.removeHouseCommand(selectedPoint);
+                        Building b = map.getBuildingAtPoint(selectedPoint);
+
+                        b.tearDown();
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -279,7 +289,13 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.stopProduction(selectedPoint);
+                        Building b = map.getBuildingAtPoint(selectedPoint);
+
+                        if (b.isProductionEnabled()) {
+                            b.stopProduction();
+                        } else {
+                            b.resumeProduction();
+                        }
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -291,7 +307,12 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.evacuate(selectedPoint);
+
+                        /* Find military building to evacuate */
+                        Building building = map.getBuildingAtPoint(selectedPoint);
+
+                        /* Order evacuation */
+                        building.evacuate();
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -302,7 +323,12 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.cancelEvacuation(selectedPoint);
+
+                    /* Find military building to re-populate */
+                    Building building = map.getBuildingAtPoint(selectedPoint);
+
+                    /* Order re-population */
+                    building.cancelEvacuation();
                 }
             });
 
@@ -310,7 +336,12 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.stopCoins(selectedPoint);
+
+                    /* Find building to stop coin delivery to */
+                    Building b = map.getBuildingAtPoint(selectedPoint);
+
+                    /* Stop coin delivery */
+                    b.disablePromotions();
                 }
             });
 
@@ -318,7 +349,12 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.startCoins(selectedPoint);
+
+                    /* Find building to resume coin delivery to */
+                    Building b = map.getBuildingAtPoint(selectedPoint);
+
+                    /* Resume coin delivery */
+                    b.enablePromotions();
                 }
             });
 
@@ -503,7 +539,7 @@ public class SidePanel extends JTabbedPane {
 
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    commandListener.startRoadCommand(selectedPoint);
+                    commandListener.startRoad(selectedPoint);
                 }
             });
 
@@ -512,7 +548,9 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.removeFlagCommand(selectedPoint);
+                        Flag flag = map.getFlagAtPoint(selectedPoint);
+
+                        map.removeFlag(flag);
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -524,7 +562,9 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.callGeologist(selectedPoint);
+                        Flag flag = map.getFlagAtPoint(selectedPoint);
+
+                        flag.callGeologist();
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -536,7 +576,9 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.callScout(selectedPoint);
+                        Flag flag = map.getFlagAtPoint(selectedPoint);
+
+                        flag.callScout();
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -570,7 +612,7 @@ public class SidePanel extends JTabbedPane {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     try {
-                        commandListener.placeFlag(selectedPoint);
+                        Flag flag = map.placeFlag(player, commandListener.getSelectedPoint());
                     } catch (Exception ex) {
                         Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -595,7 +637,16 @@ public class SidePanel extends JTabbedPane {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         try {
-                            commandListener.placeBuilding(buttonToHouseType.get(ae.getSource()), selectedPoint);
+                            HouseType houseType = buttonToHouseType.get(ae.getSource());
+
+                            Building b = BuildingFactory.createBuilding(player, houseType);
+
+                            if (b == null) {
+                                throw new Exception("Can't build " + houseType);
+                            }
+
+                            map.placeBuilding(b, commandListener.getSelectedPoint());
+
                         } catch (Exception ex) {
                             Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -677,8 +728,6 @@ public class SidePanel extends JTabbedPane {
             turboButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    turboToggle = !turboToggle;
-
                     commandListener.toggleTurbo();
                 }
             });
@@ -803,7 +852,7 @@ public class SidePanel extends JTabbedPane {
         }
     }
 
-    SidePanel(CommandListener cl) {
+    SidePanel(App cl) {
         super();
 
         selectedPoint = null;
