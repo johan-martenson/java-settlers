@@ -176,7 +176,7 @@ public class ScenarioCreator {
         map.placeTree(point21.right());
         map.placeTree(point22);
         map.placeTree(point22.right());
-    
+
     }
 
     void placeInitialPlayer(Player player, GameMap map) throws Exception {

@@ -142,7 +142,7 @@ public class RestServer extends AbstractHandler implements View {
 
             return;
         }
-        
+
         /* Return the terrain. Provide the full terrain to avoid sending it more than once */
         if (target.equals("/terrain")) {
             JSONObject jsonTerrain = new JSONObject();
@@ -329,7 +329,7 @@ public class RestServer extends AbstractHandler implements View {
 
         /* Remove the given flag */
         if (individualFlagMatcher.matches() && request.getMethod().equals("DELETE")) {
-            
+
             String flagIdString = individualFlagMatcher.group(1);
             System.out.println("Try to remove flag at " + flagIdString);
 
@@ -675,7 +675,7 @@ public class RestServer extends AbstractHandler implements View {
         System.out.println("SHOULD NOT END UP HERE");
         System.out.println("Target: " + target);
         System.out.println("Method: " + request.getMethod());
-        
+
         while (request.getAttributeNames().hasMoreElements()) {
             System.out.println("  " + request.getAttributeNames().nextElement());
         }
@@ -694,7 +694,7 @@ public class RestServer extends AbstractHandler implements View {
         baseRequest.setHandled(true);
         response.getWriter().println(jsonArray.toJSONString());
     }
-    
+
     private void replyWithJson(HttpServletResponse response, Request baseRequest, JSONObject jsonObject) throws IOException {
         response.setContentType("application/json;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -869,7 +869,7 @@ public class RestServer extends AbstractHandler implements View {
             jsonWorker.put("previous", jsonPrevious);
 
             putPointAsJson(jsonPrevious, worker.getLastPoint());
-            
+
             try {
                 JSONObject jsonNext = new JSONObject();
                 jsonWorker.put("next", jsonNext);
@@ -878,7 +878,7 @@ public class RestServer extends AbstractHandler implements View {
             } catch(Exception e) {
                 System.out.println("" + e);
             }
-            
+
             jsonWorker.put("percentageTraveled", worker.getPercentageOfDistanceTraveled());
             jsonWorker.put("speed", 10); // TODO: dynamically look up speed
         } else {
@@ -889,10 +889,10 @@ public class RestServer extends AbstractHandler implements View {
 
     private JSONObject houseToJson(Building building, int playerId) {
         JSONObject jsonHouse = new JSONObject();
-            
+
         jsonHouse.put("x", building.getPosition().getX());
         jsonHouse.put("y", building.getPosition().getY());
-            
+
         jsonHouse.put("type", building.getClass().getSimpleName());
         jsonHouse.put("playerId", playerId);
         jsonHouse.put("houseId", getId(building));
@@ -917,7 +917,7 @@ public class RestServer extends AbstractHandler implements View {
         final RestServer handler = this;
 
         Thread thread = new Thread(new Runnable() {
-        
+
             @Override
             public void run() {
                 Server server = new Server(port);
@@ -958,7 +958,7 @@ public class RestServer extends AbstractHandler implements View {
                 break;
             }
         }
- 
+
         /* Fill in the points the player has discovered */
         JSONArray jsonDiscoveredPoints = new JSONArray();
         jsonPlayer.put("discoveredPoints", jsonDiscoveredPoints);
@@ -1015,7 +1015,7 @@ public class RestServer extends AbstractHandler implements View {
         }
 
         hex = "#" + hex;
-    
+
         return hex;
     }
 

@@ -705,7 +705,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
                 int houseWidth = 250;
                 int houseHeight = 250;
-                
+
                 if (b.burningDown()) {
                     spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
                 } else if (b.destroyed()) {
@@ -993,7 +993,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
                 int stoneWidth = 250;
                 int stoneHeight = 250;
-                
+
                 SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), stoneWidth, stoneHeight, -(int)(stoneWidth / 2.0), -(int)(stoneHeight / 2.0));
                 spritesToDraw.add(si);
             }
@@ -1537,7 +1537,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         double oldGameY = ((getHeight() / 2) - translateY) / scale;
 
         scale = scale - 1;
-        
+
         translateX = (int)((getWidth()  / 2) - oldGameX * scale);
         translateY = (int)((getHeight() / 2) - oldGameY * scale);
     }
@@ -1697,7 +1697,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
     int scaleOffset(double d) {
         return (int)(d*scale/100);
     }
-    
+
     Point screenPointToGamePoint(java.awt.Point point) {
 
         /* Go from surface coordinates to game points */

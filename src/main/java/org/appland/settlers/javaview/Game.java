@@ -175,9 +175,9 @@ public class Game {
         try {
             Game game = new Game();
             CmdLineParser parser = new CmdLineParser(game);
-            
+
             parser.parseArgument(args);
-            
+
             game.startGame();
         } catch (Exception ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
@@ -219,7 +219,7 @@ public class Game {
                 e.printStackTrace();
             }
         }
-        
+
         /* Start REST server if it's enabled */
         if (this.enableRestServer) {
             RestServer restServer = new RestServer(map, port, this);
@@ -267,7 +267,7 @@ public class Game {
     void enableComputerPlayer(Player player, PlayerType type) {
 
         ComputerPlayer computerPlayer = null;
-        
+
         switch (type) {
             case BUILDING:
                 computerPlayer = new ConstructionPreparationPlayer(player, map);

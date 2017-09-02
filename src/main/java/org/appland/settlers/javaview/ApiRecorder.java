@@ -84,13 +84,13 @@ public class ApiRecorder {
         if (pointNames.containsKey(p)) {
             return pointNames.get(p);
         }
-        
+
         String name = "point" + pointNames.size();
 
         pointNames.put(p, name);
 
         record(INDENT + "Point " + name + " = new Point(" + p.x + ", " + p.y + ");\n");
-        
+
         return name;
     }
 
@@ -108,9 +108,9 @@ public class ApiRecorder {
 
     private String registerRoad(Road r) {
         String name = "road" + roadNames.size();
-        
+
         roadNames.put(r, name);
-        
+
         return name;
     }
 
@@ -118,28 +118,28 @@ public class ApiRecorder {
         String name = b.getClass().getSimpleName();
 
         name = name.toLowerCase().charAt(0) + name.substring(1);
-        
+
         for (int i = 0; i < 1000; i++) {
             if (!buildingNames.containsValue(name + i)) {
                 name = name + i;
 
                 buildingNames.put(b, name);
-                
+
                 break;
             }
         }
-        
+
         return name;
     }
-    
+
     private String registerStone(Stone s) {
         String name = "stone" + stoneNames.size();
-        
+
         stoneNames.put(s, name);
-        
+
         return name;
     }
-    
+
     void clear() {
         pointNames.clear();
         flagNames.clear();
@@ -202,7 +202,7 @@ public class ApiRecorder {
         for (Point p : r.getWayPoints()) {
             registerPoint(p);
         }
-        
+
         record(INDENT + "Road " + roadName + " = map.placeRoad(" + playerName + ", ");
 
         boolean firstRun = true;
@@ -225,13 +225,13 @@ public class ApiRecorder {
 
     void recordPlaceStone(Stone stone, Point stonePoint) {
         recordTicks();
-        
+
         recordComment("Placing stone");
-        
+
         String pointName = registerPoint(stonePoint);
-        
+
         String stoneName = registerStone(stone);
-        
+
         record(INDENT + "Stone " + stoneName + " = map.placeStone(" + pointName + ");\n");
     }
 
@@ -252,13 +252,13 @@ public class ApiRecorder {
 
     void recordSetTileVegetation(Point p1, Point p2, Point p3, Tile.Vegetation vegetation) {
         recordTicks();
-        
+
         recordComment("Place a " + vegetation.name().toLowerCase() + " tile");
-        
+
         String pointName1 = registerPoint(p1);
         String pointName2 = registerPoint(p2);
         String pointName3 = registerPoint(p3);
-        
+
         record(INDENT + "map.getTerrain().getTile(" + pointName1 + ", " + pointName2 + ", " + pointName3 +").setVegetationType(Vegetation." + vegetation.name() + ");\n");
     }
 
@@ -266,48 +266,48 @@ public class ApiRecorder {
         if (tickCount == previousRecordedTicks) {
             return;
         }
-        
+
         int delta = tickCount - previousRecordedTicks;
-        
+
         recordComment(tickCount + " ticks from start");
         record(INDENT + "Utils.fastForward(" + delta + ", map);\n");
-        
+
         previousRecordedTicks = tickCount;
     }
 
     void recordRemoveFlag(Flag flag) {
         recordTicks();
-        
+
         recordComment("Remove flag at " + flag.getPosition());
-        
+
         String name = flagNames.get(flag);
-        
+
         record(INDENT + "map.removeFlag(" + name + ");\n");
     }
 
     void recordTearDown(Building b) {
         recordTicks();
-        
+
         String name = buildingNames.get(b);
-        
+
         recordComment("Tear down " + name);
-        
+
         record(INDENT + name + ".tearDown()\n");
     }
 
     void recordRemoveRoad(Road r) {
         recordTicks();
-        
+
         recordComment("Removing road between " + r.getStart() + " and " + r.getEnd());
-        
+
         record(INDENT + "map.removeRoad(" + roadNames.get(r) + ");\n");
     }
 
     void recordCallGeologistFromFlag(Flag flag) {
         recordTicks();
-        
+
         String flagName = flagNames.get(flag);
-        
+
         recordComment("Calling geologist from " + flagName + " at " + flag.getPosition());
 
         record(INDENT + flagName + ".callGeologist();\n");
@@ -315,7 +315,7 @@ public class ApiRecorder {
 
     void recordNewGame(List<Player> players, int widthInPoints, int heightInPoints) {
         recordComment("Creating new game map with size " + widthInPoints + "x" + heightInPoints);
-        
+
         registerPlayers(players);
 
         record(INDENT + "List<Player> players = new LinkedList<>();\n");
@@ -331,9 +331,9 @@ public class ApiRecorder {
 
     void recordCallScoutFromFlag(Flag flag) {
         recordTicks();
-        
+
         String flagName = flagNames.get(flag);
-        
+
         recordComment("Calling scout from " + flagName + " at " + flag.getPosition());
 
         record(INDENT + flagName + ".callScout();\n");
@@ -361,7 +361,7 @@ public class ApiRecorder {
         if (playerNames.containsKey(player)) {
             return playerNames.get(player);
         }
-        
+
         String name = "player" + playerNames.size();
         String color = colorToHex(player.getColor());
 
@@ -383,7 +383,7 @@ public class ApiRecorder {
 
         return name;
     }
-    
+
     void recordPlaceTrees(List<Tree> trees) {
         recordComment("Place tree");
 

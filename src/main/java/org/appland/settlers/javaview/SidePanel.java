@@ -101,13 +101,13 @@ public class SidePanel extends JTabbedPane {
             panel.setVisible(true);
         }
     }
-    
+
     private class EnemyBuildingPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
         private final JLabel  titleField;
         private final JButton attackButton;
-        
+
         public EnemyBuildingPanel() {
             JPanel panel = new JPanel();
 
@@ -181,7 +181,7 @@ public class SidePanel extends JTabbedPane {
             titleField.setText(Utils.BuildingNameAsHeading(building));
         }
     }
-    
+
     private class RoadSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
         private final JButton removeRoadButton;
@@ -218,7 +218,7 @@ public class SidePanel extends JTabbedPane {
             panel.setVisible(true);
         }
     }
-    
+
     private class OwnBuildingSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
@@ -506,7 +506,7 @@ public class SidePanel extends JTabbedPane {
             infoPanel.updateUI();
         }
     }
-    
+
     private class FlagSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
@@ -589,7 +589,7 @@ public class SidePanel extends JTabbedPane {
             panel.setVisible(true);
         }
     }
-    
+
     private class SpotToBuildOnPanel extends JPanel {
         private static final long serialVersionUID = 1L;
         private final JButton raiseFlagButton;
@@ -868,7 +868,7 @@ public class SidePanel extends JTabbedPane {
         roadSpotPanel        = new RoadSpotPanel();
         enemyBuildingPanel   = new EnemyBuildingPanel();
         nonePanel            = new NonePanel();
-        
+
         /* Add key shortcuts for the panels */
         addTab("Control", controlPanel);
 

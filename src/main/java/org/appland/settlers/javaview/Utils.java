@@ -22,7 +22,7 @@ public class Utils {
     static String BuildingNameAsHeading(Building building) {
         return building.getClass().getSimpleName();
     }
-    
+
     static String BuildingNameAsVariable(Building building) {
         String className = building.getClass().getSimpleName();
 
