@@ -11,7 +11,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.TexturePaint;
 import java.awt.event.KeyEvent;
@@ -144,15 +143,13 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
     private final List<SpriteInfo>       spritesToDraw;
     private final Comparator<SpriteInfo> spriteSorter;
+    private final App app;
 
-    private List<Worker>     workers;
-    private List<WildAnimal> animals;
-    private java.awt.Point dragStarted;
+    private java.awt.Point   dragStarted;
 
     private double scale;
-    private int translateX;
-    private int translateY;
-    private final App app;
+    private int    translateX;
+    private int    translateY;
     private Player controlledPlayer;
 
     GameDrawer(GameMap map, final App app) throws IOException {
@@ -212,25 +209,17 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         /* Create the list to store pieces to draw for each frame */
         spritesToDraw = new ArrayList<>();
         spriteSorter = new SpriteSorter();
-
-        /* Create lists to store temporary copies to avoid synchronization issues */
-        workers = new ArrayList<>();
-        animals = new ArrayList<>();
     }
 
     void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
         synchronized (map) {
 
-            /* Get copy of pieces to work on */
-            workers = map.getWorkers();
-            animals = map.getWildAnimals();
-
             /* Remove sprites drawn in the previous frame */
             spritesToDraw.clear();
 
             /* Draw the terrain */
-            drawTerrain(player, g);
+            drawTerrainAlt2(player, g);
 
             /* Draw roads directly on the ground first */
             drawRoads(g, player);
@@ -250,7 +239,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
             drawCrops(g, player);
 
-            drawPersons(g, workers, player);
+            drawPersons(g, map.getWorkers(), player);
 
             drawBorders(g, player);
 
@@ -260,7 +249,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
             drawProjectiles(g);
 
-            drawWildAnimals(g, animals, player);
+            drawWildAnimals(g, map.getWildAnimals(), player);
 
             /* Draw the available spots for the next point for a road if a road is being built */
             if (showAvailableSpots) {
@@ -288,7 +277,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    private void drawTerrain(Player player, Graphics2D g) {
+    private void drawTerrainAlt1(Player player, Graphics2D g) {
 
         /* Draw the terrain */
         int startX;
@@ -444,6 +433,237 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
                 bottomPoints.clear();
                 collectedVegetation = null;
             }
+        }
+    }
+
+    private Tile getTileRight(Point point) {
+        return map.getTerrain().getTile(
+            new Point(point.x    , point.y    ),
+            new Point(point.x + 1, point.y + 1),
+            new Point(point.x + 2, point.y    )
+        );
+    }
+
+    private Tile getTileAbove(Point point) {
+        return map.getTerrain().getTile(
+            new Point(point.x    , point.y    ),
+            new Point(point.x - 1, point.y + 1),
+            new Point(point.x + 1, point.y + 1)
+        );
+    }
+
+    private void drawTerrainAlt2(Player player, Graphics2D g) {
+
+        /* Get bounds */
+        Point gamePointBottomLeftOnScreen = screenPointToGamePoint(new java.awt.Point(0, this.getHeight()));
+        Point gamePointTopRightOnScreen = screenPointToGamePoint(new java.awt.Point(this.getWidth(), 0));
+
+        /* Start on the bottom left of the game map visible on the screen */
+        int minY = Math.max(0, Math.min(map.getHeight(), gamePointBottomLeftOnScreen.y) - 1);
+        int maxY = Math.max(0, Math.min(map.getHeight(), gamePointTopRightOnScreen.y) + 1);
+        int minX = Math.max(0, Math.min(map.getWidth(), gamePointBottomLeftOnScreen.x) - 2);
+        int maxX = Math.max(0, Math.min(map.getWidth(), gamePointTopRightOnScreen.x) + 2);
+
+        /* Follow the row and see how long the vegetation stays the same */
+        for (int y = minY; y < maxY; y++) {
+
+            /* Make sure not to start with an invalid point */
+            int startX = minX;
+
+            if ((y + startX) % 2 != 0) {
+                startX = startX + 1;
+            }
+
+            /* Scan the row for segments of tiles with the same vegetation */
+            boolean rowDone = false;
+            List<Point> polygon = new ArrayList<>();
+            boolean ignoreTopOnce = startX == 0 ? true : false;
+
+            /* Iterate until the full row is checked */
+            while (!rowDone) {
+
+                /* Get the vegetation of the next segment */
+                Vegetation vegetation = getTileAbove(new Point(startX, y)).getVegetationType();
+
+                if (ignoreTopOnce) {
+                    vegetation = getTileRight(new Point(startX, y)).getVegetationType();
+                }
+
+                /* Clear the previous segment */
+                polygon.clear();
+
+                /* Add the initial points */
+                if (ignoreTopOnce) {
+                    polygon.add(new Point(startX + 1, y + 1));
+                    polygon.add(new Point(startX    , y    ));
+                } else {
+                    polygon.add(new Point(startX - 1, y + 1));
+                    polygon.add(new Point(startX    , y    ));
+                }
+
+                /* Scan the next segment in the line */
+                rowDone = true;
+                boolean endedSegmentProperly = false;
+                for (int x = startX; x < maxX; x += 2) {
+
+                    Point point = new Point(x, y);
+
+                    /* Skip the top tile if it's not discovered by the player */
+                    if (!player.getDiscoveredLand().contains(point)           ||
+                        !player.getDiscoveredLand().contains(point.upRight()) ||
+                        !player.getDiscoveredLand().contains(point.left())) {
+                        polygon.add(point);
+                        polygon.add(point.upLeft());
+
+                        /* Start from next point */
+                        startX = x + 2;
+
+                        /* We are breaking early so the row is not done yet */
+                        rowDone = false;
+
+                        /* Note that the segment is properly finished */
+                        endedSegmentProperly = true;
+
+                        break;
+                    }
+
+                    /* Add the final points and break if the top tile has a different vegetation
+                       or if is not discovered by the player
+                    */
+                    Tile tileAbove = getTileAbove(point);
+                    if (!ignoreTopOnce && tileAbove.getVegetationType() != vegetation) {
+                        polygon.add(point);
+                        polygon.add(point.upLeft());
+
+                        /* Start next segment on the next x position */
+                        startX = x;
+
+                        /* We are breaking early so the row is not done yet */
+                        rowDone = false;
+
+                        /* Note that the segment is properly finished */
+                        endedSegmentProperly = true;
+
+                        break;
+                    }
+
+
+                    /* Skip the right tile if it's not discovered by the player */
+                    if (!player.getDiscoveredLand().contains(point)           ||
+                        !player.getDiscoveredLand().contains(point.upRight()) ||
+                        !player.getDiscoveredLand().contains(point.right())) {
+                        polygon.add(point);
+                        polygon.add(point.upLeft());
+
+                        /* Start from next point */
+                        startX = x + 2;
+
+                        /* We are breaking early so the row is not done yet */
+                        rowDone = false;
+
+                        /* Note that the segment is properly finished */
+                        endedSegmentProperly = true;
+
+                        break;
+                    }
+
+                    /* Add the final points and break if the right side tile has
+                       a different vegetation or if it is not discovered by the player
+                    */
+                    Tile tileRight = getTileRight(point);
+                    if ((tileRight.getVegetationType() != vegetation)         ||
+                        !player.getDiscoveredLand().contains(point)           ||
+                        !player.getDiscoveredLand().contains(point.upRight()) ||
+                        !player.getDiscoveredLand().contains(point.left())) {
+                        polygon.add(point);
+                        polygon.add(point.upRight());
+
+                        /* Keep the same x position and skip the first top tile
+                           next time because it's already covered
+                        */
+                        startX = x;
+                        ignoreTopOnce = true;
+
+                        /* We are breaking early so the row is not done yet */
+                        rowDone = false;
+
+                        /* Note that the segment is properly finished */
+                        endedSegmentProperly = true;
+
+                        break;
+                    }
+
+                    ignoreTopOnce = false;
+                }
+
+                /* Make sure to end the segment */
+                if (!endedSegmentProperly) {
+                    if ((y + maxX) % 2 != 0) {
+                        polygon.add(new Point(maxX + 1, y    ));
+                        polygon.add(new Point(maxX    , y + 1));
+                    } else {
+                        polygon.add(new Point(maxX    , y    ));
+                        polygon.add(new Point(maxX + 1, y + 1));
+                    }
+                }
+
+                /* Draw the polygon */
+                drawPolygon(g, polygon, vegetation);
+            }
+        }
+    }
+
+    private void drawPolygon(Graphics2D g, List<Point> polygonPoints, Vegetation vegetation) {
+        Path2D.Double polygon = new Path2D.Double();
+
+        /* Draw the top line of the polygon */
+        boolean first = true;
+        for (Point point : polygonPoints) {
+
+            if (first) {
+                polygon.moveTo(pointToScreenX(point), pointToScreenY(point));
+
+                first = false;
+            } else {
+                polygon.lineTo(pointToScreenX(point), pointToScreenY(point));
+            }
+        }
+
+        polygon.closePath();
+
+        prepareToDrawVegetation(vegetation, g);
+
+        g.fill(polygon);
+
+        /*  Uncomment to troubleshoot creation of polygons to cover the background
+        g.setColor(Color.BLACK);
+        g.setStroke(new BasicStroke(2));
+        g.draw(polygon); */
+    }
+
+    enum VegetationOrUnknown {
+        WATER, MOUNTAIN, SWAMP, GRASS, UNDISCOVERED;
+
+        VegetationOrUnknown createUndiscovered() {
+            return UNDISCOVERED;
+        }
+
+        VegetationOrUnknown createFromVegetation(Vegetation v) {
+            switch (v) {
+                case WATER:
+                    return WATER;
+                case MOUNTAIN:
+                    return MOUNTAIN;
+                case SWAMP:
+                    return SWAMP;
+                case GRASS:
+                    return GRASS;
+                default:
+                    System.out.println("Cannot handle vegetation " + v);
+                    System.exit(1);
+            }
+
+            return null;
         }
     }
 
@@ -1091,7 +1311,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         g.fill(triangle);
     }
 
-    private void drawPersons(Graphics2D g, List<Worker> workers, Player player) {
+    private void drawPersons(Graphics2D g, List<Worker> workers, Player player) throws Exception {
 
         for (Worker w : workers) {
             if (w.isInsideBuilding()) {
@@ -1110,7 +1330,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    private void drawPerson(Graphics2D g, Worker w) {
+    private void drawPerson(Graphics2D g, Worker w) throws Exception {
 
         if (w instanceof Military) {
             g.setColor(w.getPlayer().getColor());
@@ -1126,16 +1346,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         double actualY = w.getPosition().y;            
 
         if (!w.isExactlyAtPoint()) {
-            Point next = null;
-
-            try {
-                next = w.getNextPoint();
-            } catch (Exception ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-
-                System.exit(1);
-            }
-
+            Point next = w.getNextPoint();
             Point last = w.getLastPoint();
 
             if (next == null) {
