@@ -101,6 +101,11 @@ public class Game {
             required=false)
     int port = 8080;
 
+    @Option(name="--host",
+            usage="Host to run HTTP server on",
+            required=false)
+    String host = "localhost";
+
     public Game() throws Exception {
 
         views           = new ArrayList<>();
@@ -222,7 +227,7 @@ public class Game {
 
         /* Start REST server if it's enabled */
         if (this.enableRestServer) {
-            RestServer restServer = new RestServer(map, port, this);
+            RestServer restServer = new RestServer(map, port, host, this);
             try {
                 restServer.startServer();
             } catch (Exception e) {

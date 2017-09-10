@@ -1,5 +1,6 @@
 package org.appland.settlers.javaview;
 
+import org.eclipse.jetty.server.ServerConnector;
 import java.awt.Color;
 import java.io.BufferedReader;
 import javax.servlet.http.HttpServletRequest;
@@ -74,6 +75,7 @@ public class RestServer extends AbstractHandler implements View {
 
     private GameMap map;
     private final int port;
+    private final String host;
     private final Pattern INDIVIDUAL_FLAG  = Pattern.compile("/flags/([0-9A-Za-z]+)/?");
     private final Pattern INDIVIDUAL_HOUSE = Pattern.compile("/houses/([0-9A-Za-z]+)/?");
     private Map<Object, Integer> objectToId;
@@ -82,10 +84,11 @@ public class RestServer extends AbstractHandler implements View {
     private final Game game;
     private final Map<Pattern, String[]> allowedMethods;
 
-    public RestServer(GameMap map, int port, Game game) {
+    public RestServer(GameMap map, int port, String host, Game game) {
         this.map = map;
         this.port = port;
         this.game = game;
+        this.host = host;
 
         this.objectToId = new HashMap<>();
         this.idToObject = new HashMap<>();
@@ -94,15 +97,14 @@ public class RestServer extends AbstractHandler implements View {
 
         /* Define the allowed methods for each endpoint*/
         this.allowedMethods.put(Pattern.compile("/terrain"),       new String[] {"GET"});
-        this.allowedMethods.put(Pattern.compile("/buildings"),     new String[] {"GET"});
         this.allowedMethods.put(Pattern.compile("/points"),        new String[] {"GET", "PUT"});
         this.allowedMethods.put(Pattern.compile("/flags"),         new String[] {"POST"});
         this.allowedMethods.put(Pattern.compile("/flags/.*"),      new String[] {"DELETE"});
         this.allowedMethods.put(Pattern.compile("/players"),       new String[] {"GET"});
         this.allowedMethods.put(Pattern.compile("/roads"),         new String[] {"POST"});
         this.allowedMethods.put(Pattern.compile("/game"),          new String[] {"PUT", "GET"});
-        this.allowedMethods.put(Pattern.compile("/houses"),        new String[] {"POST"});
-        this.allowedMethods.put(Pattern.compile("/houses/.*"),     new String[] {"DELETE", "PUT"});
+        this.allowedMethods.put(Pattern.compile("/houses"),        new String[] {"POST", "GET"});
+        this.allowedMethods.put(Pattern.compile("/houses/.*"),     new String[] {"DELETE", "PUT", "GET"});
         this.allowedMethods.put(Pattern.compile("/viewForPlayer"), new String[] {"GET"});
     }
 
@@ -181,49 +183,6 @@ public class RestServer extends AbstractHandler implements View {
             }
 
             replyWithJson(response, baseRequest, jsonTerrain);
-
-            return;
-        }
-
-        /* Return information about the given building */
-        if (target.equals("/buildings") && request.getMethod().equals("GET")) {
-            int houseId = Integer.parseInt(request.getParameter("buildingId"));
-
-            String playerIdString = request.getParameter("playerId");
-
-            Player player = null;
-
-            if (playerIdString != null) {
-                player = (Player)getObjectFromId(Integer.parseInt(playerIdString));
-            }
-
-            Building building = (Building)getObjectFromId(houseId);
-            int playerId = getId(building.getPlayer());
-
-            /* Instantiate JSON objects outside the synchronized scope */
-            JSONObject jsonHouse = null;
-            JSONObject jsonInventory = new JSONObject();
-
-            synchronized (map) {
-                jsonHouse = houseToJson(building, playerId);
-
-                jsonHouse.put("inventory", jsonInventory);
-
-                for (Material m : Material.values()) {
-                    jsonInventory.put(m.name(), building.getAmount(m));
-                }
-
-                /* Fill in attack information if the player is included */
-                if (player != null && building.isMilitaryBuilding()) {
-                    try {
-                        jsonHouse.put("maxAttackers", player.getAvailableAttackersForBuilding(building));
-                    } catch (Exception ex) {
-                        Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-
-            replyWithJson(response, baseRequest, jsonHouse);
 
             return;
         }
@@ -355,7 +314,7 @@ public class RestServer extends AbstractHandler implements View {
 
         Matcher individualHouseMatcher = INDIVIDUAL_HOUSE.matcher(target);
 
-        /* Handle requests for an individual house */
+        /* Handle requests for an individual house at "/houses/{houseId}" */
         if (individualHouseMatcher.matches()) {
 
             String houseIdString = individualHouseMatcher.group(1);
@@ -364,6 +323,48 @@ public class RestServer extends AbstractHandler implements View {
                 int houseId = Integer.parseInt(houseIdString);
 
                 Building building = (Building)getObjectFromId(houseId);
+
+                /* Return information about the given house */
+                if (request.getMethod().equals("GET")) {
+
+                    String playerIdString = request.getParameter("playerId");
+                    int playerId = Integer.parseInt(playerIdString);
+
+                    Player player = null;
+
+                    if (playerIdString != null) {
+                        player = (Player)getObjectFromId(playerId);
+                    }
+
+                    System.out.println("House " + building);
+
+                    /* Instantiate JSON objects outside the synchronized scope */
+                    JSONObject jsonHouse = null;
+                    JSONObject jsonInventory = new JSONObject();
+
+                    synchronized (map) {
+                        jsonHouse = houseToJson(building, playerId);
+
+                        jsonHouse.put("inventory", jsonInventory);
+
+                        for (Material m : Material.values()) {
+                            jsonInventory.put(m.name(), building.getAmount(m));
+                        }
+
+                        /* Fill in attack information if the player is included */
+                        if (player != null && building.isMilitaryBuilding()) {
+                            try {
+                                jsonHouse.put("maxAttackers", player.getAvailableAttackersForBuilding(building));
+                            } catch (Exception ex) {
+                                Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }
+
+                    replyWithJson(response, baseRequest, jsonHouse);
+
+                    return;
+                }
 
                 /* Remove the given house */
                 if (request.getMethod().equals("DELETE")) {
@@ -375,6 +376,10 @@ public class RestServer extends AbstractHandler implements View {
                     } catch (Exception ex) {
                         Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
                     }
+
+                    replyWithJson(response, baseRequest, messageToJson("Removed building " + houseIdString));
+
+                    return;
                 }
 
                 /* Update the given house (can only be used to trigger attacks) */
@@ -392,11 +397,10 @@ public class RestServer extends AbstractHandler implements View {
                         Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
+                    replyWithJson(response, baseRequest, messageToJson("Updated building " + houseIdString));
+
+                    return;
                 }
-
-                replyWithJson(response, baseRequest, messageToJson("Removed building " + houseIdString));
-
-                return;
             }
         }
 
@@ -920,7 +924,17 @@ public class RestServer extends AbstractHandler implements View {
 
             @Override
             public void run() {
-                Server server = new Server(port);
+
+                Server server = new Server();
+
+                // HTTP connector
+                ServerConnector http = new ServerConnector(server);
+                http.setHost(host);
+                http.setPort(port);
+                http.setIdleTimeout(30000);
+
+                // Set the connector
+                server.addConnector(http);
                 server.setHandler(handler);
 
                 try {

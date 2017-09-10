@@ -23,7 +23,6 @@ import javax.swing.JMenu;
 
 import org.appland.settlers.model.Building;
 import org.appland.settlers.model.Cargo;
-import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
 import org.appland.settlers.model.Player;
@@ -65,6 +64,7 @@ import static org.appland.settlers.javaview.HouseType.SLAUGHTER_HOUSE;
 import static org.appland.settlers.javaview.HouseType.WATCH_TOWER;
 import static org.appland.settlers.javaview.HouseType.WELL;
 import static org.appland.settlers.javaview.HouseType.WOODCUTTER;
+import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Storage;
 
 
