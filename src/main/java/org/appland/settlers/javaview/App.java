@@ -85,10 +85,10 @@ public class App extends JFrame implements View {
     private final Game                     game;
     private final Timer                    clearInputTimer;
     private final Timer                    drawingTimer;
+    private final List<Point>              roadPoints;
 
     private boolean      turboModeEnabled = false;
     private UiState      state;
-    private List<Point>  roadPoints;
     private boolean      showAvailableSpots;
     private Point        selectedPoint;
     private String       previousKeys;
