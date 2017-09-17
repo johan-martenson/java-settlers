@@ -436,17 +436,22 @@ public class RestServer extends AbstractHandler implements View {
                 Player player = (Player)getObjectFromId(playerId);
 
                 /* Create the road */
-                synchronized (map) {
-                    if (points.size() == 2) {
-                        map.placeAutoSelectedRoad(player, points.get(0), points.get(1));
-                    } else {
-                        map.placeRoad(player, points);
+                try {
+                    synchronized (map) {
+                        if (points.size() == 2) {
+                            map.placeAutoSelectedRoad(player, points.get(0), points.get(1));
+                        } else {
+                            map.placeRoad(player, points);
+                        }
                     }
+
+                    replyWithJson(response, baseRequest, messageToJson("Created road OK"));
+
+                    return;
+                } catch (Exception e) {
+                    replyWithInvalidParameter(response, baseRequest, "Cannot place road");
+                    return;
                 }
-
-                replyWithJson(response, baseRequest, messageToJson("Created road OK"));
-
-                return;
             } catch (Exception ex) {
                 Logger.getLogger(RestServer.class.getName()).log(Level.SEVERE, null, ex);
             }
