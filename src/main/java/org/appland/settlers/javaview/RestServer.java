@@ -755,7 +755,7 @@ public class RestServer extends AbstractHandler implements View {
                     jsonSign.put("type", "water");
                     break;
                 default:
-                    System.out.println("Cannot have " + sign.getType());
+                    System.out.println("Cannot have sign of type " + sign.getType());
                     System.exit(1);
             }
         }
@@ -767,7 +767,7 @@ public class RestServer extends AbstractHandler implements View {
     private Building buildingFactory(JSONObject jsonHouse, Player player) {
         Building building = null;
         switch((String)jsonHouse.get("type")) {
-            case "Forester":
+            case "ForesterHut":
                 building = new ForesterHut(player);
                 break;
             case "Woodcutter":
@@ -800,34 +800,34 @@ public class RestServer extends AbstractHandler implements View {
             case "Fishery":
                 building = new Fishery(player);
                 break;
-            case "Goldmine":
+            case "GoldMine":
                 building = new GoldMine(player);
                 break;
-            case "Ironmine":
+            case "IronMine":
                 building = new IronMine(player);
                 break;
-            case "Coalmine":
+            case "CoalMine":
                 building = new CoalMine(player);
                 break;
-            case "Granitemine":
+            case "GraniteMine":
                 building = new GraniteMine(player);
                 break;
-            case "Pigfarm":
+            case "PigFarm":
                 building = new PigFarm(player);
                 break;
             case "Mint":
                 building = new Mint(player);
                 break;
-            case "Slaughterhouse":
+            case "SlaughterHouse":
                 building = new SlaughterHouse(player);
                 break;
-            case "Donkeyfarm":
+            case "DonkeyFarm":
                 building = new DonkeyFarm(player);
                 break;
-            case "Guardhouse":
+            case "GuardHouse":
                 building = new GuardHouse(player);
                 break;
-            case "Watchtower":
+            case "WatchTower":
                 building = new WatchTower(player);
                 break;
             case "Fortress":
@@ -836,10 +836,11 @@ public class RestServer extends AbstractHandler implements View {
             case "Catapult":
                 building = new Catapult(player);
                 break;
-            case "Hunterhut":
+            case "HunterHut":
                 building = new HunterHut(player);
                 break;
             default:
+                System.out.println("DON'T KNOW HOW TO CREATE BUILDING " + (String)jsonHouse.get("type"));
                 System.exit(1);
         }
         return building;

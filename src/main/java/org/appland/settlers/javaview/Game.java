@@ -56,11 +56,11 @@ public class Game {
 
     protected final static int DEFAULT_TICK = 100;
 
-    private final ScenarioCreator creator;
-    private final List<View>      views;
-    private Timer           gameLoopTimer;
+    private final ScenarioCreator             creator;
+    private final List<View>                  views;
+    private final Map<Player, ComputerPlayer> computerPlayers;
 
-    private Map<Player, ComputerPlayer> computerPlayers;
+    private Timer gameLoopTimer;
     private GameMap map;
 
     @Option(name="--no-graphics",
@@ -314,7 +314,7 @@ public class Game {
                         computerPlayer.turn();
                     }
                 } catch (Exception ex) {
-
+                    System.out.println("Computer player failed! " + ex);
                     printTroubleshootingInformation(ex);
 
                     System.exit(1);
@@ -341,6 +341,8 @@ public class Game {
                 }
 
                 printTroubleshootingInformation(ex);
+
+                System.out.println("Game logic failed in step time " + ex);
 
                 System.exit(1);
             }
