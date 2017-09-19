@@ -352,7 +352,7 @@ public class RestServer extends AbstractHandler implements View {
                         }
 
                         /* Fill in attack information if the player is included */
-                        if (player != null && building.isMilitaryBuilding()) {
+                        if (player != null && building.isMilitaryBuilding() && !player.equals(building.getPlayer())) {
                             try {
                                 jsonHouse.put("maxAttackers", player.getAvailableAttackersForBuilding(building));
                             } catch (Exception ex) {
