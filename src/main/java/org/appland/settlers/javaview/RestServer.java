@@ -1046,9 +1046,21 @@ public class RestServer extends AbstractHandler implements View {
             case WATER:
                 return "W";
             case SWAMP:
-                return "S";
+                return "SW";
             case MOUNTAIN:
                 return "M";
+            case DEEP_WATER:
+                return "DW";
+            case SNOW:
+                return "SN";
+            case LAVA:
+                return "L";
+            case MOUNTAIN_MEADOW:
+                return "MM";
+            case STEPPE:
+                return "ST";
+            case DESERT:
+                return "DE";
             default:
                 System.out.println("Cannot handle this vegetation " + v);
                 System.exit(1);
