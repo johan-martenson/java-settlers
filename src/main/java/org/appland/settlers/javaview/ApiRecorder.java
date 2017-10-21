@@ -25,7 +25,7 @@ import org.appland.settlers.model.Tree;
  */
 public class ApiRecorder {
 
-    private static final String INITIAL_RECORDING = 
+    private static final String INITIAL_RECORDING =
         "    @Test\n" +
         "    public void testUntitled() throws Exception {\n";
     private static final String INDENT = "        ";
@@ -239,7 +239,7 @@ public class ApiRecorder {
         System.out.println("--------------------------------------");
         System.out.println(getRecording());
         System.out.println(END_OF_TESTCASE);
-        System.out.println("--------------------------------------");    
+        System.out.println("--------------------------------------");
     }
 
     void recordTick() {
@@ -320,7 +320,7 @@ public class ApiRecorder {
 
         record(INDENT + "List<Player> players = new LinkedList<>();\n");
 
-        for (Player player : players) {            
+        for (Player player : players) {
             record(INDENT + "players.add(" + playerNames.get(player) + ");\n");
         }
 

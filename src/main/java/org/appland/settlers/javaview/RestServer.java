@@ -213,7 +213,7 @@ public class RestServer extends AbstractHandler implements View {
 
             replyWithJson(response, baseRequest, messageToJson("Updated point"));
 
-            return;            
+            return;
         }
 
         /* Return information about the given point */
@@ -1112,7 +1112,7 @@ public class RestServer extends AbstractHandler implements View {
 
                 objectToId.put(o, ids);
                 idToObject.put(ids, o);
-            }   
+            }
         }
 
         return objectToId.get(o);

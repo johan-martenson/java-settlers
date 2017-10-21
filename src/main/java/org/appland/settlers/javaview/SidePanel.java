@@ -398,7 +398,7 @@ public class SidePanel extends JTabbedPane {
                 startCoins.setEnabled(false);
                 stopCoins.setEnabled(false);
                 evacuateButton.setEnabled(false);
-                cancelEvacuationButton.setEnabled(false);                
+                cancelEvacuationButton.setEnabled(false);
             }
 
             /* Only set regular production options for capable buildings */

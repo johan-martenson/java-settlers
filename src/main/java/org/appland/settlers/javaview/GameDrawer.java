@@ -676,8 +676,8 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         if (si.getSprite() != null) {
             Image img = si.getSprite();
 
-            g.drawImage(img, 
-                    pointToScreenX(p, si.offsetX), pointToScreenY(p, si.offsetY), 
+            g.drawImage(img,
+                    pointToScreenX(p, si.offsetX), pointToScreenY(p, si.offsetY),
                     scaleOffset(spriteWidth), scaleOffset(spriteHeight),
                     null);
         } else {
@@ -778,7 +778,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         for (WildAnimal animal : animals) {
 
             double actualX = animal.getPosition().x;
-            double actualY = animal.getPosition().y;            
+            double actualY = animal.getPosition().y;
 
             Point last = animal.getLastPoint();
 
@@ -1343,7 +1343,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
 
         double actualX = w.getPosition().x;
-        double actualY = w.getPosition().y;            
+        double actualY = w.getPosition().y;
 
         if (!w.isExactlyAtPoint()) {
             Point next = w.getNextPoint();
