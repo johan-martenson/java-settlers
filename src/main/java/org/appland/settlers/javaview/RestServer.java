@@ -1,5 +1,6 @@
 package org.appland.settlers.javaview;
 
+import org.appland.settlers.model.Crop;
 import org.eclipse.jetty.server.ServerConnector;
 import java.awt.Color;
 import java.io.BufferedReader;
@@ -78,6 +79,7 @@ public class RestServer extends AbstractHandler implements View {
     private final String host;
     private final Pattern INDIVIDUAL_FLAG  = Pattern.compile("/flags/([0-9A-Za-z]+)/?");
     private final Pattern INDIVIDUAL_HOUSE = Pattern.compile("/houses/([0-9A-Za-z]+)/?");
+    private final Pattern PLAYERS_VIEW = Pattern.compile("/players/([0-9A-Za-z]+)/view/?");
     private Map<Object, Integer> objectToId;
     private int ids;
     private Map<Integer, Object> idToObject;
@@ -96,16 +98,16 @@ public class RestServer extends AbstractHandler implements View {
         this.allowedMethods = new HashMap<>();
 
         /* Define the allowed methods for each endpoint*/
-        this.allowedMethods.put(Pattern.compile("/terrain"),       new String[] {"GET"});
-        this.allowedMethods.put(Pattern.compile("/points"),        new String[] {"GET", "PUT"});
-        this.allowedMethods.put(Pattern.compile("/flags"),         new String[] {"POST"});
-        this.allowedMethods.put(Pattern.compile("/flags/.*"),      new String[] {"DELETE"});
-        this.allowedMethods.put(Pattern.compile("/players"),       new String[] {"GET"});
-        this.allowedMethods.put(Pattern.compile("/roads"),         new String[] {"POST"});
-        this.allowedMethods.put(Pattern.compile("/game"),          new String[] {"PUT", "GET"});
-        this.allowedMethods.put(Pattern.compile("/houses"),        new String[] {"POST", "GET"});
-        this.allowedMethods.put(Pattern.compile("/houses/.*"),     new String[] {"DELETE", "PUT", "GET"});
-        this.allowedMethods.put(Pattern.compile("/viewForPlayer"), new String[] {"GET"});
+        this.allowedMethods.put(Pattern.compile("/terrain"),   new String[] {"GET"});
+        this.allowedMethods.put(Pattern.compile("/points"),    new String[] {"GET", "PUT"});
+        this.allowedMethods.put(Pattern.compile("/flags"),     new String[] {"POST"});
+        this.allowedMethods.put(Pattern.compile("/flags/.*"),  new String[] {"DELETE"});
+        this.allowedMethods.put(Pattern.compile("/players"),   new String[] {"GET"});
+        this.allowedMethods.put(PLAYERS_VIEW,                  new String[] {"GET"});
+        this.allowedMethods.put(Pattern.compile("/roads"),     new String[] {"POST"});
+        this.allowedMethods.put(Pattern.compile("/game"),      new String[] {"PUT", "GET"});
+        this.allowedMethods.put(Pattern.compile("/houses"),    new String[] {"POST", "GET"});
+        this.allowedMethods.put(Pattern.compile("/houses/.*"), new String[] {"DELETE", "PUT", "GET"});
     }
 
     @Override
@@ -421,7 +423,7 @@ public class RestServer extends AbstractHandler implements View {
                 /* Get the points */
                 JSONArray jsonPoints = (JSONArray) jsonRoad.get("points");
 
-                List<Point> points = new ArrayList<Point>();
+                List<Point> points = new ArrayList<>();
 
                 for (int i = 0; i < jsonPoints.size(); i++) {
                     JSONObject jsonPoint = (JSONObject) jsonPoints.get(i);
@@ -531,154 +533,235 @@ public class RestServer extends AbstractHandler implements View {
             }
         }
 
-        /* Give the whole world as the given player sees it */
-        if (target.equals("/viewForPlayer")) {
-            int playerId = Integer.parseInt(request.getParameterValues(PLAYER_PARAM)[0]);
+        /* Handle available construction for a player at "/players/{playerId}/view/ "*/
+        Matcher individualPlayersView = PLAYERS_VIEW.matcher(target);
 
-            Player player = (Player)getObjectFromId(playerId);
+        if (individualPlayersView.matches()) {
 
-            if (player == null) {
-                replyWithInvalidParameter(response, baseRequest, "Player does not exist " + playerId);
+            if (request.getMethod().equals("GET")) {
+                int playerId = Integer.parseInt(individualPlayersView.group(1));
+                Player player = (Player) getObjectFromId(playerId);
+
+                /* Return an error if there is no such player */
+                if (player == null) {
+                    replyWithInvalidParameter(response, baseRequest, "Player does not exist " + playerId);
+
+                    return;
+                }
+
+                /* Create instances outside the synchronized block when possible */
+                JSONObject view = new JSONObject();
+
+                JSONArray jsonHouses = new JSONArray();
+                JSONArray trees = new JSONArray();
+                JSONArray jsonStones = new JSONArray();
+                JSONArray workers = new JSONArray();
+                JSONArray jsonFlags = new JSONArray();
+                JSONArray jsonRoads = new JSONArray();
+                JSONArray jsonDiscoveredPoints = new JSONArray();
+                JSONArray jsonBorders = new JSONArray();
+                JSONArray jsonSigns = new JSONArray();
+                JSONArray jsonAnimals = new JSONArray();
+                JSONArray jsonCrops = new JSONArray();
+                JSONObject jsonAvailableConstruction = new JSONObject();
+
+                view.put("trees", trees);
+                view.put("houses", jsonHouses);
+                view.put("stones", jsonStones);
+                view.put("workers", workers);
+                view.put("flags", jsonFlags);
+                view.put("roads", jsonRoads);
+                view.put("discoveredPoints", jsonDiscoveredPoints);
+                view.put("borders", jsonBorders);
+                view.put("signs", jsonSigns);
+                view.put("animals", jsonAnimals);
+                view.put("crops", jsonCrops);
+                view.put("availableConstruction", jsonAvailableConstruction);
+
+                /* Protect access to the map to avoid interference */
+                synchronized (map) {
+                    Set<Point> discoveredLand = player.getDiscoveredLand();
+
+                    /* Fill in houses */
+                    for (Building building : map.getBuildings()) {
+
+                        if (!discoveredLand.contains(building.getPosition())) {
+                            continue;
+                        }
+
+                        jsonHouses.add(houseToJson(building, playerId));
+                    }
+
+                    /* Fill in trees */
+                    for (Tree tree : map.getTrees()) {
+                        if (!discoveredLand.contains(tree.getPosition())) {
+                            continue;
+                        }
+
+                        trees.add(treeToJson(tree));
+                    }
+
+                    /* Fill in stones */
+                    for (Stone stone : map.getStones()) {
+
+                        if (!discoveredLand.contains(stone.getPosition())) {
+                            continue;
+                        }
+
+                        jsonStones.add(stoneToJson(stone));
+                    }
+
+                    /* Fill in workers */
+                    for (Worker worker : map.getWorkers()) {
+
+                        if (!discoveredLand.contains(worker.getPosition())) {
+                            continue;
+                        }
+
+                        if (worker.isInsideBuilding()) {
+                            continue;
+                        }
+
+                        workers.add(workerToJson(worker));
+                    }
+
+                    /* Fill in flags */
+                    for (Flag flag : map.getFlags()) {
+
+                        if (!discoveredLand.contains(flag.getPosition())) {
+                            continue;
+                        }
+
+                        jsonFlags.add(flagToJson(flag, getId(flag), playerId));
+                    }
+
+                    /* Fill in roads */
+                    for (Road road : map.getRoads()) {
+
+                        boolean inside = false;
+
+                        /* Filter roads the player cannot see */
+                        for (Point p : road.getWayPoints()) {
+                            if (discoveredLand.contains(p)) {
+                                inside = true;
+
+                                break;
+                            }
+                        }
+
+                        if (!inside) {
+                            continue;
+                        }
+
+                        jsonRoads.add(roadToJson(road));
+                    }
+
+                    /* Fill in the points the player has discovered */
+                    for (Point point : discoveredLand) {
+                        jsonDiscoveredPoints.add(pointToJson(point));
+                    }
+
+                    jsonBorders.add(borderToJson(player, playerId));
+
+                    /* Fill in the signs */
+                    for (Sign sign : map.getSigns()) {
+
+                        if (!discoveredLand.contains(sign.getPosition())) {
+                            continue;
+                        }
+
+                        jsonSigns.add(signToJson(sign));
+                    }
+
+                    /* Fill in wild animals */
+                    for (WildAnimal animal : map.getWildAnimals()) {
+
+                        if (!discoveredLand.contains(animal.getPosition())) {
+                            continue;
+                        }
+
+                        /* Animal is an extension of worker so the same method is used */
+
+                        jsonAnimals.add(workerToJson(animal));
+                    }
+
+                    /* Fill in crops */
+                    for (Crop crop : map.getCrops()) {
+
+                        if (!discoveredLand.contains(crop.getPosition())) {
+                            continue;
+                        }
+
+                        jsonCrops.add(cropToJson(crop));
+                    }
+                }
+
+                /* Fill in available construction */
+                try {
+                    for (Point point : player.getAvailableFlagPoints()) {
+
+                        /* Filter points not discovered yet */
+                        if (!player.getDiscoveredLand().contains(point)) {
+                            continue;
+                        }
+
+                        String key = "" + point.x + "," + point.y;
+
+                        jsonAvailableConstruction.putIfAbsent(key, new JSONArray());
+
+                        ((JSONArray)jsonAvailableConstruction.get(key)).add("flag");
+                    }
+
+                    for (Entry<Point, Size> site : player.getAvailableHousePoints().entrySet()) {
+
+                        /* Filter points not discovered yet */
+                        if (!player.getDiscoveredLand().contains(site.getKey())) {
+                            continue;
+                        }
+
+                        String key = "" + site.getKey().x + "," + site.getKey().y;
+
+                        jsonAvailableConstruction.putIfAbsent(key, new JSONArray());
+
+                        ((JSONArray)jsonAvailableConstruction.get(key)).add("" + site.getValue().toString().toLowerCase());
+                    }
+
+                    for (Point point : player.getAvailableMiningPoints()) {
+
+                        /* Filter points not discovered yet */
+                        if (!player.getDiscoveredLand().contains(point)) {
+                            continue;
+                        }
+
+                        String key = "" + point.x + "," + point.y;
+
+                        jsonAvailableConstruction.putIfAbsent(key, new JSONArray());
+
+                        ((JSONArray)jsonAvailableConstruction.get(key)).add("mine");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(2);
+                }
+
+                for (Point point : player.getAvailableMiningPoints()) {
+
+                    /* Filter points not discovered yet */
+                    if (!player.getDiscoveredLand().contains(point)) {
+                        continue;
+                    }
+
+                    String key = "" + point.x + "," + point.y;
+
+                    jsonAvailableConstruction.putIfAbsent(key, new JSONArray());
+
+                    ((JSONArray)jsonAvailableConstruction.get(key)).add("mine");
+                }
+
+                replyWithJson(response, baseRequest, view);
 
                 return;
             }
-
-            /* Create instances outside the synchronized block when possible */
-            JSONObject view = new JSONObject();
-
-            JSONArray jsonHouses = new JSONArray();
-            JSONArray trees = new JSONArray();
-            JSONArray jsonStones = new JSONArray();
-            JSONArray workers = new JSONArray();
-            JSONArray jsonFlags = new JSONArray();
-            JSONArray jsonRoads = new JSONArray();
-            JSONArray jsonDiscoveredPoints = new JSONArray();
-            JSONArray jsonBorders = new JSONArray();
-            JSONArray jsonSigns = new JSONArray();
-            JSONArray jsonAnimals = new JSONArray();
-
-            view.put("trees", trees);
-            view.put("houses", jsonHouses);
-            view.put("stones", jsonStones);
-            view.put("workers", workers);
-            view.put("flags", jsonFlags);
-            view.put("roads", jsonRoads);
-            view.put("discoveredPoints", jsonDiscoveredPoints);
-            view.put("borders", jsonBorders);
-            view.put("signs", jsonSigns);
-            view.put("animals", jsonAnimals);
-
-            /* Protect access to the map to avoid interference */
-            synchronized(map) {
-                Set<Point> discoveredLand = player.getDiscoveredLand();
-
-                /* Fill in houses */
-                for (Building building : map.getBuildings()) {
-
-                    if (!discoveredLand.contains(building.getPosition())) {
-                        continue;
-                    }
-
-                    jsonHouses.add(houseToJson(building, playerId));
-                }
-
-                /* Fill in trees */
-                for (Tree tree : map.getTrees()) {
-                    if (!discoveredLand.contains(tree.getPosition())) {
-                        continue;
-                    }
-
-                    trees.add(treeToJson(tree));
-                }
-
-                /* Fill in stones */
-                for (Stone stone : map.getStones()) {
-
-                    if (!discoveredLand.contains(stone.getPosition())) {
-                        continue;
-                    }
-
-                    jsonStones.add(stoneToJson(stone));
-                }
-
-                /* Fill in workers */
-                for (Worker worker : map.getWorkers()) {
-
-                    if (!discoveredLand.contains(worker.getPosition())) {
-                        continue;
-                    }
-
-                    if (worker.isInsideBuilding()) {
-                        continue;
-                    }
-
-                    workers.add(workerToJson(worker));
-                }
-
-                /* Fill in flags */
-                for (Flag flag : map.getFlags()) {
-
-                    if (!discoveredLand.contains(flag.getPosition())) {
-                        continue;
-                    }
-
-                    jsonFlags.add(flagToJson(flag, getId(flag), playerId));
-                }
-
-                /* Fill in roads */
-                for (Road road : map.getRoads()) {
-
-                    boolean inside = false;
-
-                    /* Filter roads the player cannot see */
-                    for (Point p : road.getWayPoints()) {
-                        if (discoveredLand.contains(p)) {
-                            inside = true;
-
-                            break;
-                        }
-                    }
-
-                    if (!inside) {
-                        continue;
-                    }
-
-                    jsonRoads.add(roadToJson(road));
-                }
-
-                /* Fill in the points the player has discovered */
-                for (Point point : discoveredLand) {
-                    jsonDiscoveredPoints.add(pointToJson(point));
-                }
-
-                jsonBorders.add(borderToJson(player, playerId));
-
-                /* Fill in the signs */
-                for (Sign sign : map.getSigns()) {
-
-                    if (!discoveredLand.contains(sign.getPosition())) {
-                        continue;
-                    }
-
-                    jsonSigns.add(signToJson(sign));
-                }
-
-                /* Fill in wild animals */
-                for (WildAnimal animal : map.getWildAnimals()) {
-
-                    if (!discoveredLand.contains(animal.getPosition())) {
-                        continue;
-                    }
-
-                    /* Animal is an extension of worker so the same method is used */
-
-                    jsonAnimals.add(workerToJson(animal));
-                }
-            }
-
-            replyWithJson(response, baseRequest, view);
-
-            return;
         }
 
         System.out.println("SHOULD NOT END UP HERE");
@@ -718,17 +801,21 @@ public class RestServer extends AbstractHandler implements View {
     }
 
     private JSONObject borderToJson(Player player, int playerId) {
+
         /* Fill in borders */
         JSONObject jsonBorder = new JSONObject();
         jsonBorder.put("color", colorToHexString(player.getColor()));
         jsonBorder.put("playerId", playerId);
+
         JSONArray jsonBorderPoints = new JSONArray();
         jsonBorder.put("points", jsonBorderPoints);
+
         for (Collection<Point> border : player.getBorders()) {
             for (Point point : border) {
                 jsonBorderPoints.add(pointToJson(point));
             }
         }
+
         return jsonBorder;
     }
 
@@ -761,7 +848,18 @@ public class RestServer extends AbstractHandler implements View {
         }
 
         putPointAsJson(jsonSign, sign.getPosition());
+
         return jsonSign;
+    }
+
+    private Object cropToJson(Crop crop) {
+        JSONObject jsonCrop = new JSONObject();
+
+        putPointAsJson(jsonCrop, crop.getPosition());
+
+        jsonCrop.put("state", "" + crop.getGrowthState());
+
+        return jsonCrop;
     }
 
     private Building buildingFactory(JSONObject jsonHouse, Player player) {
@@ -900,8 +998,7 @@ public class RestServer extends AbstractHandler implements View {
     private JSONObject houseToJson(Building building, int playerId) {
         JSONObject jsonHouse = new JSONObject();
 
-        jsonHouse.put("x", building.getPosition().getX());
-        jsonHouse.put("y", building.getPosition().getY());
+        putPointAsJson(jsonHouse, building.getPosition());
 
         jsonHouse.put("type", building.getClass().getSimpleName());
         jsonHouse.put("playerId", playerId);
@@ -1013,10 +1110,10 @@ public class RestServer extends AbstractHandler implements View {
 
         JSONArray jsonPoints = new JSONArray();
 
-        for (Point p : road.getWayPoints()) {
+        for (Point point : road.getWayPoints()) {
             JSONObject jsonPoint = new JSONObject();
 
-            putPointAsJson(jsonPoint, p);
+            putPointAsJson(jsonPoint, point);
 
             jsonPoints.add(jsonPoint);
         }
@@ -1079,7 +1176,6 @@ public class RestServer extends AbstractHandler implements View {
         return jsonMessage;
     }
     private Point jsonToPoint(JSONObject jsonPoint) {
-        System.out.println("" + jsonPoint.get("x").getClass() );
         return new Point(((Long)jsonPoint.get("x")).intValue(),
                          ((Long)jsonPoint.get("y")).intValue());
     }
@@ -1095,7 +1191,7 @@ public class RestServer extends AbstractHandler implements View {
 
     private JSONObject requestBodyToJson(HttpServletRequest request) throws IOException, ParseException {
         StringBuilder sb = new StringBuilder();
-        String line = null;
+        String line;
 
         BufferedReader br = new BufferedReader(new InputStreamReader(request.getInputStream()));
         while ((line = br.readLine()) != null) {
@@ -1116,6 +1212,12 @@ public class RestServer extends AbstractHandler implements View {
         }
 
         return objectToId.get(o);
+    }
+
+    private Object getObjectFromId(String stringId) {
+        int id = Integer.parseInt(stringId);
+
+        return getObjectFromId(id);
     }
 
     private Object getObjectFromId(int id) {
