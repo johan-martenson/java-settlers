@@ -43,7 +43,7 @@ import org.appland.settlers.model.Road;
  *
  * @author johan
  */
-public class SidePanel extends JTabbedPane {
+class SidePanel extends JTabbedPane {
     private final static String TO_BUILD_PANEL       = "To build";
     private final static String FLAG_PANEL           = "Flag";
     private final static String BUILDING_PANEL       = "Building";
@@ -84,7 +84,7 @@ public class SidePanel extends JTabbedPane {
     private class NonePanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
-        public NonePanel() {
+        NonePanel() {
             JPanel panel = new JPanel();
 
             panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
@@ -108,7 +108,7 @@ public class SidePanel extends JTabbedPane {
         private final JLabel  titleField;
         private final JButton attackButton;
 
-        public EnemyBuildingPanel() {
+        EnemyBuildingPanel() {
             JPanel panel = new JPanel();
 
             panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
@@ -186,7 +186,7 @@ public class SidePanel extends JTabbedPane {
         private static final long serialVersionUID = 1L;
         private final JButton removeRoadButton;
 
-        public RoadSpotPanel() {
+        RoadSpotPanel() {
             JPanel panel = new JPanel();
 
             panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
@@ -222,11 +222,11 @@ public class SidePanel extends JTabbedPane {
     private class OwnBuildingSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
-        JPanel controlPanel;
-        JPanel infoPanel;
-        private final JLabel  titleField;
-        private final JLabel  infoField;
-        private final JLabel  bottonInfoField;
+        final JPanel controlPanel;
+        final JPanel infoPanel;
+        private final JLabel titleField;
+        private final JLabel infoField;
+        private final JLabel bottomInfoField;
 
         private final JButton removeHouseButton;
         private final JButton stopProductionButton;
@@ -235,7 +235,7 @@ public class SidePanel extends JTabbedPane {
         private final JButton stopCoins;
         private final JButton startCoins;
 
-        public OwnBuildingSpotPanel() {
+        OwnBuildingSpotPanel() {
             controlPanel = new JPanel();
             infoPanel    = new JPanel();
 
@@ -247,11 +247,11 @@ public class SidePanel extends JTabbedPane {
 
             /* Create info fields */
             infoField = new JLabel("");
-            bottonInfoField = new JLabel("");
+            bottomInfoField = new JLabel("");
 
             /* Add info field to the panel */
             infoPanel.add(infoField, BorderLayout.CENTER);
-            infoPanel.add(bottonInfoField, BorderLayout.SOUTH);
+            infoPanel.add(bottomInfoField, BorderLayout.SOUTH);
 
             /* Create buttons */
             removeHouseButton      = new JButton("Remove building");
@@ -423,17 +423,17 @@ public class SidePanel extends JTabbedPane {
             }
 
             /* Put together the info text */
-            String info = "<html>";
+            StringBuilder info = new StringBuilder("<html>");
 
             /* Indicate if production is disabled */
             if (!building.isProductionEnabled()) {
-                info += "<br>Production is stopped<br>";
+                info.append("<br>Production is stopped<br>");
             }
 
             /* Print if worker is needed */
             try {
                 if (building.needsWorker()) {
-                    info += "Needs " + building.getWorkerType().name() + "<br>";
+                    info.append("Needs ").append(building.getWorkerType().name()).append("<br>");
                 }
             } catch (Exception ex) {
                 Logger.getLogger(SidePanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -441,21 +441,21 @@ public class SidePanel extends JTabbedPane {
 
             /* Print deployed militaries if it's a military building */
             if (building.isMilitaryBuilding()) {
-                info += building.getNumberOfHostedMilitary() + " of " + building.getMaxHostedMilitary() + " deployed <br>";
+                info.append(building.getNumberOfHostedMilitary()).append(" of ").append(building.getMaxHostedMilitary()).append(" deployed <br>");
 
                 /* Print if the building is evacuated */
                 if (building.isEvacuated()) {
-                    info += "Evacuation activated<br>";
+                    info.append("Evacuation activated<br>");
                 }
 
                 /* Print if promotions are disabled */
                 if (!building.isPromotionEnabled()) {
-                    info += "Promotions disabled<br>";
+                    info.append("Promotions disabled<br>");
                 }
 
                 /* Print a list of the hosted militaries */
                 for (Military military : building.getHostedMilitary()) {
-                    info += "" + military.getRank() + "<br>";
+                    info.append("").append(military.getRank()).append("<br>");
                 }
             }
 
@@ -467,7 +467,7 @@ public class SidePanel extends JTabbedPane {
                  building instanceof GraniteMine ||
                  building instanceof Fishery) &&
                  building.outOfNaturalResources()) {
-                info += "No more available resources<br>";
+                info.append("No more available resources<br>");
             }
 
             /* Print material the building needs */
@@ -480,27 +480,27 @@ public class SidePanel extends JTabbedPane {
             }
 
             if (!materialNeeded.isEmpty()) {
-                info += "Needs: ";
+                info.append("Needs: ");
 
                 boolean firstRun = true;
                 for (Material m : materialNeeded) {
                     if (!firstRun) {
-                        info += ", ";
+                        info.append(", ");
                     }
 
-                    info += m.name();
+                    info.append(m.name());
                     firstRun = false;
                 }
             }
 
             /* Print the selected point at the bottom */
-            bottonInfoField.setText("" + selectedPoint.x + ", " + selectedPoint.y);
+            bottomInfoField.setText("" + selectedPoint.x + ", " + selectedPoint.y);
 
             /* Set the title */
             titleField.setText(title);
 
             /* Set the info text */
-            infoField.setText(info);
+            infoField.setText(info.toString());
 
             /* Update the layout of the panel to make the full text visible */
             infoPanel.updateUI();
@@ -510,12 +510,12 @@ public class SidePanel extends JTabbedPane {
     private class FlagSpotPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
-        JButton startRoadButton;
-        JButton removeFlagButton;
-        JButton callScoutButton;
-        JButton callGeologistButton;
+        final JButton startRoadButton;
+        final JButton removeFlagButton;
+        final JButton callScoutButton;
+        final JButton callGeologistButton;
 
-        public FlagSpotPanel() {
+        FlagSpotPanel() {
             JPanel panel = new JPanel();
 
             panel.setLayout(new GridLayout(1 + HouseType.values().length, 1));
@@ -669,14 +669,11 @@ public class SidePanel extends JTabbedPane {
     private class ControlPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 
-        private boolean              turboToggle;
         private final JPanel         controlPanel;
         private final Map<JButton, Player> buttonToPlayerMap;
 
-        public ControlPanel() {
+        ControlPanel() {
             super();
-
-            turboToggle = false;
 
             setMinimumSize(new Dimension(100, 100));
             setPreferredSize(new Dimension(100, 500));
@@ -894,7 +891,7 @@ public class SidePanel extends JTabbedPane {
         setVisible(true);
     }
 
-    void setSelectedPoint(Point point) throws Exception {
+    void setSelectedPoint(Point point) {
 
         /* Ignore null as selected point */
         if (point == null) {

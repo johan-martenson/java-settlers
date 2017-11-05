@@ -11,11 +11,11 @@ import org.appland.settlers.model.GameMap;
  *
  * @author johan
  */
-public interface View {
+interface View {
 
-    public void onSaveTroubleshootingInformation();
+    void onSaveTroubleshootingInformation();
 
-    public void setMap(GameMap map);
+    void setMap(GameMap map);
 
-    public void onGameStarted();
+    void onGameStarted();
 }

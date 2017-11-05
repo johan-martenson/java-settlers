@@ -201,10 +201,6 @@ public class App extends JFrame implements View {
         canvas.setHoveringSpot(point);
     }
 
-    public void setTick(int tick) {
-        game.setSpeed(tick);
-    }
-
     void onGamePointClicked(Point p) {
         try {
             if (state == UiState.BUILDING_ROAD) {
@@ -325,7 +321,7 @@ public class App extends JFrame implements View {
         state = uiState;
     }
 
-    private void selectPoint(Point p) throws Exception {
+    private void selectPoint(Point p) {
         selectedPoint = p;
 
         sidePanel.setSelectedPoint(p);
@@ -339,7 +335,7 @@ public class App extends JFrame implements View {
         if (turboModeEnabled) {
             game.setSpeed(1);
         } else {
-            game.setSpeed(game.DEFAULT_TICK);
+            game.setSpeed(Game.DEFAULT_TICK);
         }
     }
 
@@ -522,9 +518,9 @@ public class App extends JFrame implements View {
 
                 showAvailableSpots = !showAvailableSpots;
             } else if (previousKeys.equals("+")) {
-                canvas.zoomIn(1);
+                canvas.zoomIn();
             } else if (previousKeys.equals("-")) {
-                canvas.zoomOut(1);
+                canvas.zoomOut();
             } else if (previousKeys.equals("A")) {
                 if (map.isBuildingAtPoint(selectedPoint) && !controlledPlayer.isWithinBorder(selectedPoint)) {
                     /* Find building to attack */
@@ -639,7 +635,7 @@ public class App extends JFrame implements View {
         }
     }
 
-    void centerOn(Player controlledPlayer) {
+    private void centerOn(Player controlledPlayer) {
 
         /* Find the point to center on */
         Point point = null;

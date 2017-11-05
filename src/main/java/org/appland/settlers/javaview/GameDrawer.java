@@ -47,8 +47,6 @@ import org.appland.settlers.model.Flag;
 import org.appland.settlers.model.GameMap;
 import org.appland.settlers.model.Headquarter;
 import org.appland.settlers.model.Material;
-import static org.appland.settlers.model.Material.COAL;
-import static org.appland.settlers.model.Material.GOLD;
 import org.appland.settlers.model.Military;
 import org.appland.settlers.model.Player;
 import org.appland.settlers.model.Point;
@@ -211,7 +209,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         spriteSorter = new SpriteSorter();
     }
 
-    void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
+    private void drawScene(Graphics2D g, Player player, Point selected, List<Point> ongoingRoadPoints, boolean showAvailableSpots) throws Exception {
 
         synchronized (map) {
 
@@ -477,7 +475,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
             /* Scan the row for segments of tiles with the same vegetation */
             boolean rowDone = false;
             List<Point> polygon = new ArrayList<>();
-            boolean ignoreTopOnce = startX == 0 ? true : false;
+            boolean ignoreTopOnce = startX == 0;
 
             /* Iterate until the full row is checked */
             while (!rowDone) {
@@ -641,32 +639,6 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         g.draw(polygon); */
     }
 
-    enum VegetationOrUnknown {
-        WATER, MOUNTAIN, SWAMP, GRASS, UNDISCOVERED;
-
-        VegetationOrUnknown createUndiscovered() {
-            return UNDISCOVERED;
-        }
-
-        VegetationOrUnknown createFromVegetation(Vegetation v) {
-            switch (v) {
-                case WATER:
-                    return WATER;
-                case MOUNTAIN:
-                    return MOUNTAIN;
-                case SWAMP:
-                    return SWAMP;
-                case GRASS:
-                    return GRASS;
-                default:
-                    System.out.println("Cannot handle vegetation " + v);
-                    System.exit(1);
-            }
-
-            return null;
-        }
-    }
-
     private void drawSprite(Graphics2D g, SpriteInfo si) {
 
         Point p = si.getPosition();
@@ -691,30 +663,28 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
         List<Building> houses = map.getBuildings();
 
-        synchronized (houses) {
-            for (Building b : houses) {
-                Point p = b.getPosition();
+        for (Building b : houses) {
+            Point p = b.getPosition();
 
-                if (!pointOnScreen(b.getPosition())) {
-                    continue;
-                }
+            if (!pointOnScreen(b.getPosition())) {
+                continue;
+            }
 
-                if (!player.getDiscoveredLand().contains((b.getPosition()))) {
-                    continue;
-                }
+            if (!player.getDiscoveredLand().contains((b.getPosition()))) {
+                continue;
+            }
 
-                int houseWidth = 250;
-                int houseHeight = 250;
+            int houseWidth = 250;
+            int houseHeight = 250;
 
-                if (b.burningDown()) {
-                    spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
-                } else if (b.destroyed()) {
-                    spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
-                } else if (b instanceof Headquarter) {
-                    spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 200, 250, -15, -25));
-                } else {
-                    spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), houseWidth, houseHeight, (int)(houseWidth / 4), (int)(houseHeight / 4.0)));
-                }
+            if (b.burningDown()) {
+                spritesToDraw.add(new SpriteInfo(fireImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
+            } else if (b.destroyed()) {
+                spritesToDraw.add(new SpriteInfo(rubbleImage, p.upLeft(), houseWidth, houseHeight, -150, 0));
+            } else if (b instanceof Headquarter) {
+                spritesToDraw.add(new SpriteInfo(headquarterImage, p.upLeft(), 200, 250, -15, -25));
+            } else {
+                spritesToDraw.add(new SpriteInfo(houseImage, p.upLeft(), houseWidth, houseHeight, houseWidth / 4, (int)(houseHeight / 4.0)));
             }
         }
     }
@@ -818,7 +788,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    void moveGameView(int changeX, int changeY) {
+    private void moveGameView(int changeX, int changeY) {
         translateX = translateX + changeX;
         translateY = translateY - changeY;
     }
@@ -892,13 +862,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         @Override
         public int compare(SpriteInfo t, SpriteInfo t1) {
 
-            if (t.getPosition().getY() > t1.getPosition().getY()) {
-                return -1;
-            } else if (t.getPosition().getY() < t1.getPosition().getY()) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return Double.compare(t1.getPosition().getY(), t.getPosition().getY());
         }
     }
 
@@ -927,19 +891,19 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
             return offsetX;
         }
 
-        public int getHeight() {
+        int getHeight() {
             return spriteHeight;
         }
 
-        public int getWidth() {
+        int getWidth() {
             return spriteWidth;
         }
 
-        public Point getPosition() {
+        Point getPosition() {
             return position;
         }
 
-        public Image getSprite() {
+        Image getSprite() {
             return sprite;
         }
 
@@ -949,31 +913,28 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
         Collection<Tree> trees = map.getTrees();
 
-        synchronized (trees) {
-
-            for (Tree t : trees) {
-                if (!pointOnScreen(t.getPosition())) {
-                    continue;
-                }
-
-                if (!player.getDiscoveredLand().contains((t.getPosition()))) {
-                    continue;
-                }
-
-                int base = 35;
-                int treeHeight = 400;
-
-                if (t.getSize() == SMALL) {
-                    base = 20;
-                    treeHeight = 200;
-                } else if (t.getSize() == MEDIUM) {
-                    base = 28;
-                    treeHeight = 300;
-                }
-
-                SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 5, treeHeight, -25, treeHeight);
-                spritesToDraw.add(si);
+        for (Tree t : trees) {
+            if (!pointOnScreen(t.getPosition())) {
+                continue;
             }
+
+            if (!player.getDiscoveredLand().contains((t.getPosition()))) {
+                continue;
+            }
+
+            int base = 35;
+            int treeHeight = 400;
+
+            if (t.getSize() == SMALL) {
+                base = 20;
+                treeHeight = 200;
+            } else if (t.getSize() == MEDIUM) {
+                base = 28;
+                treeHeight = 300;
+            }
+
+            SpriteInfo si = new SpriteInfo(treeImage, t.getPosition(), base * 5, treeHeight, -25, treeHeight);
+            spritesToDraw.add(si);
         }
     }
 
@@ -981,22 +942,20 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
 
         Collection<Stone> stones = map.getStones();
 
-        synchronized (stones) {
-            for (Stone s : stones) {
-                if (!pointOnScreen(s.getPosition())) {
-                    continue;
-                }
-
-                if (!player.getDiscoveredLand().contains((s.getPosition()))) {
-                    continue;
-                }
-
-                int stoneWidth = 250;
-                int stoneHeight = 250;
-
-                SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), stoneWidth, stoneHeight, -(int)(stoneWidth / 2.0), -(int)(stoneHeight / 2.0));
-                spritesToDraw.add(si);
+        for (Stone s : stones) {
+            if (!pointOnScreen(s.getPosition())) {
+                continue;
             }
+
+            if (!player.getDiscoveredLand().contains((s.getPosition()))) {
+                continue;
+            }
+
+            int stoneWidth = 250;
+            int stoneHeight = 250;
+
+            SpriteInfo si = new SpriteInfo(stoneImage, s.getPosition(), stoneWidth, stoneHeight, -(int)(stoneWidth / 2.0), -(int)(stoneHeight / 2.0));
+            spritesToDraw.add(si);
         }
     }
 
@@ -1171,7 +1130,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    private void drawPossibleRoadConnections(Graphics2D g, Player player, Point point, List<Point> roadPoints) throws Exception {
+    private void drawPossibleRoadConnections(Graphics2D g, Player player, Point point, List<Point> roadPoints) {
 
         for (Point p : map.getPossibleAdjacentRoadConnectionsIncludingEndpoints(player, point)) {
             if (!pointOnScreen(p)) {
@@ -1371,7 +1330,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    private void drawAvailableSpots(Graphics2D g, Player player) throws Exception {
+    private void drawAvailableSpots(Graphics2D g, Player player) {
         Map<Point, Size> houses = map.getAvailableHousePoints(player);
 
         /* Draw the available houses */
@@ -1514,7 +1473,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         map = m;
     }
 
-    void zoomIn(int notches) throws Exception {
+    void zoomIn() {
         // screen = game * scale + translate
         // screen/2 = game * scale + translate
         // translate = screen/2 - game * scale
@@ -1528,7 +1487,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         translateY = (int)((getHeight() / 2) - oldGameY * scale);
     }
 
-    void zoomOut(int notches) throws Exception {
+    void zoomOut() {
         // screen = game * scale + translate
         // screen/2 = game * scale + translate
         // translate = screen/2 - game * scale
@@ -1638,39 +1597,15 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         g.drawOval(pointToScreenX(p, 30), pointToScreenY(p, 30), -15, -15);
     }
 
-    java.awt.Point gamePointToScreenPoint(java.awt.Point p, java.awt.Point gplowerLeft, java.awt.Point gpUpperRight, java.awt.Point upperLeft, java.awt.Point lowerRight) {
-
-        /* Calculate ratios */
-        double pixelsPerGpX = (lowerRight.x - upperLeft.x) / (gpUpperRight.x - gplowerLeft.x);
-        double pixelsPerGpY = (lowerRight.y - upperLeft.y) / (gpUpperRight.y - gplowerLeft.y);
-
-        /* Calculate anchor pixel */
-        java.awt.Point fixedPoint = new java.awt.Point(
-                (int)((p.x - gplowerLeft.x) * pixelsPerGpX + upperLeft.x),
-                (int)((p.y - gplowerLeft.y) * pixelsPerGpY + upperLeft.y));
-
-        return fixedPoint;
-    }
-
-    Dimension getPixelsPerGamePoint(java.awt.Point gpLowerLeft, java.awt.Point gpUpperRight, java.awt.Point upperLeft, java.awt.Point lowerRight) {
-        double nrGamePointsX = gpUpperRight.x - gpLowerLeft.x;
-        double nrGamePointsY = gpUpperRight.y - gpLowerLeft.y;
-
-        double pixelsShownX = lowerRight.x - upperLeft.x;
-        double pixelsShownY = upperLeft.y - lowerRight.y;
-
-        return new Dimension((int) (pixelsShownX / nrGamePointsX), (int) (pixelsShownY / nrGamePointsY));
-    }
-
-    int pointToScreenX(Point p) {
+    private int pointToScreenX(Point p) {
         return (int)(p.x * scale + translateX);
     }
 
-    int pointToScreenY(Point p) {
+    private int pointToScreenY(Point p) {
         return getHeight() - (int)(p.y * scale + translateY);
     }
 
-    int toScreenX(double x) {
+    private int toScreenX(double x) {
         return (int)(x * scale + translateX);
     }
 
@@ -1678,11 +1613,11 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         return getHeight() - (int)(y * scale + translateY);
     }
 
-    int pointToScreenX(Point p, int offset) {
+    private int pointToScreenX(Point p, int offset) {
         return (int)((p.x  + (offset / 100)) * scale + translateX);
     }
 
-    int pointToScreenY(Point p, double offset) {
+    private int pointToScreenY(Point p, double offset) {
         return getHeight() - (int)((p.y  + (offset / 100)) * scale + translateY);
     }
 
@@ -1690,15 +1625,15 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         return (int)((x  + (offset / 100)) * scale + translateX);
     }
 
-    int toScreenY(double y, double offset) {
+    private int toScreenY(double y, double offset) {
         return getHeight() - (int)((y + (offset / 100))* scale + translateY);
     }
 
-    int scaleOffset(double d) {
+    private int scaleOffset(double d) {
         return (int)(d*scale/100);
     }
 
-    Point screenPointToGamePoint(java.awt.Point point) {
+    private Point screenPointToGamePoint(java.awt.Point point) {
 
         /* Go from surface coordinates to game points */
         double px = (double) (point.x - translateX) / scale;
@@ -1811,9 +1746,9 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         try {
             int notches = mwe.getWheelRotation();
             if (notches < 0) {
-                zoomIn(notches);
+                zoomIn();
             } else {
-                zoomOut(notches);
+                zoomOut();
             }
         } catch (Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);

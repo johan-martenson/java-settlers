@@ -64,49 +64,49 @@ public class Game {
     private GameMap map;
 
     @Option(name="--no-graphics",
-            usage="Run the game without graphics",
-            required=false)
+            usage="Run the game without graphics"
+    )
     boolean headless = false;
 
     @Option(name="--file", usage="Map file to load")
     String filename;
 
     @Option(name="--computer-player-one",
-            usage="Computer player for player one",
-            required=false)
+            usage="Computer player for player one"
+    )
     String computerPlayerOne;
 
     @Option(name="--computer-player-two",
-            usage="Computer player for player two",
-            required=false)
+            usage="Computer player for player two"
+    )
     String computerPlayerTwo;
 
     @Option(name="--tick",
-            usage="The time (in milliseconds) between each step of the game",
-            required=false)
+            usage="The time (in milliseconds) between each step of the game"
+    )
     int tick = 30;
 
     @Option(name="--players",
-            usage="The number of players (defaults to 2)",
-            required=false)
+            usage="The number of players (defaults to 2)"
+    )
     int numberOfPlayers = 2;
 
     @Option(name="--rest-server",
-            usage="Enable REST server for remote players",
-            required=false)
+            usage="Enable REST server for remote players"
+    )
     boolean enableRestServer = false;
 
     @Option(name="--port",
-            usage="Port to expose the REST server on",
-            required=false)
+            usage="Port to expose the REST server on"
+    )
     int port = 8080;
 
     @Option(name="--host",
-            usage="Host to run HTTP server on",
-            required=false)
+            usage="Host to run HTTP server on"
+    )
     String host = "localhost";
 
-    public Game() throws Exception {
+    public Game() {
 
         views           = new ArrayList<>();
         creator         = new ScenarioCreator();
@@ -328,7 +328,7 @@ public class Game {
                 }
             } catch (Exception ex) {
 
-                /* Print API recording to make the fault reproducable */
+                /* Print API recording to make the fault reproducible */
                 try {
                     ((GameMapRecordingAdapter)map).printRecordingOnConsole();
                 } catch (Exception e) {
@@ -349,7 +349,7 @@ public class Game {
         }
 
         private void printTroubleshootingInformation(Exception ex) {
-            /* Print API recording to make the fault reproducable */
+            /* Print API recording to make the fault reproducible */
             try {
                 ((GameMapRecordingAdapter)map).printRecordingOnConsole();
             } catch (Exception e) {}

@@ -57,7 +57,7 @@ import org.appland.settlers.model.Woodcutter;
  *
  * @author johan
  */
-public class BuildingFactory {
+class BuildingFactory {
 
     public static Building createBuilding(Player player, HouseType type) {
 

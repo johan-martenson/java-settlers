@@ -21,7 +21,7 @@ import org.appland.settlers.model.Stone;
  *
  * @author johan
  */
-public class ScenarioCreator {
+class ScenarioCreator {
 
     void placeOpponent(Player opponent, GameMap map) throws Exception {
 

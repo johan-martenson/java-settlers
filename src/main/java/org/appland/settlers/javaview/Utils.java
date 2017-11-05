@@ -27,12 +27,11 @@ public class Utils {
         String className = building.getClass().getSimpleName();
 
         /* Change the initial letter to a small letter */
-        String name = className.toLowerCase().charAt(0) + className.substring(1);
 
         /* Add space before each remaining capital letter */
         // TODO
 
-        return name;
+        return className.toLowerCase().charAt(0) + className.substring(1);
     }
 
     static String prettifyBuildingName(HouseType type) {
