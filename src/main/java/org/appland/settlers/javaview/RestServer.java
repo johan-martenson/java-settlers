@@ -72,17 +72,15 @@ import org.json.simple.parser.ParseException;
 
 public class RestServer extends AbstractHandler implements View {
 
-    private final String PLAYER_PARAM = "player";
-
     private GameMap map;
     private final int port;
     private final String host;
     private final Pattern INDIVIDUAL_FLAG  = Pattern.compile("/flags/([0-9A-Za-z]+)/?");
     private final Pattern INDIVIDUAL_HOUSE = Pattern.compile("/houses/([0-9A-Za-z]+)/?");
     private final Pattern PLAYERS_VIEW = Pattern.compile("/players/([0-9A-Za-z]+)/view/?");
-    private Map<Object, Integer> objectToId;
+    private final Map<Object, Integer> objectToId;
     private int ids;
-    private Map<Integer, Object> idToObject;
+    private final Map<Integer, Object> idToObject;
     private final Game game;
     private final Map<Pattern, String[]> allowedMethods;
 
@@ -341,7 +339,7 @@ public class RestServer extends AbstractHandler implements View {
                     System.out.println("House " + building);
 
                     /* Instantiate JSON objects outside the synchronized scope */
-                    JSONObject jsonHouse = null;
+                    JSONObject jsonHouse;
                     JSONObject jsonInventory = new JSONObject();
 
                     synchronized (map) {
@@ -425,8 +423,8 @@ public class RestServer extends AbstractHandler implements View {
 
                 List<Point> points = new ArrayList<>();
 
-                for (int i = 0; i < jsonPoints.size(); i++) {
-                    JSONObject jsonPoint = (JSONObject) jsonPoints.get(i);
+                for (Object jsonPoint1 : jsonPoints) {
+                    JSONObject jsonPoint = (JSONObject) jsonPoint1;
                     Point point = jsonToPoint(jsonPoint);
 
                     points.add(point);
@@ -533,7 +531,7 @@ public class RestServer extends AbstractHandler implements View {
             }
         }
 
-        /* Handle available construction for a player at "/players/{playerId}/view/ "*/
+        /* Handle view for a player at "/players/{playerId}/view/ "*/
         Matcher individualPlayersView = PLAYERS_VIEW.matcher(target);
 
         if (individualPlayersView.matches()) {
@@ -552,23 +550,23 @@ public class RestServer extends AbstractHandler implements View {
                 /* Create instances outside the synchronized block when possible */
                 JSONObject view = new JSONObject();
 
-                JSONArray jsonHouses = new JSONArray();
-                JSONArray trees = new JSONArray();
-                JSONArray jsonStones = new JSONArray();
-                JSONArray workers = new JSONArray();
-                JSONArray jsonFlags = new JSONArray();
-                JSONArray jsonRoads = new JSONArray();
-                JSONArray jsonDiscoveredPoints = new JSONArray();
-                JSONArray jsonBorders = new JSONArray();
-                JSONArray jsonSigns = new JSONArray();
-                JSONArray jsonAnimals = new JSONArray();
-                JSONArray jsonCrops = new JSONArray();
+                JSONArray  jsonHouses                = new JSONArray();
+                JSONArray  trees                     = new JSONArray();
+                JSONArray  jsonStones                = new JSONArray();
+                JSONArray  jsonWorkers               = new JSONArray();
+                JSONArray  jsonFlags                 = new JSONArray();
+                JSONArray  jsonRoads                 = new JSONArray();
+                JSONArray  jsonDiscoveredPoints      = new JSONArray();
+                JSONArray  jsonBorders               = new JSONArray();
+                JSONArray  jsonSigns                 = new JSONArray();
+                JSONArray  jsonAnimals               = new JSONArray();
+                JSONArray  jsonCrops                 = new JSONArray();
                 JSONObject jsonAvailableConstruction = new JSONObject();
 
                 view.put("trees", trees);
                 view.put("houses", jsonHouses);
                 view.put("stones", jsonStones);
-                view.put("workers", workers);
+                view.put("workers", jsonWorkers);
                 view.put("flags", jsonFlags);
                 view.put("roads", jsonRoads);
                 view.put("discoveredPoints", jsonDiscoveredPoints);
@@ -622,7 +620,7 @@ public class RestServer extends AbstractHandler implements View {
                             continue;
                         }
 
-                        workers.add(workerToJson(worker));
+                        jsonWorkers.add(workerToJson(worker));
                     }
 
                     /* Fill in flags */
@@ -938,7 +936,7 @@ public class RestServer extends AbstractHandler implements View {
                 building = new HunterHut(player);
                 break;
             default:
-                System.out.println("DON'T KNOW HOW TO CREATE BUILDING " + (String)jsonHouse.get("type"));
+                System.out.println("DON'T KNOW HOW TO CREATE BUILDING " + jsonHouse.get("type"));
                 System.exit(1);
         }
         return building;
@@ -961,8 +959,8 @@ public class RestServer extends AbstractHandler implements View {
     private Point getPointFromParameters(HttpServletRequest request) throws NumberFormatException {
         int x = Integer.parseInt(request.getParameter("x"));
         int y = Integer.parseInt(request.getParameter("y"));
-        Point point = new Point(x, y);
-        return point;
+
+        return new Point(x, y);
     }
 
     private JSONObject workerToJson(Worker worker) {
@@ -1004,6 +1002,10 @@ public class RestServer extends AbstractHandler implements View {
         jsonHouse.put("playerId", playerId);
         jsonHouse.put("houseId", getId(building));
 
+        if (building.canProduce()) {
+            jsonHouse.put("productivity", building.getProductivity());
+        }
+
         if (building.underConstruction()) {
             jsonHouse.put("state", "unfinished");
         } else if (building.ready() && !building.occupied()) {
@@ -1019,7 +1021,7 @@ public class RestServer extends AbstractHandler implements View {
         return jsonHouse;
     }
 
-    protected void startServer() throws Exception {
+    void startServer() {
 
         final RestServer handler = this;
 
@@ -1125,15 +1127,15 @@ public class RestServer extends AbstractHandler implements View {
 
     private String colorToHexString(Color c) {
 
-        String hex = Integer.toHexString(c.getRGB() & 0xffffff);
+        StringBuilder hex = new StringBuilder(Integer.toHexString(c.getRGB() & 0xffffff));
 
         while(hex.length() < 6){
-              hex = "0" + hex;
+              hex.insert(0, "0");
         }
 
-        hex = "#" + hex;
+        hex.insert(0, "#");
 
-        return hex;
+        return hex.toString();
     }
 
     private String vegetationToJson(Vegetation v) {
