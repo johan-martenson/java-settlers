@@ -35,7 +35,7 @@ import static org.appland.settlers.model.Material.FLOUR;
 import static org.appland.settlers.model.Material.GENERAL;
 import static org.appland.settlers.model.Material.GOLD;
 import static org.appland.settlers.model.Material.MEAT;
-import static org.appland.settlers.model.Material.PLANCK;
+import static org.appland.settlers.model.Material.PLANK;
 import static org.appland.settlers.model.Material.STONE;
 import static org.appland.settlers.model.Material.WHEAT;
 import static org.appland.settlers.model.Material.WOOD;
@@ -358,7 +358,7 @@ public class App extends JFrame implements View {
         /* Fill headquarter with bonus resources */
         if (headquarter != null) {
             fillStorageWithMaterial(headquarter, WOOD,    100);
-            fillStorageWithMaterial(headquarter, PLANCK,  100);
+            fillStorageWithMaterial(headquarter, PLANK,  100);
             fillStorageWithMaterial(headquarter, STONE,   100);
             fillStorageWithMaterial(headquarter, GOLD,    100);
             fillStorageWithMaterial(headquarter, COAL,    100);

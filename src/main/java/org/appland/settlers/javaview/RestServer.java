@@ -543,7 +543,7 @@ public class RestServer extends AbstractHandler implements View {
                 /* Return an error if there is no such player */
                 if (player == null) {
                     replyWithInvalidParameter(response, baseRequest, "Player does not exist " + playerId);
-
+                    System.out.println("No such player");
                     return;
                 }
 
@@ -993,6 +993,23 @@ public class RestServer extends AbstractHandler implements View {
         return jsonWorker;
     }
 
+    /*
+     { playerId: 17,
+       houseId: 9,
+       x: 2,
+       y: 3,
+       inventory: {'gold': 3},
+       type: 'headquarter',
+       maxAttackers: 23,
+       productivity: 100,
+       produces: 'wood',
+       resources: {
+                     plank: {needs: 2, has: 1},
+                     stone:  {needs: 2, has: 0}
+       }
+     }
+    */
+
     private JSONObject houseToJson(Building building, int playerId) {
         JSONObject jsonHouse = new JSONObject();
 
@@ -1003,7 +1020,31 @@ public class RestServer extends AbstractHandler implements View {
         jsonHouse.put("houseId", getId(building));
 
         if (building.canProduce()) {
+            JSONArray jsonProduces = new JSONArray();
+
             jsonHouse.put("productivity", building.getProductivity());
+            jsonHouse.put("produces", jsonProduces);
+
+            for (Material material : building.getProducedMaterial()) {
+                jsonProduces.add(material.name());
+            }
+
+            JSONObject jsonResources = new JSONObject();
+
+            for (Material material : building.getMaterialNeeded()) {
+                int amount = building.getTotalAmountNeeded(material);
+
+                if (amount > 0) {
+                    JSONObject jsonResource = new JSONObject();
+
+                    jsonResource.put("needs", amount);
+                    jsonResource.put("has", building.getAmount(material));
+
+                    jsonResources.put(material.name().toLowerCase(), jsonResource);
+                }
+            }
+
+            jsonHouse.put("resources", jsonResources);
         }
 
         if (building.underConstruction()) {

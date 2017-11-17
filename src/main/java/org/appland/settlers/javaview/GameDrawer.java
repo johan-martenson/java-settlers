@@ -75,7 +75,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
     private final Color FLAG_POLE_COLOR         = DARK_GRAY;
     private final Color WOOD_COLOR              = new Color(0xBF8026);
     private final Color WHEAT_COLOR             = Color.ORANGE;
-    private final Color PLANCK_COLOR            = Color.YELLOW;
+    private final Color PLANK_COLOR            = Color.YELLOW;
     private final Color WATER_COLOR             = Color.BLUE;
     private final Color FLOUR_COLOR             = Color.WHITE;
     private final Color STONE_COLOR             = Color.GRAY;
@@ -1442,8 +1442,8 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
             return STONE_COLOR;
         case WHEAT:
             return WHEAT_COLOR;
-        case PLANCK:
-            return PLANCK_COLOR;
+        case PLANK:
+            return PLANK_COLOR;
         case WOOD:
             return WOOD_COLOR;
         case FISH:

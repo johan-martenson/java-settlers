@@ -23,16 +23,8 @@ import org.appland.settlers.computer.ComputerPlayer;
 import org.appland.settlers.computer.ConstructionPreparationPlayer;
 import org.appland.settlers.computer.ExpandLandPlayer;
 import org.appland.settlers.computer.FoodProducer;
-import org.appland.settlers.computer.MiltaryProducer;
+import org.appland.settlers.computer.MilitaryProducer;
 import org.appland.settlers.computer.PlayerType;
-import static org.appland.settlers.computer.PlayerType.ATTACKING;
-import static org.appland.settlers.computer.PlayerType.BUILDING;
-import static org.appland.settlers.computer.PlayerType.COIN_PRODUCER;
-import static org.appland.settlers.computer.PlayerType.COMPOSITE_PLAYER;
-import static org.appland.settlers.computer.PlayerType.EXPANDING;
-import static org.appland.settlers.computer.PlayerType.FOOD_PRODUCER;
-import static org.appland.settlers.computer.PlayerType.MILITARY_PRODUCER;
-import static org.appland.settlers.computer.PlayerType.MINERALS;
 import org.appland.settlers.computer.SearchForMineralsPlayer;
 import org.appland.settlers.maps.MapFile;
 import org.appland.settlers.maps.MapLoader;
@@ -293,7 +285,7 @@ public class Game {
             	computerPlayer = new CoinProducer(player, map);
             	break;
             case MILITARY_PRODUCER:
-            	computerPlayer = new MiltaryProducer(player, map);
+            	computerPlayer = new MilitaryProducer(player, map);
                 break;
             case COMPOSITE_PLAYER:
                 computerPlayer = new CompositePlayer(player, map);
