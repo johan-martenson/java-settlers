@@ -113,7 +113,7 @@ public class RestServer extends AbstractHandler implements View {
                        Request baseRequest,
                        HttpServletRequest request,
                        HttpServletResponse response)
-        throws IOException, ServletException {
+        throws IOException {
 
         /* Answer OPTIONS requests */
         if (request.getMethod().equals("OPTIONS")) {

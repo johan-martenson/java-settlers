@@ -455,7 +455,7 @@ class SidePanel extends JTabbedPane {
 
                 /* Print a list of the hosted militaries */
                 for (Military military : building.getHostedMilitary()) {
-                    info.append("").append(military.getRank()).append("<br>");
+                    info.append(military.getRank()).append("<br>");
                 }
             }
 
