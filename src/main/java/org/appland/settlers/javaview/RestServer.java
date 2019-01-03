@@ -167,8 +167,8 @@ public class RestServer extends AbstractHandler implements View {
                     for (int x = start; x + 1 < map.getWidth(); x += 2) {
                         Point p = new Point(x, y);
 
-                        Tile below = terrain.getTile(p.downLeft(), p, p.downRight());
-                        Tile belowRight = terrain.getTile(p, p.downRight(), p.right());
+                        Tile below = terrain.getTileBelow(p);
+                        Tile belowRight = terrain.getTileDownRight(p);
 
                         jsonTrianglesBelow.add(vegetationToJson(below.getVegetationType()));
                         jsonTrianglesBelowRight.add(vegetationToJson(belowRight.getVegetationType()));

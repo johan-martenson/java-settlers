@@ -334,7 +334,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
                     player.getDiscoveredLand().contains(right) &&
                     player.getDiscoveredLand().contains(up)) {
 
-                    Tile tile = map.getTerrain().getTile(left, right, up);
+                    Tile tile = map.getTerrain().getTileUpRight(left);
                     vegetationUp = tile.getVegetationType();
                 }
 
@@ -343,7 +343,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
                     player.getDiscoveredLand().contains(right) &&
                     player.getDiscoveredLand().contains(down)) {
 
-                    Tile tile = map.getTerrain().getTile(left, right, down);
+                    Tile tile = map.getTerrain().getTileDownRight(left);
                     vegetationDown = tile.getVegetationType();
                 }
 
@@ -434,22 +434,6 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
         }
     }
 
-    private Tile getTileRight(Point point) {
-        return map.getTerrain().getTile(
-            new Point(point.x    , point.y    ),
-            new Point(point.x + 1, point.y + 1),
-            new Point(point.x + 2, point.y    )
-        );
-    }
-
-    private Tile getTileAbove(Point point) {
-        return map.getTerrain().getTile(
-            new Point(point.x    , point.y    ),
-            new Point(point.x - 1, point.y + 1),
-            new Point(point.x + 1, point.y + 1)
-        );
-    }
-
     private void drawTerrainAlt2(Player player, Graphics2D g) {
 
         /* Get bounds */
@@ -481,10 +465,10 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
             while (!rowDone) {
 
                 /* Get the vegetation of the next segment */
-                Vegetation vegetation = getTileAbove(new Point(startX, y)).getVegetationType();
+                Vegetation vegetation = map.getTerrain().getTileAbove(new Point(startX, y)).getVegetationType();
 
                 if (ignoreTopOnce) {
-                    vegetation = getTileRight(new Point(startX, y)).getVegetationType();
+                    vegetation = map.getTerrain().getTileUpRight(new Point(startX, y)).getVegetationType();
                 }
 
                 /* Clear the previous segment */
@@ -528,7 +512,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
                     /* Add the final points and break if the top tile has a different vegetation
                        or if is not discovered by the player
                     */
-                    Tile tileAbove = getTileAbove(point);
+                    Tile tileAbove = map.getTerrain().getTileAbove(point);
                     if (!ignoreTopOnce && tileAbove.getVegetationType() != vegetation) {
                         polygon.add(point);
                         polygon.add(point.upLeft());
@@ -568,7 +552,7 @@ public class GameDrawer extends JPanel implements MouseListener, KeyListener, Mo
                     /* Add the final points and break if the right side tile has
                        a different vegetation or if it is not discovered by the player
                     */
-                    Tile tileRight = getTileRight(point);
+                    Tile tileRight = map.getTerrain().getTileUpRight(point);
                     if ((tileRight.getVegetationType() != vegetation)         ||
                         !player.getDiscoveredLand().contains(point)           ||
                         !player.getDiscoveredLand().contains(point.upRight()) ||
